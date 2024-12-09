@@ -89,7 +89,11 @@ wif::wif(FILE* _wifstream)
         throw std::runtime_error("Error in wif file: no WEAVING section");
     
     f = nameKeys.find("rising shed");
-    if (f != nameKeys.end()) risingShed = valueToBool(f->second);
+    if (f != nameKeys.end()) {
+        risingShed = valueToBool(f->second);
+    } else {
+        std::cerr << "Wif file does not specify rising/falling shed. Assuming rising shed." << std::endl;
+    }
     f = nameKeys.find("shafts");
     if (f == nameKeys.end())
         throw std::runtime_error("Error in wif file: Shafts key missing");

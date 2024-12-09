@@ -38,7 +38,7 @@ public:
     
     int  maxShafts;
     int  maxTreadles;
-    bool risingShed = false;
+    bool risingShed = true;
     int ends = 0;
     int picks = 0;
     
