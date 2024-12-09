@@ -181,7 +181,7 @@ wif::wif(FILE* _wifstream)
                     char* end = nullptr;
                     long treadle = std::strtol(v, &end, 10);
                     if (treadle < 1 || treadle > maxTreadles)
-                        throw std::runtime_error("Error in wif file: bad treadle number in liftplan");
+                        throw std::runtime_error("Error in wif file: treadle number out of range in liftplan");
                     
                     liftplan[i] |= tieup[treadle];
                     if (*end != ',') break;
@@ -304,7 +304,7 @@ wif::processKeyLines(bool multi)
                 char* end = nullptr;
                 long shaft = std::strtol(v, &end, 10);
                 if (shaft < 1 || shaft > maxShafts)
-                    throw std::runtime_error("Error in wif file: bad shaft number in liftplan");
+                    throw std::runtime_error("Error in wif file: shaft number out of range in liftplan");
                 keyLines[i] |= 1 << (shaft - 1);
                 if (*end == ',' && !multi)
                     throw std::runtime_error("Drawboy doesn't handle ends with multiple shafts");
