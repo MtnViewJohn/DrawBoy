@@ -121,24 +121,31 @@ makesystem_error(const char* what) {
 int
 Options::getOptions(int argc, const char * argv[])
 {
-    std::unordered_map<std::string, Options::DobbyType> map{
+    std::unordered_map<std::string, Options::DobbyType> dobbyMap{
         {"positive", Options::DobbyType::Positive},
         {"negative", Options::DobbyType::Negative},
         {"+", Options::DobbyType::Positive},
         {"-", Options::DobbyType::Negative},
+    };
+    std::unordered_map<std::string, int> shaftMap{
+        {"8", 8},
+        {"12", 12},
+        {"16", 16},
+        {"24", 24},
+        {"32", 32},
+        {"40", 40},
     };
     args::ArgumentParser parser("AVL CompuDobby III loom driver.", "Report errors to John Horigan <john@glyphic.com>.");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::CompletionFlag completion(parser, {"complete"});
     args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut | args::Options::CLIOnly);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
-        "The path of the loom device in the /dev directory", {'l', "loomDevice"},
-        "", args::Options::Required);
+        "The path of the loom device in the /dev directory", {'l', "loomDevice"}, "");
     args::ValueFlag<std::string> _wifFile(parser, "WIF PATH",
         "The path of the WIF file", {'f', "wif"}, "");
-    args::ValueFlag<int> _maxShafts(parser, "SHAFT COUNT",
-        "Number of shafts on the loom", {'s', "shafts"}, 0);
-    args::MapFlag<std::string, Options::DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, map, Options::DobbyType::Positive);
+    args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
+        "Number of shafts on the loom", {'s', "shafts"}, shaftMap, 0);
+    args::MapFlag<std::string, Options::DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, Options::DobbyType::Positive);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
@@ -188,13 +195,7 @@ Options::getOptions(int argc, const char * argv[])
     dobbyType = args::get(_dobbyType);
     
     if (_maxShafts) {
-        const auto legalValues = {8, 12, 16, 24, 32, 40};
         maxShafts = args::get(_maxShafts);
-        if (std::find(legalValues.begin(), legalValues.end(), maxShafts)
-            == legalValues.end())
-        {
-            throw std::runtime_error("Legal shaft counts are 8, 12, 16, 24, 32, and 40");
-        }
     } else {
         std::cerr << "Flag '--shafts' is required" << std::endl;
         std::cerr << parser;
