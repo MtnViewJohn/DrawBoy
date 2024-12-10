@@ -33,6 +33,7 @@
 #include <termios.h>
 #include <sstream>
 #include <algorithm>
+#include <cstdlib>
 
 namespace {
 int
@@ -135,17 +136,32 @@ Options::getOptions(int argc, const char * argv[])
         {"32", 32},
         {"40", 40},
     };
+    
+    const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
+    const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
+    const char* envDobby = std::getenv("DRAWBOY_DOBBY");
+    
+    if (!envLoom) envLoom = "";
+    
+    auto f1 = envDobby ? dobbyMap.find(envDobby) : dobbyMap.end();
+    Options::DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : Options::DobbyType::Positive;
+    
+    auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
+    int defShaft = f2 != shaftMap.end() ? f2->second : 0;
+    
     args::ArgumentParser parser("AVL CompuDobby III loom driver.", "Report errors to John Horigan <john@glyphic.com>.");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::CompletionFlag completion(parser, {"complete"});
-    args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut | args::Options::CLIOnly);
+    args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
-        "The path of the loom device in the /dev directory", {'l', "loomDevice"}, "");
+        "The path of the loom device in the /dev directory", {'l', "loomDevice"},
+        envLoom, *envLoom ? args::Options::None : args::Options::Required);
     args::ValueFlag<std::string> _wifFile(parser, "WIF PATH",
-        "The path of the WIF file", {'f', "wif"}, "");
+        "The path of the WIF file", {'f', "wif"}, "", args::Options::Required);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
-        "Number of shafts on the loom", {'s', "shafts"}, shaftMap, 0);
-    args::MapFlag<std::string, Options::DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, Options::DobbyType::Positive);
+        "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
+        defShaft ? args::Options::None : args::Options::Required);
+    args::MapFlag<std::string, Options::DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
@@ -153,9 +169,7 @@ Options::getOptions(int argc, const char * argv[])
     try
     {
         parser.Prog("DrawBoy");
-        std::string rcfile = getenv("HOME");
-        rcfile.append("/.drawboyrc");
-        parser.ParseCLI(argc, argv, rcfile);
+        parser.ParseCLI(argc, argv);
     }
     catch (const args::Completion& e)
     {
@@ -193,15 +207,8 @@ Options::getOptions(int argc, const char * argv[])
     maxShafts = args::get(_maxShafts);
     pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
-    
-    if (_maxShafts) {
-        maxShafts = args::get(_maxShafts);
-    } else {
-        std::cerr << "Flag '--shafts' is required" << std::endl;
-        std::cerr << parser;
-        return 1;
-    }
-    
+    maxShafts = args::get(_maxShafts);
+
     if (_picks) {
         std::stringstream ss(args::get(_picks));
         std::string range;
@@ -242,19 +249,13 @@ Options::getOptions(int argc, const char * argv[])
         }
     }
     
-    if (_wifFile) {
-        wifFile = args::get(_wifFile);
-        wifFileStream = std::fopen(wifFile.c_str(), "r");
-        
-        if (wifFileStream == nullptr)
-            throw makesystem_error("Cannot open wif file");
-    } else {
-        std::cerr << "Flag '--wif' is required" << std::endl;
-        std::cerr << parser;
-        return 1;
-    }
+    wifFile = args::get(_wifFile);
+    wifFileStream = std::fopen(wifFile.c_str(), "r");
     
-    loomDeviceFD = checkForSerial(args::get(_loomDevice));
+    if (wifFileStream == nullptr)
+        throw makesystem_error("Cannot open wif file");
+    
+    loomDeviceFD = checkForSerial(loomDevice);
     
     if (loomDeviceFD == 1)
         throw std::runtime_error("Cannot open loom device.");
