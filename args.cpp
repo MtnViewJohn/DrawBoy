@@ -103,9 +103,9 @@ initLoomPort(int fd)
     cfmakeraw(&term);
     cfsetispeed(&term, B9600);          // set 9600 baud
     cfsetospeed(&term, B9600);
-    term.c_cflag &= ~PARENB;            // set 8N1
-    term.c_cflag &= ~CSTOPB;
-    term.c_cflag = (term.c_cflag & ~CSIZE) | CS8;
+    term.c_cflag &= (tcflag_t)(~PARENB);            // set 8N1
+    term.c_cflag &= (tcflag_t)(~CSTOPB);
+    term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
     
     if (tcsetattr(fd, TCSAFLUSH, &term) < 0)
         throw makesystem_error("Cannot communicate with loom device");
@@ -140,6 +140,7 @@ Options::getOptions(int argc, const char * argv[])
     const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
     const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
     const char* envDobby = std::getenv("DRAWBOY_DOBBY");
+    const char* envASCII = std::getenv("DRAWBOY_ASCII");
     
     if (!envLoom) envLoom = "";
     
@@ -166,6 +167,9 @@ Options::getOptions(int argc, const char * argv[])
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
+    args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
+    args::ValueFlag<std::string> _tabby(parser, "TABBY_A/TABBY_B", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
+    
     try
     {
         parser.Prog("DrawBoy");
@@ -208,6 +212,7 @@ Options::getOptions(int argc, const char * argv[])
     pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
     maxShafts = args::get(_maxShafts);
+    ascii = args::get(_ascii) || envASCII != nullptr;
 
     if (_picks) {
         std::stringstream ss(args::get(_picks));
@@ -234,11 +239,11 @@ Options::getOptions(int argc, const char * argv[])
                     throw std::runtime_error("Bad treadling range.");
                 for (int count = 0; count < mult; ++count) {
                     if (start < end) {
-                        for (int pick = start; pick <= end; ++pick)
-                            picks.push_back(pick);
+                        for (int p = start; p <= end; ++p)
+                            picks.push_back(p);
                     } else {
-                        for (int pick = end; pick >= start; --pick)
-                            picks.push_back(pick);
+                        for (int p = end; p >= start; --p)
+                            picks.push_back(p);
                     }
                 }
             } catch (std::runtime_error& rte) {
@@ -263,6 +268,48 @@ Options::getOptions(int argc, const char * argv[])
         throw std::runtime_error("Loom device is not a serial port.");
 
     initLoomPort(loomDeviceFD);
+    
+    std::string tabby = args::get(_tabby);
+    if (tabby.empty()) {
+        for (int shaft = 0; shaft < maxShafts; ++shaft)
+            if (shaft & 1)
+                tabbyB |= 1 << shaft;   // even shafts
+            else
+                tabbyA |= 1 << shaft;   // odd shaft
+    } else {
+        auto slash = tabby.find_first_of('/');
+        if (slash == std::string::npos)
+            throw std::runtime_error("Tabby specification is missing a '/'.");
+        
+        auto pos = slash - 1;
+        for (int shaft = 0; pos < slash; ++shaft, --pos) {
+            switch (tabby[pos]) {
+                case '0':
+                    break;
+                case '1':
+                    tabbyA |= 1 << shaft;
+                    if (shaft >= maxShafts)
+                        throw std::runtime_error("Tabby specification contains more shafts than are present on the loom.");
+                    break;
+                default:
+                    throw std::runtime_error("Unknown character (not 0 or 1) in tabby specification.");
+            }
+        }
+        pos = tabby.length() - 1;
+        for (int shaft = 0; pos > slash; ++shaft, --pos) {
+            switch (tabby[pos]) {
+                case '0':
+                    break;
+                case '1':
+                    tabbyB |= 1 << shaft;
+                    if (shaft >= maxShafts)
+                        throw std::runtime_error("Tabby specification contains more shafts than are present on the loom.");
+                    break;
+                default:
+                    throw std::runtime_error("Unknown character (not 0 or 1) in tabby specification.");
+            }
+        }
+    }
 
     valid = true;
     return 0;

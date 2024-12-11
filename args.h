@@ -23,6 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
 
+#pragma once
+
 #include <exception>
 #include <string>
 #include <cstdio>
@@ -44,6 +46,8 @@ struct Options {
     DobbyType dobbyType = DobbyType::Positive;
     int pick;
     std::vector<int> picks;
+    bool ascii;
+    std::uint64_t tabbyA = 0, tabbyB = 0;
 };
 
 std::system_error makesystem_error(const char* what);
