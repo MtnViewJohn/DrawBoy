@@ -134,9 +134,9 @@ wif::wif(FILE* _wifstream)
     if (numberKeys.empty())
         throw std::runtime_error("Error in wif file: THREADING has no key lines");
     
-    if (numberKeys.size() > ends + 1)
+    if (std::ssize(numberKeys) > ends + 1)
         std::cerr << "Extraneous ends found in THREADING section, discarded." << std::endl;
-    numberKeys.resize(ends + 1);
+    numberKeys.resize((std::size_t)ends + 1);
     threading = processKeyLines(false);
 
     if (hasLiftplan) {
@@ -147,9 +147,9 @@ wif::wif(FILE* _wifstream)
         if (numberKeys.empty())
             throw std::runtime_error("Error in wif file: LIFTPLAN has no key lines");
         
-        if (numberKeys.size() > picks + 1)
+        if (std::ssize(numberKeys) > picks + 1)
             std::cerr << "Extraneous picks found in LIFTPLAN section, discarded." << std::endl;
-        numberKeys.resize(picks + 1);
+        numberKeys.resize((std::size_t)picks + 1);
         liftplan = processKeyLines(true);
     } else {
         if (!readSection("TIEUP"))
@@ -159,9 +159,9 @@ wif::wif(FILE* _wifstream)
         if (numberKeys.empty())
             throw std::runtime_error("Error in wif file: TIEUP has no key lines");
         
-        if (numberKeys.size() > maxTreadles + 1)
+        if (std::ssize(numberKeys) > maxTreadles + 1)
             std::cerr << "Extraneous treadles found in TIEUP section, discarded." << std::endl;
-        numberKeys.resize(maxTreadles + 1);
+        numberKeys.resize((std::size_t)maxTreadles + 1);
         tieup = processKeyLines(true);
         
         if (!readSection("TREADLING"))
@@ -171,12 +171,12 @@ wif::wif(FILE* _wifstream)
         if (numberKeys.empty())
             throw std::runtime_error("Error in wif file: TREADLING has no key lines");
         
-        treadling.resize(picks + 1);
-        liftplan.resize(picks + 1, 0);
-        if (numberKeys.size() > picks + 1)
+        treadling.resize((std::size_t)picks + 1);
+        liftplan.resize((std::size_t)picks + 1, 0);
+        if (std::ssize(numberKeys) > picks + 1)
             std::cerr << "Extraneous treadlings found in TREADLING section, discarded." << std::endl;
-        numberKeys.resize(picks + 1);
-        for (int i = 1; i <= picks; ++i) {
+        numberKeys.resize((std::size_t)picks + 1);
+        for (size_t i = 1; i <= (std::size_t)picks; ++i) {
             treadling[i] = valueStripWhite(numberKeys[i]);
             if (treadling[i].empty()) continue;
             try {
@@ -187,7 +187,7 @@ wif::wif(FILE* _wifstream)
                     if (treadle < 1 || treadle > maxTreadles)
                         throw std::runtime_error("Error in wif file: treadle number out of range in liftplan");
                     
-                    liftplan[i] |= tieup[treadle];
+                    liftplan[i] |= tieup[(std::size_t)treadle];
                     if (*end != ',') break;
                     v = end + 1;
                 }
@@ -220,8 +220,6 @@ wif::readSection(const char *name)
     
     nameKeys.clear();
     numberKeys.clear();
-    minKey.reset();
-    maxKey.reset();
     
     char buf[128];
     std::string line;
@@ -250,7 +248,7 @@ wif::readSection(const char *name)
             line.insert(0, "Error in wif file: ");
             throw std::runtime_error(line);
         }
-        std::string value(line.begin() + eqpos + 1, line.end());
+        std::string value = line.substr(eqpos + 1);
         value.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
         if (!value.empty() && value.front() == ';') value.clear();
         
@@ -263,13 +261,11 @@ wif::readSection(const char *name)
                 throw std::runtime_error(line);
             }
             try {
-                int i = std::stoi(line);
+                std::size_t i = (std::size_t)std::stoi(line);
                 if (i < 1) {
                     line.insert(0, "Error in wif file: ");
                     throw std::runtime_error(line);
                 }
-                if (!minKey.has_value() || i < *minKey) minKey = i;
-                if (!maxKey.has_value() || i > *maxKey) maxKey = i;
                 if (i >= numberKeys.size())
                     numberKeys.resize(i + 1);
                 numberKeys[i] = std::move(value);
@@ -278,14 +274,14 @@ wif::readSection(const char *name)
                 throw std::runtime_error(line);
             }
         } else {
-            std::string key(line.begin(), line.begin() + eqpos);
+            std::string key = line.substr(0, eqpos);
             key.erase(key.find_last_not_of(" \t\n\r\f\v") + 1);
             if (key.empty()) {
                 line.insert(0, "Error in wif file: ");
                 throw std::runtime_error(line);
             }
             for (char& c: key)
-                c = std::tolower(+c);
+                c = (char)std::tolower(+c);
             auto there = nameKeys.try_emplace(std::move(key), std::move(value));
             if (!there.second) {
                 std::cerr << "Duplicate key in wif section, ignoring: " << line << std::endl;
@@ -299,7 +295,7 @@ std::vector<std::uint64_t>
 wif::processKeyLines(bool multi)
 {
     std::vector<std::uint64_t> keyLines(numberKeys.size(), 0);
-    for (int i = 1; i < numberKeys.size(); ++i) {
+    for (std::size_t i = 1; i < numberKeys.size(); ++i) {
         std::string shafts = valueStripWhite(numberKeys[i]);
         if (shafts.empty()) continue;
         try {

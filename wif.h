@@ -23,10 +23,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. */
  
+#pragma once
 #include <cstdio>
 #include <map>
 #include <vector>
-#include <optional>
 
 class wif {
 public:
@@ -55,5 +55,4 @@ private:
     FILE* wifstream = nullptr;
     std::map<std::string, std::string> nameKeys;
     std::vector<std::string> numberKeys;
-    std::optional<int> minKey, maxKey;
 };
