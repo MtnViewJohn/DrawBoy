@@ -281,8 +281,8 @@ Options::getOptions(int argc, const char * argv[])
         if (slash == std::string::npos)
             throw std::runtime_error("Tabby specification is missing a '/'.");
         
-        auto pos = slash - 1;
-        for (int shaft = 0; pos < slash; ++shaft, --pos) {
+        auto pos = 0ul;
+        for (int shaft = 0; pos < slash; ++shaft, ++pos) {
             switch (tabby[pos]) {
                 case '0':
                     break;
@@ -295,8 +295,8 @@ Options::getOptions(int argc, const char * argv[])
                     throw std::runtime_error("Unknown character (not 0 or 1) in tabby specification.");
             }
         }
-        pos = tabby.length() - 1;
-        for (int shaft = 0; pos > slash; ++shaft, --pos) {
+        pos = slash + 1;
+        for (int shaft = 0; pos < tabby.length(); ++shaft, ++pos) {
             switch (tabby[pos]) {
                 case '0':
                     break;
@@ -310,6 +310,10 @@ Options::getOptions(int argc, const char * argv[])
             }
         }
     }
+    if (tabbyA == 0)
+        std::cerr << "Tabby A has no shafts set." << std::endl;
+    if (tabbyB == 0)
+        std::cerr << "Tabby B has no shafts set." << std::endl;
 
     valid = true;
     return 0;
