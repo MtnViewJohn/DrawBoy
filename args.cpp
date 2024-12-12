@@ -141,6 +141,7 @@ Options::getOptions(int argc, const char * argv[])
     const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
     const char* envDobby = std::getenv("DRAWBOY_DOBBY");
     const char* envASCII = std::getenv("DRAWBOY_ASCII");
+    const char* envSocket = std::getenv("DRAWBOY_SOCKET");
     
     if (!envLoom) envLoom = "";
     
@@ -156,7 +157,7 @@ Options::getOptions(int argc, const char * argv[])
     args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
         "The path of the loom device in the /dev directory", {'l', "loomDevice"},
-        envLoom, *envLoom ? args::Options::None : args::Options::Required);
+        envLoom, (*envLoom || envSocket) ? args::Options::None : args::Options::Required);
     args::ValueFlag<std::string> _wifFile(parser, "WIF PATH",
         "The path of the WIF file", {'f', "wif"}, "", args::Options::Required);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
@@ -260,14 +261,20 @@ Options::getOptions(int argc, const char * argv[])
     if (wifFileStream == nullptr)
         throw makesystem_error("Cannot open wif file");
     
-    loomDeviceFD = checkForSerial(loomDevice);
-    
-    if (loomDeviceFD == 1)
-        throw std::runtime_error("Cannot open loom device.");
-    if (loomDeviceFD == 2)
-        throw std::runtime_error("Loom device is not a serial port.");
-
-    initLoomPort(loomDeviceFD);
+    if (envSocket) {
+        loomDeviceFD = open(envSocket, O_RDWR | O_NOCTTY | O_NDELAY);
+        if (loomDeviceFD < 0)
+            throw makesystem_error("Cannot open fakeloom socket");
+    } else {
+        loomDeviceFD = checkForSerial(loomDevice);
+        
+        if (loomDeviceFD == 1)
+            throw std::runtime_error("Cannot open loom device.");
+        if (loomDeviceFD == 2)
+            throw std::runtime_error("Loom device is not a serial port.");
+        
+        initLoomPort(loomDeviceFD);
+    }
     
     std::string tabby = args::get(_tabby);
     if (tabby.empty()) {
