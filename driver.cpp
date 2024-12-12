@@ -41,6 +41,12 @@ enum class Mode {
     Quit,
 };
 
+enum class Shed {
+    Open,
+    Closed,
+    Unknown,
+};
+
 std::map<Mode, const char*> ModePrompt{
     {Mode::Weave, "Weaving"},
     {Mode::Unweave, "Reverse weaving"},
@@ -54,6 +60,8 @@ enum class TabbyPick {
     TabbyB,
 };
 
+static const std::uint64_t NotAShed = 0xffffffff;
+
 struct View
 {
     Term& term;
@@ -63,6 +71,10 @@ struct View
     int pick;
     TabbyPick tabbyPick = TabbyPick::TabbyA;
     std::string pickValue;
+    
+    std::string loomOutput;
+    Shed loomState = Shed::Unknown;
+    std::uint64_t pendingPick = NotAShed;
 
     Mode mode = Mode::Weave;
     
@@ -75,15 +87,18 @@ struct View
     bool handlePickEvent(const Term::Event& ev);
     bool handlePickEntryEvent(const Term::Event& ev);
     
+    void sendPick(std::uint64_t _pick = NotAShed);
+    void sendToLoom(const char *msg);
+    
     void nextPick();
     void prevPick();
-    void displayPick();
+    void displayPick(bool sendToLoom = false);
     void displayPrompt();
     void run();
 };
 
 void
-View::displayPick()
+View::displayPick(bool sendToLoom)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
@@ -128,6 +143,8 @@ View::displayPick()
     
     term.clearToEOL();
     std::fputs("\r\n", stdout);
+    if (sendToLoom)
+        sendPick(lift);
 }
 
 void
@@ -265,7 +282,7 @@ View::handlePickEvent(const Term::Event &ev)
             default:
                 return false;
         }
-        displayPick();
+        displayPick(true);
         displayPrompt();
         return true;
     }
@@ -352,6 +369,62 @@ View::prevPick()
 }
 
 void
+View::sendToLoom(const char *msg)
+{
+    std::size_t remaining = std::strlen(msg);
+    std::size_t sent = 0;
+    
+    while (remaining > 0  &&  mode != Mode::Quit)
+    {
+        auto result = write(opts.loomDeviceFD, msg + sent, remaining);
+        if (result >= 0) {
+            // sent partial or all the remaining data
+            sent += (std::size_t)result;
+            remaining -= (std::size_t)result;
+        } else {
+            int err = errno;
+            if ((err == EAGAIN) || (err == EWOULDBLOCK) || (err == EINTR)) {
+                timeval tv = {};
+                fd_set fds = {};
+                int selectresult;
+                
+                tv.tv_sec = 1;
+                FD_ZERO(&fds);
+                FD_SET(opts.loomDeviceFD, &fds);
+                selectresult = select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
+                if (selectresult == -1 && errno != EINTR)
+                    throw std::system_error(errno, std::generic_category(), "loom select failed");
+            } else {
+                throw std::system_error(err, std::generic_category(), "loom write failed");
+            }
+        }
+    }
+}
+
+void
+View::sendPick(std::uint64_t lift)
+{
+    if (loomState != Shed::Closed) {
+        pendingPick = lift;
+        return;
+    }
+    
+    if (lift == NotAShed) lift = pendingPick;
+    pendingPick = NotAShed;
+    if (lift == NotAShed) return;
+    
+    char shaftCmd = '\x10';
+    std::string command;
+    for (int i = 0; i < wifContents.maxShafts >> 2; ++i) {
+        command.push_back(shaftCmd | (char)(lift & 0xf));
+        shaftCmd += '\x10';
+        lift >>= 4;
+    }
+    command.push_back('\x07');
+    sendToLoom(command.c_str());
+}
+
+void
 View::run()
 {
     if (wifContents.maxShafts > opts.maxShafts)
@@ -368,8 +441,7 @@ View::run()
                 throw std::runtime_error("Pick list includes picks that are not in the wif file.");
     }
     
-    displayPick();
-    displayPrompt();
+    sendToLoom("\x0f\x07");
     
     while (mode != Mode::Quit) {
         fd_set rdset;
@@ -391,7 +463,42 @@ View::run()
         }
         
         if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
+            char c;
+            while (true) {
+                auto n = read(opts.loomDeviceFD, &c, 1);
+                if (n < 0) throw std::system_error(errno, std::generic_category(), "error in read");
+                if (n == 0) break;
+                loomOutput.push_back(c);
+            };
             
+            if (!loomOutput.empty()) {
+                if (loomOutput.back() == '\x03') {
+                    if (loomOutput == "\x7f\x03") {
+                        displayPick(true);
+                        displayPrompt();
+                    }
+                    if (loomOutput == "\x61\x03") {
+                        loomState = Shed::Open;
+                    }
+                    if (loomOutput == "\x62\x03") {
+                        if (loomState == Shed::Open) {
+                            loomState = Shed::Closed;
+                            if (pendingPick == NotAShed) {
+                                nextPick();
+                                displayPick(true);
+                                displayPrompt();
+                            } else {
+                                sendPick(NotAShed);
+                            }
+                        } else {
+                            loomState = Shed::Closed;
+                            displayPick(true);
+                            displayPrompt();
+                        }
+                    }
+                    loomOutput.clear();
+                }
+            }
         }
     }
 }
