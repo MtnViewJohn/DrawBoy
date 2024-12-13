@@ -108,8 +108,8 @@ View::displayPick(bool sendToLoom)
         std::size_t zpick = (std::size_t)pick % opts.picks.size();
         lift = wifContents.liftplan[(std::size_t)(opts.picks[zpick] + 1)];
         
-        if ((opts.dobbyType == Options::DobbyType::Negative &&  wifContents.risingShed) ||
-            (opts.dobbyType == Options::DobbyType::Positive && !wifContents.risingShed))
+        if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
+            (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
         {
             lift ^= (1 << wifContents.maxShafts) - 1;
         }

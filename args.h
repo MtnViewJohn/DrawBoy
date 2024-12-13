@@ -25,7 +25,9 @@
 
 #pragma once
 
+#include "argscommon.h"
 #include <exception>
+#include <system_error>
 #include <string>
 #include <cstdio>
 #include <vector>
@@ -34,9 +36,6 @@ struct Options {
     ~Options();
     int getOptions(int argc, const char * argv[]);
     
-    enum class DobbyType {
-        Positive, Negative
-    };
     bool valid = false;
     std::string loomDevice;
     int loomDeviceFD = 0;
@@ -50,4 +49,3 @@ struct Options {
     std::uint64_t tabbyA = 0, tabbyB = 0;
 };
 
-std::system_error makesystem_error(const char* what);

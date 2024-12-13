@@ -122,31 +122,10 @@ makesystem_error(const char* what) {
 int
 Options::getOptions(int argc, const char * argv[])
 {
-    std::unordered_map<std::string, Options::DobbyType> dobbyMap{
-        {"positive", Options::DobbyType::Positive},
-        {"negative", Options::DobbyType::Negative},
-        {"+", Options::DobbyType::Positive},
-        {"-", Options::DobbyType::Negative},
-    };
-    std::unordered_map<std::string, int> shaftMap{
-        {"8", 8},
-        {"12", 12},
-        {"16", 16},
-        {"24", 24},
-        {"32", 32},
-        {"40", 40},
-    };
-    
-    const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
-    const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
-    const char* envDobby = std::getenv("DRAWBOY_DOBBY");
-    const char* envASCII = std::getenv("DRAWBOY_ASCII");
-    const char* envSocket = std::getenv("DRAWBOY_SOCKET");
-    
     if (!envLoom) envLoom = "";
     
     auto f1 = envDobby ? dobbyMap.find(envDobby) : dobbyMap.end();
-    Options::DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : Options::DobbyType::Positive;
+    DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Positive;
     
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
     int defShaft = f2 != shaftMap.end() ? f2->second : 0;
@@ -163,7 +142,7 @@ Options::getOptions(int argc, const char * argv[])
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
         "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::None : args::Options::Required);
-    args::MapFlag<std::string, Options::DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
+    args::MapFlag<std::string, DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
