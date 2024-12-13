@@ -34,6 +34,7 @@
 
 #include <csignal>
 #include <exception>
+#include <system_error>
 #include <format>
 #include <print>
 #include <cstdio>
