@@ -134,9 +134,9 @@ View::displayPick(PickAction sendToLoom)
                 std::fputs(opts.ascii ? "-" : "\xE2\x95\x90", stdout);
         
         // Output direction arrows and pick #
-        const char* arrow = opts.ascii ? " -> " : " \xE2\xA4\x9C\xE2\x86\x92 ";
+        const char* arrow = opts.ascii ? " -> " : " \xE2\xAE\x95 ";
         if (mode == Mode::Unweave)
-            arrow = opts.ascii ? " <-- " : " \xE2\x86\x90\xE2\xA4\x9B ";
+            arrow = opts.ascii ? " <- " : " \xE2\xAC\x85 ";
         if (mode == Mode::Tabby)
             std::printf("%s%s%s|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
         else
