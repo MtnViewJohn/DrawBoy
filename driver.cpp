@@ -224,6 +224,7 @@ View::handleGlobalEvent(const Term::Event& ev)
                     
                 case '\x1b':      // escape
                     mode = Mode::Weave;
+                    displayPrompt();
                     return true;
                     
                 default:
@@ -330,12 +331,12 @@ View::handlePickEntryEvent(const Term::Event &ev)
             if (pickValue.empty() && ev.character == '0')
                 return false;
             pickValue.push_back(ev.character);
-            putc(ev.character, stdout);
+            std::putc(ev.character, stdout);
             return true;
         }
         if (ev.character == '\b') {
             if (pickValue.empty()) {
-                putc('\a', stdout);
+                std::putc('\a', stdout);
             } else {
                 pickValue.pop_back();
                 displayPrompt();
@@ -346,7 +347,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
             if (!pickValue.empty()) {
                 long p = std::strtol(pickValue.c_str(), nullptr, 10);
                 if (errno || p > 999999 || p < 1) {
-                    putc('\a', stdout);
+                    std::putc('\a', stdout);
                 } else {
                     pick = (int)p - 1;
                     displayPick();
@@ -448,7 +449,7 @@ View::sendToLoom(const char *msg)
     {
         auto result = write(opts.loomDeviceFD, msg + sent, remaining);
         if (result >= 0) {
-            if (result == 0) putchar('>');
+            if (result == 0) std::putchar('>');
             // sent partial or all the remaining data
             sent += (std::size_t)result;
             remaining -= (std::size_t)result;
@@ -461,7 +462,7 @@ View::sendToLoom(const char *msg)
                 
                 tv.tv_sec = 1;
                 FD_ZERO(&fds);
-                putchar('>');
+                std::putchar('>');
                 FD_SET(opts.loomDeviceFD, &fds);
                 selectresult = select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
@@ -532,7 +533,7 @@ View::run()
         if (nfds == 0) {
             if (waitingForSolenoids) {
                 sendToLoom("\x0f\x07");
-                putchar('.');
+                std::putchar('.');
             }
             continue;
         }
