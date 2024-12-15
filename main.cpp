@@ -39,7 +39,7 @@ int main(int argc, const char * argv[]) {
         returnValue = opts.getOptions(argc, argv);
         
         if (opts.valid)
-            driverCommand(opts);
+            driver(opts);
     } catch (std::system_error& se) {
         std::cerr << se.what() << std::endl;
         returnValue = 4;

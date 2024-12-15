@@ -503,7 +503,7 @@ View::run()
     }
 }
 
-void driverCommand(Options& opts)
+void driver(Options& opts)
 {
     Term term;
     

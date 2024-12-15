@@ -25,5 +25,5 @@
 
 struct Options;
 
-void driverCommand(Options& opts);
+void driver(Options& opts);
 
