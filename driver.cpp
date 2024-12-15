@@ -62,6 +62,12 @@ enum class TabbyPick {
 
 static const std::uint64_t NotAShed = 0xffffffff;
 
+enum class PickAction {
+    DontSend,
+    Send,
+    SendSilent,
+};
+
 struct View
 {
     Term& term;
@@ -75,6 +81,7 @@ struct View
     std::string loomOutput;
     Shed loomState = Shed::Unknown;
     std::uint64_t pendingPick = NotAShed;
+    bool waitingForSolenoids = false;
 
     Mode mode = Mode::Weave;
     
@@ -92,21 +99,21 @@ struct View
     
     void nextPick();
     void prevPick();
-    void displayPick(bool sendToLoom = false);
+    void displayPick(PickAction sendToLoom = PickAction::DontSend);
     void displayPrompt();
     void run();
 };
 
 void
-View::displayPick(bool sendToLoom)
+View::displayPick(PickAction sendToLoom)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
     if (mode == Mode::Tabby) {
         lift = tabbyPick == TabbyPick::TabbyA ? opts.tabbyA : opts.tabbyB;
     } else {
-        std::size_t zpick = (std::size_t)pick % opts.picks.size();
-        lift = wifContents.liftplan[(std::size_t)(opts.picks[zpick] + 1)];
+        std::size_t zpick = (std::size_t)(pick) % opts.picks.size();
+        lift = wifContents.liftplan[(std::size_t)(opts.picks[zpick])];
         
         if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
             (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
@@ -116,34 +123,40 @@ View::displayPick(bool sendToLoom)
     }
     
     // Output drawdown
-    std::putchar('\r');
-    int drawdownWidth = term.cols() - wifContents.maxShafts - 17;
-    if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
-    for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i)
-        if (wifContents.threading[i] & lift)
-            std::fputs(opts.ascii ? "|" : "\xE2\x95\x91", stdout);
+    if (sendToLoom != PickAction::SendSilent) {
+        std::putchar('\r');
+        int drawdownWidth = term.cols() - wifContents.maxShafts - 17;
+        if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
+        for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i)
+            if (wifContents.threading[i] & lift)
+                std::fputs(opts.ascii ? "|" : "\xE2\x95\x91", stdout);
+            else
+                std::fputs(opts.ascii ? "-" : "\xE2\x95\x90", stdout);
+        
+        // Output direction arrows and pick #
+        const char* arrow = opts.ascii ? " -> " : " \xE2\xA4\x9C\xE2\x86\x92 ";
+        if (mode == Mode::Unweave)
+            arrow = opts.ascii ? " <-- " : " \xE2\x86\x90\xE2\xA4\x9B ";
+        if (mode == Mode::Tabby)
+            std::printf("%s%s%s|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
         else
-            std::fputs(opts.ascii ? "-" : "\xE2\x95\x90", stdout);
+            std::printf("%s%6d%s|", arrow, pick + 1, arrow);
+        
+        // Output liftplan
+        for (uint64_t shaftMask = 1; shaftMask != 1 << wifContents.maxShafts; shaftMask <<= 1)
+            if (shaftMask & lift)
+                std::fputs(opts.ascii ? "*" : "\xE2\x96\xA0", stdout);
+            else
+                std::putchar(' ');
+        putchar('|');
+        if (loomState != Shed::Closed)
+            std::fputs("pending ", stdout);
+        
+        term.clearToEOL();
+        std::fputs("\r\n", stdout);
+    }
     
-    // Output direction arrows and pick #
-    const char* arrow = opts.ascii ? " -> " : " \xE2\xA4\x9C\xE2\x86\x92 ";
-    if (mode == Mode::Unweave)
-        arrow = opts.ascii ? " <-- " : " \xE2\x86\x90\xE2\xA4\x9B ";
-    if (mode == Mode::Tabby)
-        std::printf("%s%s%s", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
-    else
-        std::printf("%s%6d%s", arrow, pick + 1, arrow);
-    
-    // Output liftplan
-    for (uint64_t shaftMask = 1; shaftMask != 1 << wifContents.maxShafts; shaftMask <<= 1)
-        if (shaftMask & lift)
-            std::fputs(opts.ascii ? "*" : "\xE2\x96\xA0", stdout);
-        else
-            std::putchar(' ');
-    
-    term.clearToEOL();
-    std::fputs("\r\n", stdout);
-    if (sendToLoom)
+    if (sendToLoom != PickAction::DontSend)
         sendPick(lift);
 }
 
@@ -282,7 +295,7 @@ View::handlePickEvent(const Term::Event &ev)
             default:
                 return false;
         }
-        displayPick(true);
+        displayPick(PickAction::Send);
         displayPrompt();
         return true;
     }
@@ -315,7 +328,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 if (errno || p > 999999 || p < 1) {
                     putc('\a', stdout);
                 } else {
-                    pick = (int)p;
+                    pick = (int)p - 1;
                     displayPick();
                 }
             }
@@ -378,6 +391,7 @@ View::sendToLoom(const char *msg)
     {
         auto result = write(opts.loomDeviceFD, msg + sent, remaining);
         if (result >= 0) {
+            if (result == 0) putchar('>');
             // sent partial or all the remaining data
             sent += (std::size_t)result;
             remaining -= (std::size_t)result;
@@ -390,6 +404,7 @@ View::sendToLoom(const char *msg)
                 
                 tv.tv_sec = 1;
                 FD_ZERO(&fds);
+                putchar('>');
                 FD_SET(opts.loomDeviceFD, &fds);
                 selectresult = select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
@@ -442,19 +457,28 @@ View::run()
     }
     
     sendToLoom("\x0f\x07");
-    
+    waitingForSolenoids = true;
+    displayPick(PickAction::Send);    // initialize pending pick
+    displayPrompt();
+
     while (mode != Mode::Quit) {
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(opts.loomDeviceFD, &rdset);
-        timeval onesec{1,0};
+        timeval threesec{3,0};
         
-        int nfds = select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &onesec);
+        int nfds = select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
         
         if (nfds == -1 && errno != EINTR)
             throw std::system_error(errno, std::generic_category(), "select failed");
 
-        if (nfds == 0) continue;
+        if (nfds == 0) {
+            if (waitingForSolenoids) {
+                sendToLoom("\x0f\x07");
+                putchar('.');
+            }
+            continue;
+        }
         
         if (FD_ISSET(STDIN_FILENO, &rdset) || nfds == -1) {
             Term::Event ev = term.getEvent();
@@ -466,7 +490,12 @@ View::run()
             char c;
             while (true) {
                 auto n = read(opts.loomDeviceFD, &c, 1);
-                if (n < 0) throw std::system_error(errno, std::generic_category(), "error in read");
+                if (n < 0) {
+                    if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
+                        break;
+                    else
+                        throw std::system_error(errno, std::generic_category(), "error in read");
+                }
                 if (n == 0) break;
                 loomOutput.push_back(c);
             };
@@ -474,26 +503,23 @@ View::run()
             if (!loomOutput.empty()) {
                 if (loomOutput.back() == '\x03') {
                     if (loomOutput == "\x7f\x03") {
-                        displayPick(true);
-                        displayPrompt();
+                        waitingForSolenoids = false;
+                        std::fputs(" solenoid reset received", stdout);
                     }
-                    if (loomOutput == "\x61\x03") {
+                    if (loomOutput == "\x61\x03" && loomState == Shed::Closed) {
                         loomState = Shed::Open;
+                        std::fputs(" open", stdout);
                     }
                     if (loomOutput == "\x62\x03") {
-                        if (loomState == Shed::Open) {
+                        if (loomState == Shed::Open && pendingPick == NotAShed) {
                             loomState = Shed::Closed;
-                            if (pendingPick == NotAShed) {
-                                nextPick();
-                                displayPick(true);
-                                displayPrompt();
-                            } else {
-                                sendPick(NotAShed);
-                            }
+                            nextPick();
+                            displayPick(PickAction::Send);
+                            displayPrompt();
                         } else {
                             loomState = Shed::Closed;
-                            displayPick(true);
-                            displayPrompt();
+                            sendPick(NotAShed);
+                            std::printf("%s READY%s", Term::Style::bold, Term::Style::reset);
                         }
                     }
                     loomOutput.clear();
