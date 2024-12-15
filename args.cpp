@@ -114,6 +114,51 @@ initLoomPort(int fd)
 
 }
 
+void
+Options::parsePicks(const std::string& str)
+{
+    std::stringstream ss(str);
+    std::string range;
+    std::vector<int> newpicks;
+    
+    while (std::getline(ss, range, ',')) {
+        try {
+            int mult = 1;
+            std::size_t multToken = range.find("x");
+            if (multToken != std::string::npos) {
+                std::size_t check;
+                mult = std::stoi(range, &check);
+                if (check != multToken || mult < 1)
+                    throw std::runtime_error("Syntax error in treadling multiplier.");
+                range.erase(0, multToken + 1);
+            }
+            std::size_t rangeToken = std::string::npos;
+            int start = std::stoi(range, &rangeToken);
+            int end = start;
+            if (rangeToken < range.length() && range[rangeToken] == '-') {
+                range.erase(0, rangeToken + 1);
+                end = std::stoi(range, &rangeToken);
+            }
+            if (start < 1 || end < 1)
+                throw std::runtime_error("Bad treadling range.");
+            for (int count = 0; count < mult; ++count) {
+                if (start < end) {
+                    for (int p = start; p <= end; ++p)
+                        newpicks.push_back(p);
+                } else {
+                    for (int p = end; p >= start; --p)
+                        newpicks.push_back(p);
+                }
+            }
+        } catch (std::runtime_error& rte) {
+            throw;
+        } catch (...) {
+            throw std::runtime_error("Syntax error in treadling range.");
+        }
+    }
+    std::swap(newpicks, picks);
+}
+
 int
 Options::getOptions(int argc, const char * argv[])
 {
@@ -189,45 +234,8 @@ Options::getOptions(int argc, const char * argv[])
     maxShafts = args::get(_maxShafts);
     ascii = args::get(_ascii) || envASCII != nullptr;
 
-    if (_picks) {
-        std::stringstream ss(args::get(_picks));
-        std::string range;
-        while (std::getline(ss, range, ',')) {
-            try {
-                int mult = 1;
-                std::size_t multToken = range.find("x");
-                if (multToken != std::string::npos) {
-                    std::size_t check;
-                    mult = std::stoi(range, &check);
-                    if (check != multToken || mult < 1)
-                        throw std::runtime_error("Syntax error in treadling multiplier.");
-                    range.erase(0, multToken + 1);
-                }
-                std::size_t rangeToken = std::string::npos;
-                int start = std::stoi(range, &rangeToken);
-                int end = start;
-                if (rangeToken < range.length() && range[rangeToken] == '-') {
-                    range.erase(0, rangeToken + 1);
-                    end = std::stoi(range, &rangeToken);
-                }
-                if (start < 1 || end < 1)
-                    throw std::runtime_error("Bad treadling range.");
-                for (int count = 0; count < mult; ++count) {
-                    if (start < end) {
-                        for (int p = start; p <= end; ++p)
-                            picks.push_back(p);
-                    } else {
-                        for (int p = end; p >= start; --p)
-                            picks.push_back(p);
-                    }
-                }
-            } catch (std::runtime_error& rte) {
-                throw;
-            } catch (...) {
-                throw std::runtime_error("Syntax error in treadling range.");
-            }
-        }
-    }
+    if (_picks)
+        parsePicks(args::get(_picks));
     
     wifFile = args::get(_wifFile);
     wifFileStream = std::fopen(wifFile.c_str(), "r");

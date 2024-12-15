@@ -35,6 +35,7 @@
 struct Options {
     ~Options();
     int getOptions(int argc, const char * argv[]);
+    void parsePicks(const std::string& str);
     
     bool valid = false;
     std::string loomDevice;

@@ -38,6 +38,7 @@ enum class Mode {
     Unweave,
     Tabby,
     PickEntry,
+    PickListEntry,
     Quit,
 };
 
@@ -52,6 +53,7 @@ std::map<Mode, const char*> ModePrompt{
     {Mode::Unweave, "Reverse weaving"},
     {Mode::Tabby, "Tabby"},
     {Mode::PickEntry, "Select pick"},
+    {Mode::PickListEntry, "Enter pick list"},
     {Mode::Quit, "Quitting"},
 };
 
@@ -93,7 +95,8 @@ struct View
     bool handleGlobalEvent(const Term::Event& ev);
     bool handlePickEvent(const Term::Event& ev);
     bool handlePickEntryEvent(const Term::Event& ev);
-    
+    bool handlePickListEntryEvent(const Term::Event& ev);
+
     void sendPick(std::uint64_t _pick = NotAShed);
     void sendToLoom(const char *msg);
     
@@ -164,10 +167,17 @@ void
 View::displayPrompt()
 {
     std::putchar('\r');
-    if (mode == Mode::PickEntry)
-        printf("Enter the new pick number: %s", pickValue.c_str());
-    else
-        printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  q)uit", ModePrompt[mode]);
+    switch (mode) {
+        case Mode::PickEntry:
+            std::printf("Enter the new pick number: %s", pickValue.c_str());
+            break;
+        case Mode::PickListEntry:
+            std::printf("Enter the new pick list: %s", pickValue.c_str());
+            break;
+        default:
+            std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit", ModePrompt[mode]);
+            break;
+    }
     term.clearToEOL();
 }
 
@@ -186,6 +196,10 @@ View::handleEvent(const Term::Event &ev)
             break;
         case Mode::PickEntry:
             if (handlePickEntryEvent(ev))
+                return;
+            break;
+        case Mode::PickListEntry:
+            if (handlePickListEntryEvent(ev))
                 return;
             break;
         default:
@@ -277,6 +291,12 @@ View::handlePickEvent(const Term::Event &ev)
                 pickValue.clear();
                 displayPrompt();
                 return true;
+            case 'p':
+            case 'P':
+                mode = Mode::PickListEntry;
+                pickValue.clear();
+                displayPrompt();
+                return true;
             default:
                 break;
         }
@@ -330,6 +350,43 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 } else {
                     pick = (int)p - 1;
                     displayPick();
+                }
+            }
+            mode = Mode::Weave;
+            displayPrompt();
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool
+View::handlePickListEntryEvent(const Term::Event &ev)
+{
+    if (ev.type == Term::EventType::Char) {
+        if (std::strchr("0123456789-,", ev.character)) {
+            pickValue.push_back(ev.character);
+            std::putc(ev.character, stdout);
+            return true;
+        }
+        if (ev.character == '\b') {
+            if (pickValue.empty()) {
+                std::putc('\a', stdout);
+            } else {
+                pickValue.pop_back();
+                displayPrompt();
+            }
+            return true;
+        }
+        if (ev.character == '\r') {
+            if (!pickValue.empty()) {
+                try {
+                    opts.parsePicks(pickValue);
+                    pick = 0;
+                    displayPick(PickAction::Send);
+                } catch (std::exception& e) {
+                    std::printf(" \a%s%s%s\r\n", Term::Style::bold, e.what(), Term::Style::reset);
                 }
             }
             mode = Mode::Weave;
