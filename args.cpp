@@ -113,12 +113,6 @@ initLoomPort(int fd)
 
 }
 
-std::system_error
-makesystem_error(const char* what) {
-  auto ec = std::error_code(errno, std::generic_category());
-  return std::system_error(ec, what);
-}
-
 int
 Options::getOptions(int argc, const char * argv[])
 {

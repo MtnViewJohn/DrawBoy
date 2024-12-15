@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <system_error>
 
@@ -38,6 +39,25 @@ inline std::unordered_map<std::string, int> shaftMap{
     {"40", 40},
 };
 
-std::system_error makesystem_error(const char* what);
+inline std::system_error
+makesystem_error(const char* what) {
+  auto ec = std::error_code(errno, std::generic_category());
+  return std::system_error(ec, what);
+}
+
+inline std::runtime_error
+make_runtime_error(std::vector<std::string> parts)
+{
+    std::string msg;
+    std::size_t len = 1;
+    for (auto&& part: parts)
+        len += part.length();
+    msg.reserve(len);
+    for (auto&& part: parts)
+        msg.append(part);
+    return std::runtime_error(msg);
+}
+
+
 
 #endif /* argscommon_h */
