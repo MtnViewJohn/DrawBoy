@@ -34,6 +34,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cstdlib>
+#include "ipc.h"
 
 namespace {
 int
@@ -235,9 +236,8 @@ Options::getOptions(int argc, const char * argv[])
         throw makesystem_error("Cannot open wif file");
     
     if (envSocket) {
-        loomDeviceFD = open(envSocket, O_RDWR | O_NOCTTY | O_NDELAY);
-        if (loomDeviceFD < 0)
-            throw makesystem_error("Cannot open fakeloom socket");
+        IPC::Client fakeLoom(envSocket);
+        loomDeviceFD = fakeLoom.release();
     } else {
         loomDeviceFD = checkForSerial(loomDevice);
         
@@ -301,7 +301,12 @@ Options::getOptions(int argc, const char * argv[])
 
 Options::~Options()
 {
-    close (loomDeviceFD);
-    if (wifFileStream != nullptr)
+    if (loomDeviceFD >= 0) {
+        close(loomDeviceFD);
+        loomDeviceFD = -1;
+    }
+    if (wifFileStream != nullptr) {
         std::fclose(wifFileStream);
+        wifFileStream = nullptr;
+    }
 }
