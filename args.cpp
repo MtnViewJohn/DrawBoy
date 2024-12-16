@@ -78,7 +78,7 @@ initLoomPort(int fd)
     struct termios term;
 
     if (tcgetattr(fd, &term) < 0)
-        throw makesystem_error("Cannot communicate with loom device");
+        throw make_system_error("Cannot communicate with loom device");
     
     cfmakeraw(&term);
     cfsetispeed(&term, B9600);          // set 9600 baud
@@ -88,7 +88,7 @@ initLoomPort(int fd)
     term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
     
     if (tcsetattr(fd, TCSAFLUSH, &term) < 0)
-        throw makesystem_error("Cannot communicate with loom device");
+        throw make_system_error("Cannot communicate with loom device");
 }
 
 }
@@ -211,7 +211,7 @@ Options::getOptions(int argc, const char * argv[])
     wifFileStream = std::fopen(wifFile.c_str(), "r");
     
     if (wifFileStream == nullptr)
-        throw makesystem_error("Cannot open wif file");
+        throw make_system_error("Cannot open wif file");
     
     if (envSocket) {
         IPC::Client fakeLoom(envSocket);

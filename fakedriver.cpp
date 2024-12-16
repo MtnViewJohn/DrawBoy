@@ -168,9 +168,9 @@ View::sendToDrawBoy(const char *msg)
                 FD_SET(socketFD, &fds);
                 selectresult = select(socketFD + 1, nullptr, &fds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
-                    throw makesystem_error("loom select failed");
+                    throw make_system_error("loom select failed");
             } else {
-                throw makesystem_error("loom write failed");
+                throw make_system_error("loom write failed");
             }
         }
     }
@@ -190,7 +190,7 @@ View::connect()
         int nfds = select(socketFD + 1, &rdset, nullptr, nullptr, &onesec);
         
         if (nfds == -1 && errno != EINTR)
-            throw std::system_error(errno, std::generic_category(), "select failed");
+            throw make_system_error("select failed");
 
         if (nfds == 0) continue;
         
@@ -207,7 +207,7 @@ View::connect()
                 if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
                     continue;
                 else
-                    throw std::system_error(errno, std::generic_category(), "error in read");
+                    throw make_system_error("error in read");
             }
             if (n == 0) return LoopingState::ShouldWait;
             DrawBoyOutput.push_back(c);
@@ -267,7 +267,7 @@ View::run(IPC::Server& server)
         int nfds = select(server.fd() + 1, &rdset, nullptr, nullptr, &onesec);
         
         if (nfds == -1 && errno != EINTR)
-            throw std::system_error(errno, std::generic_category(), "select failed");
+            throw make_system_error("select failed");
 
         if (nfds == 0) continue;
 
@@ -286,7 +286,7 @@ View::run(IPC::Server& server)
                 socketFD = ac->fd();
                 return connect();
             } catch (IPC::SocketError& se) {
-                printf("\r\nClient connection failed: %s, ignoring\r\n", se.what());
+                std::printf("\r\nClient connection failed: %s, ignoring\r\n", se.what());
                 std::fflush(stdout);
             }
         }

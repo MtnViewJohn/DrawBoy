@@ -26,13 +26,13 @@ int makeSocket(const std::string& path, bool server)
 {
     int sockFD = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockFD == -1)
-        throw makesystem_error("Couldn't create IPC socket");
+        throw make_system_error("Couldn't create IPC socket");
     
     int flags = fcntl(sockFD, F_GETFL);
     if (flags == -1)
-        throw makesystem_error("Could not get socket flags.");
+        throw make_system_error("Could not get socket flags.");
     if (fcntl(sockFD, F_SETFL, flags | O_NONBLOCK) == -1)
-        throw makesystem_error("Could not set socket flags.");
+        throw make_system_error("Could not set socket flags.");
     
     if (server) removeSocketFile(path);
     
@@ -131,7 +131,7 @@ Server::accept()
             return {};
         }
         
-        throw makesystem_error("Accepting a connection failed");
+        throw make_system_error("Accepting a connection failed");
     }
     
     return Connection(connFD);
