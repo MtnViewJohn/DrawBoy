@@ -144,7 +144,7 @@ View::displayPick(PickAction sendToLoom)
     if (loomState != Shed::Closed)
         std::fputs("pending ", stdout);
     
-    term.clearToEOL();
+    Term::clearToEOL();
     std::fputs("\r\n", stdout);
     
     if (sendToLoom != PickAction::DontSend)
@@ -166,7 +166,7 @@ View::displayPrompt()
             std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit", ModePrompt[mode]);
             break;
     }
-    term.clearToEOL();
+    Term::clearToEOL();
 }
 
 void
