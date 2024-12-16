@@ -378,7 +378,8 @@ View::handlePickListEntryEvent(const Term::Event &ev)
                     pick = 0;
                     displayPick(PickAction::Send);
                 } catch (std::exception& e) {
-                    std::printf(" \a%s%s%s\r\n", Term::Style::bold, e.what(), Term::Style::reset);
+                    std::printf(" \a%s%s%s\r\n", opts.ascii ? "" : Term::Style::bold,
+                                e.what(), opts.ascii ? "" : Term::Style::reset);
                 }
             }
             mode = Mode::Weave;
@@ -568,7 +569,9 @@ View::run()
                         } else {
                             loomState = Shed::Closed;
                             sendPick(NotAShed);
-                            std::printf("%s READY%s", Term::Style::bold, Term::Style::reset);
+                            std::printf("%s READY%s",
+                                        opts.ascii ? "" : Term::Style::bold,
+                                        opts.ascii ? "" : Term::Style::reset);
                         }
                     }
                     loomOutput.clear();

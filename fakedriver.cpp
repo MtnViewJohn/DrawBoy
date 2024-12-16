@@ -237,10 +237,10 @@ View::connect()
                         for (std::uint64_t shaft = 0; shaft < shafts; ++shaft)
                             std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
                         std::fputc('|', stdout);
-                        std::printf("%s %s %s%s\r\n", Term::Style::bold,
+                        std::printf("%s %s %s%s\r\n", opts.ascii ? "" : Term::Style::bold,
                                     tooMany ? "too many shafts!" : "",
                                     unexpected ? "unexpected character!" : "",
-                                    Term::Style::reset);
+                                    opts.ascii ? "" : Term::Style::reset);
                     }
                     DrawBoyOutput.clear();
                     displayPrompt();
