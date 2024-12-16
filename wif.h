@@ -27,23 +27,7 @@
 #include <cstdio>
 #include <map>
 #include <vector>
-#include <tuple>
-
-class color {
-public:
-    using tupple3 = std::tuple<int,int,int>;
-    
-    color(tupple3 rgb, std::pair<int,int> range);
-    color(double r, double g, double b);
-    
-    tupple3 convert(int range) const;
-    int convertGray(int range) const;
-    bool useWhiteText() const;
-    
-    double red;
-    double green;
-    double blue;
-};
+#include "color.h"
 
 class wif {
 public:

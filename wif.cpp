@@ -96,33 +96,6 @@ namespace  {
     }
 }
 
-color::color(tupple3 rgb, std::pair<int,int> range)
-: red  ((double)(std::get<0>(rgb) - range.first) / (range.second - range.first)),
-  green((double)(std::get<1>(rgb) - range.first) / (range.second - range.first)),
-  blue ((double)(std::get<2>(rgb) - range.first) / (range.second - range.first)) {}
-
-color::color(double r, double g, double b)
-: red(r), green(g), blue(b) {}
-
-
-color::tupple3
-color::convert(int range) const
-{
-    return {(int)(red * range), (int)(green * range), (int)(blue * range)};
-}
-
-int
-color::convertGray(int range) const
-{
-    if (red != green || red != blue) return -1;
-    return (int)(red * range);
-}
-
-bool
-color::useWhiteText() const
-{
-    return (red * 0.299) + (green * 0.587) + (blue * 0.114) < 0.5;
-}
 
 wif::wif(FILE* _wifstream)
 : wifstream(_wifstream)
