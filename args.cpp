@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include "ipc.h"
+#include <set>
 
 namespace {
 int
@@ -34,7 +35,7 @@ checkForSerial(std::string& name)
 }
 
 void
-enumSerial(std::vector<std::string>& exclude)
+enumSerial(const std::set<std::string>& exclude)
 {
     DIR* devDir = opendir("/dev");
     struct dirent *entry = readdir(devDir);
@@ -45,11 +46,8 @@ enumSerial(std::vector<std::string>& exclude)
             int fd = checkForSerial(dname);
             if (fd != 1 && fd != 2) {
                 close(fd);
-                if (std::find(exclude.begin(), exclude.end(), dname) ==
-                    exclude.end())
-                {
+                if (!exclude.contains(dname))
                     std::cout << dname << std::endl;
-                }
             }
         }
         entry = readdir(devDir);
@@ -58,10 +56,10 @@ enumSerial(std::vector<std::string>& exclude)
 }
 
 
-std::vector<std::string>
+std::set<std::string>
 readfile(std::istream& in, const std::string& commentPrefix)
 {
-    std::vector<std::string> buf;
+    std::set<std::string> buf;
     std::string line;
     if (!in) return buf;
     while (std::getline(in, line)) {
@@ -69,7 +67,7 @@ readfile(std::istream& in, const std::string& commentPrefix)
         line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
         if (line.empty() || line.find(commentPrefix) == 0)
             continue;
-        buf.emplace_back(line);
+        buf.emplace(std::move(line));
     }
     return buf;
 }
@@ -200,7 +198,7 @@ Options::getOptions(int argc, const char * argv[])
     }
     
     if (findloom) {
-        std::vector<std::string> exclude;
+        std::set<std::string> exclude;
         if (!isatty(0))
             exclude = readfile(std::cin, " ");
         enumSerial(exclude);
