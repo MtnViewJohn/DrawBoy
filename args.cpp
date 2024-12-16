@@ -169,29 +169,20 @@ Options::getOptions(int argc, const char * argv[])
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
     args::ValueFlag<std::string> _tabby(parser, "TABBY_A/TABBY_B", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
     
-    try
-    {
+    try {
         parser.Prog("DrawBoy");
         parser.ParseCLI(argc, argv);
-    }
-    catch (const args::Completion& e)
-    {
+    } catch (const args::Completion& e) {
         std::cout << e.what();
         return 0;
-    }
-    catch (const args::Help&)
-    {
+    } catch (const args::Help&) {
         std::cout << parser;
         return 0;
-    }
-    catch (const args::ParseError& e)
-    {
+    } catch (const args::ParseError& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << parser;
         return 1;
-    }
-    catch (const args::RequiredError& e)
-    {
+    } catch (const args::RequiredError& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << parser;
         return 1;
