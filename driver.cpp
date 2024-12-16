@@ -112,18 +112,20 @@ View::displayPick(PickAction sendToLoom)
     std::putchar('\r');
     int drawdownWidth = term.cols() - wifContents.maxShafts - 24;
     if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
-    for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i)
-        if (opts.ascii) {
-            putchar(wifContents.threading[i] & lift ? '|' : '-');
-        } else {
+    for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i) {
+        if (opts.ansi != ANSIsupport::no) {
             color c = wifContents.threading[i] & lift ? wifContents.warpColor[i] : weftColor;
-            const char* sym = wifContents.threading[i] & lift ? "\xE2\x95\x91" : "\xE2\x95\x90";
-            std::printf("%s%s", Term::colorToStyle(c), sym);
+            std::fputs(Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor), stdout);
         }
+        if (opts.ascii)
+            putchar(wifContents.threading[i] & lift ? '|' : '-');
+        else
+            std::fputs(wifContents.threading[i] & lift ? "\xE2\x95\x91" : "\xE2\x95\x90", stdout);
+    }
     
     // Output direction arrows and pick #
-    if (!opts.ascii) {
-        std::fputs(Term::colorToStyle(weftColor), stdout);
+    if (opts.ansi != ANSIsupport::no) {
+        std::fputs(Term::colorToStyle(weftColor, opts.ansi == ANSIsupport::truecolor), stdout);
     }
     const char* arrow = opts.ascii ? "->" : "\xE2\xAE\x95 ";
     if (mode == Mode::Unweave)
@@ -140,7 +142,7 @@ View::displayPick(PickAction sendToLoom)
         else
             std::putchar(' ');
     putchar('|');
-    if (!opts.ascii) std::fputs(Term::Style::reset, stdout);
+    if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
     if (loomState != Shed::Closed)
         std::fputs("pending ", stdout);
     
@@ -376,8 +378,8 @@ View::handlePickListEntryEvent(const Term::Event &ev)
                     pick = 0;
                     displayPick(PickAction::Send);
                 } catch (std::exception& e) {
-                    std::printf(" \a%s%s%s\r\n", opts.ascii ? "" : Term::Style::bold,
-                                e.what(), opts.ascii ? "" : Term::Style::reset);
+                    std::printf(" \a%s%s%s\r\n", opts.ansi != ANSIsupport::no ? "" : Term::Style::bold,
+                                e.what(), opts.ansi != ANSIsupport::no ? "" : Term::Style::reset);
                 }
             }
             mode = Mode::Weave;
@@ -568,8 +570,8 @@ View::run()
                             loomState = Shed::Closed;
                             sendPick(NotAShed);
                             std::printf("%s READY%s",
-                                        opts.ascii ? "" : Term::Style::bold,
-                                        opts.ascii ? "" : Term::Style::reset);
+                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::bold,
+                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::reset);
                         }
                     }
                     loomOutput.clear();

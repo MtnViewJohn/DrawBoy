@@ -37,7 +37,7 @@ class Term {
     static void clearDisplay();
       // clear methods also reset style
     
-    static const char* colorToStyle(const color &);
+    static const char* colorToStyle(const color &, bool truecolor);
 
     struct Style {
       static const char* reset;

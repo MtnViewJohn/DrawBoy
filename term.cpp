@@ -113,15 +113,25 @@ const char* Term::Style::bold     = "\x1b[1m";
 const char* Term::Style::dim      = "\x1b[2m";
 const char* Term::Style::inverse  = "\x1b[7m";
 
-const char* Term::colorToStyle(const color &c)
+const char* Term::colorToStyle(const color &c, bool truecolor)
 {
     static char buf[32];
-    auto c666 = c.convert(6);
-    int gray = c.convertGray(24);
-    int bkgnd = gray >= 0 ? gray + 232 :
-        std::get<0>(c666) * 36 + std::get<1>(c666) * 6 + std::get<2>(c666) + 16;
-    int foregnd = c.useWhiteText() ? 97 : 30;
-    std::snprintf(buf, 32, "\x1b[48;5;%d;%dm", bkgnd, foregnd);
+    
+    const char* foregnd = c.useWhiteText() ? "1;37" : "0;30";
+    if (truecolor) {
+        auto c24bit = c.convert(256);
+        std::snprintf(buf, 32, "\x1b[%s;48;2;%d;%d;%dm", foregnd,
+                      std::get<0>(c24bit),
+                      std::get<1>(c24bit),
+                      std::get<2>(c24bit));
+    } else {
+        auto c666 = c.convert(6);
+        int gray = c.convertGray(24);
+        int bkgnd = gray >= 0 ? gray + 232 :
+            std::get<0>(c666) * 36 + std::get<1>(c666) * 6 + std::get<2>(c666) + 16;
+        std::snprintf(buf, 32, "\x1b[%s;48;5;%dm", foregnd, bkgnd);
+    }
+    
     return buf;
 }
 

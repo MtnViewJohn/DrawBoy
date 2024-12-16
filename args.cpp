@@ -149,6 +149,9 @@ Options::getOptions(int argc, const char * argv[])
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
     int defShaft = f2 != shaftMap.end() ? f2->second : 0;
     
+    auto f3 = envANSI ? ANSImap.find(envANSI) : ANSImap.end();
+    ANSIsupport defANSI = f3 != ANSImap.end() ? f3->second : ANSIsupport::yes;
+    
     args::ArgumentParser parser("AVL CompuDobby III loom driver.", "Report errors to John Horigan <john@glyphic.com>.");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::CompletionFlag completion(parser, {"complete"});
@@ -167,6 +170,7 @@ Options::getOptions(int argc, const char * argv[])
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
+    args::MapFlag<std::string, ANSIsupport> _ansi(parser, "ANSI SUPPORT", "Does the terminal support ANSI style codes and possibly true-color", {"ansi"}, ANSImap, defANSI);
     args::ValueFlag<std::string> _tabby(parser, "TABBY_A/TABBY_B", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
     
     try {
@@ -203,6 +207,7 @@ Options::getOptions(int argc, const char * argv[])
     dobbyType = args::get(_dobbyType);
     maxShafts = args::get(_maxShafts);
     ascii = args::get(_ascii) || envASCII != nullptr;
+    ansi = args::get(_ansi);
 
     if (_picks)
         parsePicks(args::get(_picks));

@@ -18,10 +18,17 @@ enum class DobbyType {
     Positive, Negative
 };
 
+enum class ANSIsupport {
+    no,
+    yes,
+    truecolor,
+};
+
 inline const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
 inline const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
 inline const char* envDobby = std::getenv("DRAWBOY_DOBBY");
 inline const char* envASCII = std::getenv("DRAWBOY_ASCII");
+inline const char* envANSI = std::getenv("DRAWBOY_ANSI");
 inline const char* envSocket = std::getenv("DRAWBOY_SOCKET");
 
 inline std::unordered_map<std::string, DobbyType> dobbyMap{
@@ -37,6 +44,11 @@ inline std::unordered_map<std::string, int> shaftMap{
     {"24", 24},
     {"32", 32},
     {"40", 40},
+};
+inline std::unordered_map<std::string, ANSIsupport> ANSImap{
+    {"no", ANSIsupport::no},
+    {"yes", ANSIsupport::yes},
+    {"truecolor", ANSIsupport::truecolor},
 };
 
 inline std::system_error

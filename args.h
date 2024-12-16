@@ -28,6 +28,7 @@ struct Options {
     int pick;
     std::vector<int> picks;
     bool ascii;
+    ANSIsupport ansi;
     std::uint64_t tabbyA = 0, tabbyB = 0;
 };
 
