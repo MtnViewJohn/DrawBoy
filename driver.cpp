@@ -127,13 +127,15 @@ View::displayPick(PickAction sendToLoom)
     if (opts.ansi != ANSIsupport::no) {
         std::fputs(Term::colorToStyle(weftColor, opts.ansi == ANSIsupport::truecolor), stdout);
     }
-    const char* arrow = opts.ascii ? "->" : "\xE2\xAE\x95 ";
+    const char *leftArrow = "", *rightArrow = "";
     if (mode == Mode::Unweave)
-        arrow = opts.ascii ? "<-" : "\xE2\xAC\x85 ";
-    if (mode == Mode::Tabby)
-        std::printf(" #%s%s%s#|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
+        leftArrow = opts.ascii ? " <-- " : " \xE2\xAC\x85  ";
     else
-        std::printf(" #%s%6d%s#|", arrow, pick + 1, arrow);
+        rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
+    if (mode == Mode::Tabby)
+        std::printf(" %s   %c%s |", leftArrow, tabbyPick == TabbyPick::TabbyA ? 'A' : 'B', rightArrow);
+    else
+        std::printf(" %s%4d%s |", leftArrow, pick + 1, rightArrow);
     
     // Output liftplan
     for (uint64_t shaftMask = 1; shaftMask != 1 << wifContents.maxShafts; shaftMask <<= 1)
