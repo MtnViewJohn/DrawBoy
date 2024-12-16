@@ -112,7 +112,7 @@ View::displayPick(PickAction sendToLoom)
     // Output drawdown
     if (sendToLoom != PickAction::SendSilent) {
         std::putchar('\r');
-        int drawdownWidth = term.cols() - wifContents.maxShafts - 20;
+        int drawdownWidth = term.cols() - wifContents.maxShafts - 24;
         if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
         for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i)
             if (opts.ascii) {
@@ -127,13 +127,13 @@ View::displayPick(PickAction sendToLoom)
         if (!opts.ascii) {
             std::fputs(Term::colorToStyle(weftColor), stdout);
         }
-        const char* arrow = opts.ascii ? "->" : "\xE2\xAE\x95";
+        const char* arrow = opts.ascii ? "->" : "\xE2\xAE\x95 ";
         if (mode == Mode::Unweave)
-            arrow = opts.ascii ? "<-" : "\xE2\xAC\x85";
+            arrow = opts.ascii ? "<-" : "\xE2\xAC\x85 ";
         if (mode == Mode::Tabby)
-            std::printf("|%s%s%s|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
+            std::printf(" #%s%s%s#|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
         else
-            std::printf("|%s%6d%s|", arrow, pick + 1, arrow);
+            std::printf(" #%s%6d%s#|", arrow, pick + 1, arrow);
         
         // Output liftplan
         for (uint64_t shaftMask = 1; shaftMask != 1 << wifContents.maxShafts; shaftMask <<= 1)
