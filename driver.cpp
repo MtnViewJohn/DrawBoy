@@ -333,6 +333,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
         }
         if (ev.character == '\r') {
             if (!pickValue.empty()) {
+                errno = 0;
                 long p = std::strtol(pickValue.c_str(), nullptr, 10);
                 if (errno || p > 999999 || p < 1) {
                     std::putc('\a', stdout);
@@ -455,9 +456,9 @@ View::sendToLoom(const char *msg)
                 FD_SET(opts.loomDeviceFD, &fds);
                 selectresult = select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
-                    throw std::system_error(errno, std::generic_category(), "loom select failed");
+                    throw make_system_error("loom select failed");
             } else {
-                throw std::system_error(err, std::generic_category(), "loom write failed");
+                throw make_system_error("loom write failed");
             }
         }
     }
@@ -517,7 +518,7 @@ View::run()
         int nfds = select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
         
         if (nfds == -1 && errno != EINTR)
-            throw std::system_error(errno, std::generic_category(), "select failed");
+            throw make_system_error("select failed");
 
         if (nfds == 0) {
             if (waitingForSolenoids) {
@@ -541,7 +542,7 @@ View::run()
                     if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
                         break;
                     else
-                        throw std::system_error(errno, std::generic_category(), "error in read");
+                        throw make_system_error("error in read");
                 }
                 if (n == 0) break;
                 loomOutput.push_back(c);
