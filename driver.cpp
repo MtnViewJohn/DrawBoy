@@ -112,11 +112,14 @@ View::displayPick(PickAction sendToLoom)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
+    color weftColor;
     if (mode == Mode::Tabby) {
         lift = tabbyPick == TabbyPick::TabbyA ? opts.tabbyA : opts.tabbyB;
+        weftColor = wifContents.weftColor[(std::size_t)(opts.picks[0])];
     } else {
         std::size_t zpick = (std::size_t)(pick) % opts.picks.size();
         lift = wifContents.liftplan[(std::size_t)(opts.picks[zpick])];
+        weftColor = wifContents.weftColor[(std::size_t)(opts.picks[zpick])];
         
         if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
             (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
@@ -128,22 +131,28 @@ View::displayPick(PickAction sendToLoom)
     // Output drawdown
     if (sendToLoom != PickAction::SendSilent) {
         std::putchar('\r');
-        int drawdownWidth = term.cols() - wifContents.maxShafts - 17;
+        int drawdownWidth = term.cols() - wifContents.maxShafts - 20;
         if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
         for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i)
-            if (wifContents.threading[i] & lift)
-                std::fputs(opts.ascii ? "|" : "\xE2\x95\x91", stdout);
-            else
-                std::fputs(opts.ascii ? "-" : "\xE2\x95\x90", stdout);
+            if (opts.ascii) {
+                putchar(wifContents.threading[i] & lift ? '|' : '-');
+            } else {
+                color c = wifContents.threading[i] & lift ? wifContents.warpColor[i] : weftColor;
+                const char* sym = wifContents.threading[i] & lift ? "\xE2\x95\x91" : "\xE2\x95\x90";
+                std::printf("%s%s", Term::colorToStyle(c), sym);
+            }
         
         // Output direction arrows and pick #
-        const char* arrow = opts.ascii ? " -> " : " \xE2\xAE\x95 ";
+        if (!opts.ascii) {
+            std::fputs(Term::colorToStyle(weftColor), stdout);
+        }
+        const char* arrow = opts.ascii ? "->" : "\xE2\xAE\x95";
         if (mode == Mode::Unweave)
-            arrow = opts.ascii ? " <- " : " \xE2\xAC\x85 ";
+            arrow = opts.ascii ? "<-" : "\xE2\xAC\x85";
         if (mode == Mode::Tabby)
-            std::printf("%s%s%s|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
+            std::printf("|%s%s%s|", arrow, tabbyPick == TabbyPick::TabbyA ? "tabbyA" : "tabbyB", arrow);
         else
-            std::printf("%s%6d%s|", arrow, pick + 1, arrow);
+            std::printf("|%s%6d%s|", arrow, pick + 1, arrow);
         
         // Output liftplan
         for (uint64_t shaftMask = 1; shaftMask != 1 << wifContents.maxShafts; shaftMask <<= 1)
@@ -152,6 +161,7 @@ View::displayPick(PickAction sendToLoom)
             else
                 std::putchar(' ');
         putchar('|');
+        if (!opts.ascii) std::fputs(Term::Style::reset, stdout);
         if (loomState != Shed::Closed)
             std::fputs("pending ", stdout);
         

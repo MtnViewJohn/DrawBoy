@@ -35,6 +35,8 @@
 #include <termios.h>
 #include <string>
 
+class color;
+
 class Term {
   public:
     Term();
@@ -59,6 +61,8 @@ class Term {
     static void clearToEOL();
     static void clearDisplay();
       // clear methods also reset style
+    
+    static const char* colorToStyle(const color &);
 
     struct Style {
       static const char* reset;

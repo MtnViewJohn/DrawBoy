@@ -40,6 +40,7 @@
 #include <cstdio>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include "color.h"
 
 #define TermStyleReset     "\x1b[0m"
 
@@ -137,6 +138,17 @@ const char* Term::Style::bold     = "\x1b[1m";
 const char* Term::Style::dim      = "\x1b[2m";
 const char* Term::Style::inverse  = "\x1b[7m";
 
+const char* Term::colorToStyle(const color &c)
+{
+    static char buf[32];
+    auto c666 = c.convert(6);
+    int gray = c.convertGray(24);
+    int bkgnd = gray >= 0 ? gray + 232 :
+        std::get<0>(c666) * 36 + std::get<1>(c666) * 6 + std::get<2>(c666) + 16;
+    int foregnd = c.useWhiteText() ? 97 : 30;
+    std::snprintf(buf, 32, "\x1b[48;5;%d;%dm", bkgnd, foregnd);
+    return buf;
+}
 
 void Term::remainingInput(const std::string& s, std::size_t pos)
 {
