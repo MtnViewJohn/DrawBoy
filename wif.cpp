@@ -229,14 +229,14 @@ wif::wif(FILE* _wifstream)
     
     warpColor.resize((std::size_t)ends + 1, palette[defWarpColor]);
     if (readSection("WARP COLORS")) {
-        auto warpcolors = processColorLines((std::size_t)ends + 1, defWarpColor);
+        auto warpcolors = processColorLines((std::size_t)ends, defWarpColor);
         for (std::size_t i = 1; i < warpcolors.size(); ++i) {
             warpColor[i] = palette[warpcolors[i]];
         }
     }
     weftColor.resize((std::size_t)picks + 1, palette[defWeftColor]);
     if (readSection("WEFT COLORS")) {
-        auto weftcolors = processColorLines((std::size_t)ends + 1, defWeftColor);
+        auto weftcolors = processColorLines((std::size_t)picks, defWeftColor);
         for (std::size_t i = 1; i < weftcolors.size(); ++i) {
             weftColor[i] = palette[weftcolors[i]];
         }
@@ -435,9 +435,9 @@ wif::processKeyLines(bool multi)
 }
 
 std::vector<std::size_t>
-wif::processColorLines(std::size_t colors, std::size_t def)
+wif::processColorLines(std::size_t entries, std::size_t def)
 {
-    std::vector<std::size_t> keyLines(colors + 1, def);
+    std::vector<std::size_t> keyLines(entries + 1, def);
     for (std::size_t i = 1; i < numberKeys.size(); ++i) {
         keyLines[i] = (std::size_t)valueToInt(numberKeys[i], (int)def);
     }
