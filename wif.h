@@ -27,6 +27,23 @@
 #include <cstdio>
 #include <map>
 #include <vector>
+#include <tuple>
+
+class color {
+public:
+    using tupple3 = std::tuple<int,int,int>;
+    
+    color(tupple3 rgb, std::pair<int,int> range);
+    color(double r, double g, double b);
+    
+    tupple3 convert(int range) const;
+    int convertGray(int range) const;
+    bool useWhiteText() const;
+    
+    double red;
+    double green;
+    double blue;
+};
 
 class wif {
 public:
@@ -46,12 +63,14 @@ public:
     std::vector<std::uint64_t> tieup;
     std::vector<std::string>   treadling;
     std::vector<std::uint64_t> threading;
+    std::vector<color>         warpColor, weftColor;
     
 private:
     bool seekSection(const char* name);
     bool readSection(const char* name);
     std::vector<std::uint64_t> processKeyLines(bool multi);
-    
+    std::vector<std::size_t> processColorLines(std::size_t colors, std::size_t def);
+
     FILE* wifstream = nullptr;
     std::map<std::string, std::string> nameKeys;
     std::vector<std::string> numberKeys;

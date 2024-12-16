@@ -53,6 +53,39 @@ namespace  {
         }
     }
 
+    std::pair<int,int>
+    valueToIntPair(const std::string& v, std::pair<int,int> def)
+    {
+        char *end;
+        std::pair<int,int> ret;
+        errno = 0;
+        ret.first = (int)std::strtol(v.c_str(), &end, 10);
+        if (errno || *end != ',' || *(end + 1) == '\0')
+            return def;
+        ret.second = (int)std::strtol(end + 1, &end, 10);
+        if (errno || *end != '\0')
+            return def;
+        return ret;
+    }
+
+    color::tupple3
+    valueToInt3(const std::string& v, color::tupple3 def)
+    {
+        char *end;
+        color::tupple3 ret;
+        errno = 0;
+        std::get<0>(ret) = (int)std::strtol(v.c_str(), &end, 10);
+        if (errno || *end != ',' || *(end + 1) == '\0')
+            return def;
+        std::get<1>(ret) = (int)std::strtol(end + 1, &end, 10);
+        if (errno || *end != ',' || *(end + 1) == '\0')
+            return def;
+        std::get<2>(ret) = (int)std::strtol(end + 1, &end, 10);
+        if (errno || *end != '\0')
+            return def;
+        return ret;
+    }
+
     std::string
     valueStripWhite(const std::string& v)
     {
@@ -61,6 +94,34 @@ namespace  {
             ret.erase(p);
         return ret;
     }
+}
+
+color::color(tupple3 rgb, std::pair<int,int> range)
+: red  ((double)(std::get<0>(rgb) - range.first) / (range.second - range.first)),
+  green((double)(std::get<1>(rgb) - range.first) / (range.second - range.first)),
+  blue ((double)(std::get<2>(rgb) - range.first) / (range.second - range.first)) {}
+
+color::color(double r, double g, double b)
+: red(r), green(g), blue(b) {}
+
+
+color::tupple3
+color::convert(int range) const
+{
+    return {(int)(red * range), (int)(green * range), (int)(blue * range)};
+}
+
+int
+color::convertGray(int range) const
+{
+    if (red != green || red != blue) return -1;
+    return (int)(red * range);
+}
+
+bool
+color::useWhiteText() const
+{
+    return (red * 0.299) + (green * 0.587) + (blue * 0.114) < 0.5;
 }
 
 wif::wif(FILE* _wifstream)
@@ -116,6 +177,12 @@ wif::wif(FILE* _wifstream)
     ends = valueToInt(f->second, 0);
     if (ends == 0)
         throw std::runtime_error("Error in wif file: Threads key illegal value in WARP section");
+    f = nameKeys.find("color");
+    std::size_t defWarpColor = 1;
+    if (f == nameKeys.end())
+        std::cerr << "Wif file does not specify default warp color, using 1." << std::endl;
+    else
+        defWarpColor = (std::size_t)valueToInt(f->second, 1);
 
     if (!readSection("WEFT"))
         throw std::runtime_error("Error in wif file: no WEFT section");
@@ -126,6 +193,54 @@ wif::wif(FILE* _wifstream)
     picks = valueToInt(f->second, 0);
     if (picks == 0)
         throw std::runtime_error("Error in wif file: Threads key illegal value in WEFT section");
+    f = nameKeys.find("color");
+    std::size_t defWeftColor = 2;
+    if (f == nameKeys.end())
+        std::cerr << "Wif file does not specify default weft color, using 2." << std::endl;
+    else
+        defWeftColor = (std::size_t)valueToInt(f->second, 1);
+    
+    std::vector<color> palette;
+    palette.push_back({0.0,0.0,0.0});   // color 0 is unused
+    if (!readSection("COLOR PALETTE")) {
+        std::cerr << "Wif file does not specify color palette. Using default." << std::endl;
+        palette.push_back({1.0,1.0,1.0});
+        palette.push_back({0.0,0.0,0.0});
+    } else {
+        std::pair<int,int> range;
+        f = nameKeys.find("entries");
+        if (f == nameKeys.end())
+            throw std::runtime_error("Error in wif file: Entries key missing from COLOR PALETTE section");
+        std::size_t colors = (std::size_t)valueToInt(f->second, 2);
+        f = nameKeys.find("range");
+        if (f == nameKeys.end())
+            throw std::runtime_error("Error in wif file: Range key missing from COLOR PALETTE section");
+        range = valueToIntPair(f->second, {0, 255});
+        palette.resize(colors + 1, {0.0,0.0,0.0});
+        
+        if (!readSection("COLOR TABLE"))
+            throw std::runtime_error("Error in wif file: no COLOR TABLE section");
+        numberKeys.resize(colors + 1, "0,0,0");
+        for (std::size_t i = 1; i <= colors; ++i) {
+            color::tupple3 c = valueToInt3(numberKeys[i], {0,0,0});
+            palette[i] = color(c, range);
+        }
+    }
+    
+    warpColor.resize((std::size_t)ends + 1, palette[defWarpColor]);
+    if (readSection("WARP COLORS")) {
+        auto warpcolors = processColorLines((std::size_t)ends + 1, defWarpColor);
+        for (std::size_t i = 1; i < warpcolors.size(); ++i) {
+            warpColor[i] = palette[warpcolors[i]];
+        }
+    }
+    weftColor.resize((std::size_t)picks + 1, palette[defWeftColor]);
+    if (readSection("WEFT COLORS")) {
+        auto weftcolors = processColorLines((std::size_t)ends + 1, defWeftColor);
+        for (std::size_t i = 1; i < weftcolors.size(); ++i) {
+            weftColor[i] = palette[weftcolors[i]];
+        }
+    }
 
     if (!readSection("THREADING"))
         throw std::runtime_error("Error in wif file: THREADING section missing");
@@ -316,5 +431,15 @@ wif::processKeyLines(bool multi)
         }
     }
 
+    return keyLines;
+}
+
+std::vector<std::size_t>
+wif::processColorLines(std::size_t colors, std::size_t def)
+{
+    std::vector<std::size_t> keyLines(colors + 1, def);
+    for (std::size_t i = 1; i < numberKeys.size(); ++i) {
+        keyLines[i] = (std::size_t)valueToInt(numberKeys[i], (int)def);
+    }
     return keyLines;
 }
