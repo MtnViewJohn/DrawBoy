@@ -171,7 +171,7 @@ Options::getOptions(int argc, const char * argv[])
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
     args::MapFlag<std::string, ANSIsupport> _ansi(parser, "ANSI SUPPORT", "Does the terminal support ANSI style codes and possibly true-color", {"ansi"}, ANSImap, defANSI);
-    args::ValueFlag<std::string> _tabby(parser, "TABBY_A/TABBY_B", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
+    args::ValueFlag<std::string> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
     
     try {
         parser.Prog("DrawBoy");
@@ -205,7 +205,6 @@ Options::getOptions(int argc, const char * argv[])
     maxShafts = args::get(_maxShafts);
     pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
-    maxShafts = args::get(_maxShafts);
     ascii = args::get(_ascii) || envASCII != nullptr;
     ansi = args::get(_ansi);
 
@@ -234,45 +233,20 @@ Options::getOptions(int argc, const char * argv[])
     
     std::string tabby = args::get(_tabby);
     if (tabby.empty()) {
-        for (int shaft = 0; shaft < maxShafts; ++shaft)
-            if (shaft & 1)
-                tabbyB |= 1 << shaft;   // even shafts
-            else
-                tabbyA |= 1 << shaft;   // odd shaft
-    } else {
-        auto slash = tabby.find_first_of('/');
-        if (slash == std::string::npos)
-            throw std::runtime_error("Tabby specification is missing a '/'.");
-        
-        auto pos = 0ul;
-        for (int shaft = 0; pos < slash; ++shaft, ++pos) {
-            switch (tabby[pos]) {
-                case '0':
-                    break;
-                case '1':
-                    tabbyA |= 1 << shaft;
-                    if (shaft >= maxShafts)
-                        throw std::runtime_error("Tabby specification contains more shafts than are present on the loom.");
-                    break;
-                default:
-                    throw std::runtime_error("Unknown character (not 0 or 1) in tabby specification.");
-            }
-        }
-        pos = slash + 1;
-        for (int shaft = 0; pos < tabby.length(); ++shaft, ++pos) {
-            switch (tabby[pos]) {
-                case '0':
-                    break;
-                case '1':
-                    tabbyB |= 1 << shaft;
-                    if (shaft >= maxShafts)
-                        throw std::runtime_error("Tabby specification contains more shafts than are present on the loom.");
-                    break;
-                default:
-                    throw std::runtime_error("Unknown character (not 0 or 1) in tabby specification.");
-            }
-        }
+        tabby.reserve((std::size_t)maxShafts);
+        for (std::size_t shaft = 0; shaft < (std::size_t)maxShafts; shaft += 2)
+            tabby.append("AB");
     }
+    
+    for (std::size_t shaft = 0; shaft < tabby.length(); ++shaft) {
+        if (tabby[shaft] == 'A')
+            tabbyA |= 1 << shaft;
+        else if (tabby[shaft] == 'B')
+            tabbyB |= 1 << shaft;
+        else
+            throw std::runtime_error("Bad character in tabby specification.");
+    }
+            
     if (tabbyA == 0)
         std::cerr << "Tabby A has no shafts set." << std::endl;
     if (tabbyB == 0)
