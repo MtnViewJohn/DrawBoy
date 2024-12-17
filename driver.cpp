@@ -248,7 +248,7 @@ View::handlePickEvent(const Term::Event &ev)
                 if (mode != Mode::Tabby) {
                     mode = Mode::Tabby;
                     tabbyPick = TabbyPick::TabbyA;
-                    displayPick();
+                    displayPick(PickAction::Send);
                     displayPrompt();
                 }
                 return true;
@@ -256,7 +256,7 @@ View::handlePickEvent(const Term::Event &ev)
             case 'L':
                 if (mode == Mode::Tabby) {
                     mode = Mode::Weave;
-                    displayPick();
+                    displayPick(PickAction::Send);
                     displayPrompt();
                 }
                 return true;
@@ -344,7 +344,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
                     std::putc('\a', stdout);
                 } else {
                     pick = (int)p - 1;
-                    displayPick();
+                    displayPick(PickAction::Send);
                 }
             }
             mode = Mode::Weave;
