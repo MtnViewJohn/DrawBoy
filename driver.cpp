@@ -401,7 +401,7 @@ View::setPick(int newPick)
     int psize = (int)opts.picks.size();
     if (pick >= 9999)
         pick -= (pick / psize) * psize;
-    while (newPick < 0)
+    while (pick < 0)
         pick += psize;
 }
 
