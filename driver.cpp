@@ -571,17 +571,16 @@ View::run()
                         std::fputs(" open", stdout);
                     }
                     if (loomOutput == "\x62\x03") {
-                        if (loomState == Shed::Open && pendingPick == NotAShed) {
-                            loomState = Shed::Closed;
+                        loomState = Shed::Closed;
+                        if (pendingPick != NotAShed) {
+                            sendPick(NotAShed);
+                            std::printf("%s SENT%s",
+                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::bold,
+                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::reset);
+                        } else {
                             nextPick();
                             displayPick(PickAction::Send);
                             displayPrompt();
-                        } else {
-                            loomState = Shed::Closed;
-                            sendPick(NotAShed);
-                            std::printf("%s READY%s",
-                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::bold,
-                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::reset);
                         }
                     }
                     loomOutput.clear();
