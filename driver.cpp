@@ -82,6 +82,7 @@ struct View
     
     void nextPick();
     void prevPick();
+    void setPick(int newPick);
     void displayPick(PickAction sendToLoom = PickAction::DontSend);
     void displayPrompt();
     void run();
@@ -394,16 +395,25 @@ View::handlePickListEntryEvent(const Term::Event &ev)
 }
 
 void
+View::setPick(int newPick)
+{
+    pick = newPick;
+    int psize = (int)opts.picks.size();
+    if (pick >= 9999)
+        pick -= (pick / psize) * psize;
+    while (newPick < 0)
+        pick += psize;
+}
+
+void
 View::nextPick()
 {
     switch (mode) {
         case Mode::Weave:
-            ++pick;
+            setPick(pick + 1);
             break;
         case Mode::Unweave:
-            --pick;
-            if (pick < 0)
-                pick = (int)opts.picks.size() - 1;
+            setPick(pick - 1);
             break;
         case Mode::Tabby:
             tabbyPick = tabbyPick == TabbyPick::TabbyA ? TabbyPick::TabbyB : TabbyPick::TabbyA;
@@ -418,12 +428,10 @@ View::prevPick()
 {
     switch (mode) {
         case Mode::Weave:
-            --pick;
-            if (pick < 0)
-                pick = (int)opts.picks.size() - 1;
+            setPick(pick - 1);
             break;
         case Mode::Unweave:
-            ++pick;
+            setPick(pick + 1);
             break;
         case Mode::Tabby:
             tabbyPick = tabbyPick == TabbyPick::TabbyA ? TabbyPick::TabbyB : TabbyPick::TabbyA;
