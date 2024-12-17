@@ -218,6 +218,7 @@ View::connect()
                         std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
                         solenoidState = Solenoid::Reset;
                     } else {
+                        std::fputs(loomState == Shed::Closed ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
                         std::uint64_t lift = 0;
                         bool unexpected = false;
                         std::uint64_t shafts = 0;
@@ -237,7 +238,7 @@ View::connect()
                         for (std::uint64_t shaft = 0; shaft < shafts; ++shaft)
                             std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
                         std::fputc('|', stdout);
-                        std::printf("%s %s %s%s\r\n", opts.ascii ? "" : Term::Style::bold,
+                        std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
                                     tooMany ? "too many shafts!" : "",
                                     unexpected ? "unexpected character!" : "",
                                     opts.ascii ? "" : Term::Style::reset);
