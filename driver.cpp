@@ -168,6 +168,11 @@ View::displayPrompt()
         case Mode::PickListEntry:
             std::printf("Enter the new pick list: %s", pickValue.c_str());
             break;
+        case Mode::Weave:
+        case Mode::Unweave:
+            std::printf("[%s:%d]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
+                        ModePrompt[mode], opts.picks[(std::size_t)(pick) % opts.picks.size()]);
+            break;
         default:
             std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ", ModePrompt[mode]);
             break;
