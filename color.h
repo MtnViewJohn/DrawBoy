@@ -16,9 +16,9 @@ public:
     
     // Maps integer range [low,high] to double range [0,1)
     color(tupple3 rgb, std::pair<int,int> range)
-    : red  ((double)(std::get<0>(rgb) - range.first) / (range.second - range.first + 1)),
-      green((double)(std::get<1>(rgb) - range.first) / (range.second - range.first + 1)),
-      blue ((double)(std::get<2>(rgb) - range.first) / (range.second - range.first + 1)) {}
+    : red  ((double)(std::get<0>(rgb) - range.first) / ((range.second - range.first) + 1)),
+      green((double)(std::get<1>(rgb) - range.first) / ((range.second - range.first) + 1)),
+      blue ((double)(std::get<2>(rgb) - range.first) / ((range.second - range.first) + 1)) {}
     color(double r, double g, double b)
     : red(r), green(g), blue(b) {}
     color() : red(0.0), green(0.0), blue(0.0) {}

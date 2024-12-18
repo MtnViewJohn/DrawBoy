@@ -32,19 +32,19 @@ Term::Term()
     _rows = 0;
     _cols = 0;
 
-    if (!isatty(STDIN_FILENO)) throw std::runtime_error("stdin isn't a tty");
-    if (!isatty(STDOUT_FILENO)) throw std::runtime_error("stdout isn't a tty");
+    if (!::isatty(STDIN_FILENO))  throw std::runtime_error("stdin isn't a tty");
+    if (!::isatty(STDOUT_FILENO)) throw std::runtime_error("stdout isn't a tty");
 
     int err;
 
     struct termios t;
-    err = tcgetattr(STDOUT_FILENO, &t);
+    err = ::tcgetattr(STDOUT_FILENO, &t);
     if (err != 0) throw std::system_error(errno, std::generic_category(), "getting term attr");
     _original_termios = t;
-    cfmakeraw(&t);
+    ::cfmakeraw(&t);
     t.c_cc[VMIN] = 0;
     t.c_cc[VTIME] = 1;
-    err = tcsetattr(STDOUT_FILENO, TCSAFLUSH, &t);
+    err = ::tcsetattr(STDOUT_FILENO, TCSAFLUSH, &t);
     if (err != 0) throw std::system_error(errno, std::generic_category(), "setting term attr");
 
     pendingResize = false;
@@ -69,13 +69,13 @@ Term::~Term()
 
     //flushwrite("\x1b[?1049l");  // use original buffer, restore cursor
 
-    tcsetattr(STDOUT_FILENO, TCSAFLUSH, &_original_termios);
+    ::tcsetattr(STDOUT_FILENO, TCSAFLUSH, &_original_termios);
 }
 
 void Term::fetchWindowSize()
 {
     struct winsize w;
-    int err = ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    int err = ::ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     if (err != 0)
         throw std::system_error(errno, std::generic_category(), "getting term size");
     _rows = w.ws_row;
@@ -147,7 +147,7 @@ std::string Term::readInput()
 
     char c;
     while (true) {
-        auto n = read(STDIN_FILENO, &c, 1);
+        auto n = ::read(STDIN_FILENO, &c, 1);
         if (n < 0) throw std::system_error(errno, std::generic_category(), "error in read");
         if (n == 0) break;
         o.push_back(c);

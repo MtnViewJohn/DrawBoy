@@ -7,7 +7,7 @@
 
 #include "wif.h"
 #include <cstdio>
-#include <strings.h>
+#include <cstring>
 #include <cctype>
 #include <iostream>
 #include <string>
@@ -17,10 +17,10 @@ namespace  {
     bool
     valueToBool(const std::string& v)
     {
-        if (strcasecmp(v.c_str(), "true") == 0) return true;
-        if (strcasecmp(v.c_str(), "on") == 0) return true;
-        if (strcmp(v.c_str(), "1") == 0) return true;
-        if (strcasecmp(v.c_str(), "yes") == 0) return true;
+        if (::strcasecmp(v.c_str(), "true") == 0) return true;
+        if (::strcasecmp(v.c_str(), "on") == 0) return true;
+        if (std::strcmp(v.c_str(), "1") == 0) return true;
+        if (::strcasecmp(v.c_str(), "yes") == 0) return true;
         return false;
     }
 
@@ -274,8 +274,8 @@ wif::seekSection(const char* name)
     char buf[128];
     std::size_t len = std::strlen(name);
     
-    while (fgets(buf, 128, wifstream) != nullptr) {
-        if (buf[0] == '[' && buf[len + 1] == ']' && strncasecmp(buf + 1, name, len) == 0)
+    while (std::fgets(buf, 128, wifstream) != nullptr) {
+        if (buf[0] == '[' && buf[len + 1] == ']' && ::strncasecmp(buf + 1, name, len) == 0)
             return true;
     }
     return false;

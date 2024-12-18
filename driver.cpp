@@ -120,7 +120,7 @@ View::displayPick(PickAction sendToLoom)
             std::fputs(Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor), stdout);
         }
         if (opts.ascii)
-            putchar(wifContents.threading[i] & lift ? '|' : '-');
+            std::putchar(wifContents.threading[i] & lift ? '|' : '-');
         else
             std::fputs(wifContents.threading[i] & lift ? "\xE2\x95\x91" : "\xE2\x95\x90", stdout);
     }
@@ -145,7 +145,7 @@ View::displayPick(PickAction sendToLoom)
             std::fputs(opts.ascii ? "*" : "\xE2\x96\xA0", stdout);
         else
             std::putchar(' ');
-    putchar('|');
+    std::putchar('|');
     if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
     if (loomState != Shed::Closed)
         std::fputs("pending ", stdout);
@@ -169,7 +169,7 @@ View::displayPrompt()
             std::printf("Enter the new pick list: %s", pickValue.c_str());
             break;
         default:
-            std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit", ModePrompt[mode]);
+            std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ", ModePrompt[mode]);
             break;
     }
     Term::clearToEOL();
@@ -331,12 +331,12 @@ View::handlePickEntryEvent(const Term::Event &ev)
             if (pickValue.empty() && ev.character == '0')
                 return false;
             pickValue.push_back(ev.character);
-            std::putc(ev.character, stdout);
+            std::putchar(ev.character);
             return true;
         }
         if (ev.character == '\b') {
             if (pickValue.empty()) {
-                std::putc('\a', stdout);
+                std::putchar('\a');
             } else {
                 pickValue.pop_back();
                 displayPrompt();
@@ -348,7 +348,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 errno = 0;
                 long p = std::strtol(pickValue.c_str(), nullptr, 10);
                 if (errno || p > 999999 || p < 1) {
-                    std::putc('\a', stdout);
+                    std::putchar('\a');
                 } else {
                     pick = (int)p - 1;
                     displayPick(PickAction::Send);
@@ -369,12 +369,12 @@ View::handlePickListEntryEvent(const Term::Event &ev)
     if (ev.type == Term::EventType::Char) {
         if (std::strchr("0123456789-,", ev.character)) {
             pickValue.push_back(ev.character);
-            std::putc(ev.character, stdout);
+            std::putchar(ev.character);
             return true;
         }
         if (ev.character == '\b') {
             if (pickValue.empty()) {
-                std::putc('\a', stdout);
+                std::putchar('\a');
             } else {
                 pickValue.pop_back();
                 displayPrompt();
@@ -456,7 +456,7 @@ View::sendToLoom(const char *msg)
     
     while (remaining > 0  &&  mode != Mode::Quit)
     {
-        auto result = write(opts.loomDeviceFD, msg + sent, remaining);
+        auto result = ::write(opts.loomDeviceFD, msg + sent, remaining);
         if (result >= 0) {
             if (result == 0) std::putchar('>');
             // sent partial or all the remaining data
@@ -473,7 +473,7 @@ View::sendToLoom(const char *msg)
                 FD_ZERO(&fds);
                 std::putchar('>');
                 FD_SET(opts.loomDeviceFD, &fds);
-                selectresult = select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
+                selectresult = ::select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
                     throw make_system_error("loom select failed");
             } else {
@@ -534,7 +534,7 @@ View::run()
         FD_SET(opts.loomDeviceFD, &rdset);
         timeval threesec{3,0};
         
-        int nfds = select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
+        int nfds = ::select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
         
         if (nfds == -1 && errno != EINTR)
             throw make_system_error("select failed");
@@ -556,7 +556,7 @@ View::run()
         if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
             char c;
             while (true) {
-                auto n = read(opts.loomDeviceFD, &c, 1);
+                auto n = ::read(opts.loomDeviceFD, &c, 1);
                 if (n < 0) {
                     if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
                         break;

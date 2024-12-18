@@ -10,7 +10,7 @@
 #include "term.h"
 #include <sys/select.h>
 #include <unistd.h>
-#include <signal.h>
+#include <csignal>
 #include "ipc.h"
 
 enum class Shed {
@@ -147,7 +147,7 @@ View::sendToDrawBoy(const char *msg)
     
     while (remaining > 0  &&  mode != Mode::Quit)
     {
-        auto result = write(socketFD, msg + sent, remaining);
+        auto result = ::write(socketFD, msg + sent, remaining);
         if (result >= 0) {
             // sent partial or all the remaining data
             sent += (std::size_t)result;
@@ -166,7 +166,7 @@ View::sendToDrawBoy(const char *msg)
                 tv.tv_sec = 1;
                 FD_ZERO(&fds);
                 FD_SET(socketFD, &fds);
-                selectresult = select(socketFD + 1, nullptr, &fds, nullptr, &tv);
+                selectresult = ::select(socketFD + 1, nullptr, &fds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
                     throw make_system_error("loom select failed");
             } else {
@@ -187,7 +187,7 @@ View::connect()
         FD_SET(socketFD, &rdset);
         timeval onesec{1,0};
         
-        int nfds = select(socketFD + 1, &rdset, nullptr, nullptr, &onesec);
+        int nfds = ::select(socketFD + 1, &rdset, nullptr, nullptr, &onesec);
         
         if (nfds == -1 && errno != EINTR)
             throw make_system_error("select failed");
@@ -202,7 +202,7 @@ View::connect()
         
         if (FD_ISSET(socketFD, &rdset)) {
             char c;
-            auto n = read(socketFD, &c, 1);
+            auto n = ::read(socketFD, &c, 1);
             if (n < 0) {
                 if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
                     continue;
@@ -233,11 +233,11 @@ View::connect()
                             } else if (uc != 0x07)
                                 unexpected = true;
                         }
-                        std::fputc('|', stdout);
+                        std::putchar('|');
                         bool tooMany = shafts > (std::uint64_t)opts.maxShafts;
                         for (std::uint64_t shaft = 0; shaft < shafts; ++shaft)
                             std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
-                        std::fputc('|', stdout);
+                        std::putchar('|');
                         std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
                                     tooMany ? "too many shafts!" : "",
                                     unexpected ? "unexpected character!" : "",
@@ -299,7 +299,7 @@ driver(Options& opts)
 {
     IPC::Server server(opts.socketPath);
     LoopingState loop = LoopingState::ShouldWait;
-    signal(SIGPIPE, SIG_IGN);
+    std::signal(SIGPIPE, SIG_IGN);
     
     do {
         Term term;

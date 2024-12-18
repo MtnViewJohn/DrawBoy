@@ -22,13 +22,13 @@ namespace {
 int
 checkForSerial(std::string& name)
 {
-    int fd = open(name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    int fd = ::open(name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
     int modemBits = 0;
     if (fd == -1)
         return 1;
-    if (!isatty(fd) || ioctl(fd, TIOCMGET, &modemBits) == -1)
+    if (!::isatty(fd) || ::ioctl(fd, TIOCMGET, &modemBits) == -1)
     {
-        close(fd);
+        ::close(fd);
         return 2;
     }
     return fd;
@@ -37,22 +37,22 @@ checkForSerial(std::string& name)
 void
 enumSerial(const std::set<std::string>& exclude)
 {
-    DIR* devDir = opendir("/dev");
-    struct dirent *entry = readdir(devDir);
+    DIR* devDir = ::opendir("/dev");
+    struct dirent *entry = ::readdir(devDir);
     while (entry != NULL) {
         if (entry->d_type == DT_CHR) {
             std::string dname = "/dev/";
             dname.append(entry->d_name, entry->d_namlen);
             int fd = checkForSerial(dname);
             if (fd != 1 && fd != 2) {
-                close(fd);
+                ::close(fd);
                 if (!exclude.contains(dname))
                     std::cout << dname << std::endl;
             }
         }
-        entry = readdir(devDir);
+        entry = ::readdir(devDir);
     }
-    closedir(devDir);
+    ::closedir(devDir);
 }
 
 
@@ -77,17 +77,17 @@ initLoomPort(int fd)
 {
     struct termios term;
 
-    if (tcgetattr(fd, &term) < 0)
+    if (::tcgetattr(fd, &term) < 0)
         throw make_system_error("Cannot communicate with loom device");
     
-    cfmakeraw(&term);
-    cfsetispeed(&term, B9600);          // set 9600 baud
-    cfsetospeed(&term, B9600);
+    ::cfmakeraw(&term);
+    ::cfsetispeed(&term, B9600);          // set 9600 baud
+    ::cfsetospeed(&term, B9600);
     term.c_cflag &= (tcflag_t)(~PARENB);            // set 8N1
     term.c_cflag &= (tcflag_t)(~CSTOPB);
     term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
     
-    if (tcsetattr(fd, TCSAFLUSH, &term) < 0)
+    if (::tcsetattr(fd, TCSAFLUSH, &term) < 0)
         throw make_system_error("Cannot communicate with loom device");
 }
 
@@ -194,7 +194,7 @@ Options::getOptions(int argc, const char * argv[])
     
     if (findloom) {
         std::set<std::string> exclude;
-        if (!isatty(0))
+        if (!::isatty(0))
             exclude = readfile(std::cin, " ");
         enumSerial(exclude);
         return 0;
@@ -259,7 +259,7 @@ Options::getOptions(int argc, const char * argv[])
 Options::~Options()
 {
     if (loomDeviceFD >= 0) {
-        close(loomDeviceFD);
+        ::close(loomDeviceFD);
         loomDeviceFD = -1;
     }
     if (wifFileStream != nullptr) {

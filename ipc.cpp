@@ -14,7 +14,7 @@ namespace {
 void
 removeSocketFile(const std::string& path)
 {
-    int err = remove(path.c_str());
+    int err = ::remove(path.c_str());
     if (err == -1 && (errno != 0 && errno != ENOENT))
         std::fprintf(stderr, "Couldn't remove socket %s\n", path.c_str());
     // This doesn't throw as we don't want to obscure any error that is
@@ -24,14 +24,14 @@ removeSocketFile(const std::string& path)
 
 int makeSocket(const std::string& path, bool server)
 {
-    int sockFD = socket(AF_UNIX, SOCK_STREAM, 0);
+    int sockFD = ::socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockFD == -1)
         throw make_system_error("Couldn't create IPC socket");
     
-    int flags = fcntl(sockFD, F_GETFL);
+    int flags = ::fcntl(sockFD, F_GETFL);
     if (flags == -1)
         throw make_system_error("Could not get socket flags.");
-    if (fcntl(sockFD, F_SETFL, flags | O_NONBLOCK) == -1)
+    if (::fcntl(sockFD, F_SETFL, flags | O_NONBLOCK) == -1)
         throw make_system_error("Could not set socket flags.");
     
     if (server) removeSocketFile(path);
@@ -43,21 +43,21 @@ int makeSocket(const std::string& path, bool server)
         throw make_runtime_error({"Socket path is too long: ", path});
     
     if (server) {
-        auto oldmask = umask(0007); // allow group access (usually audio)
-        if (bind(sockFD, (const struct sockaddr*)&addr, sizeof(addr)) != 0)
+        auto oldmask = ::umask(0007); // allow group access (usually audio)
+        if (::bind(sockFD, (const struct sockaddr*)&addr, sizeof(addr)) != 0)
             throw make_runtime_error({"Couldn't bind socket to path ", path});
-        umask(oldmask);
+        ::umask(oldmask);
         
-        if (listen(sockFD, 2) != 0)   // don't need a long backlog
+        if (::listen(sockFD, 2) != 0)   // don't need a long backlog
             throw make_runtime_error({"Couldn't listen to socket path ", path});
     } else {
-        if (connect(sockFD, (const struct sockaddr*)&addr, sizeof(addr)) != 0) {
+        if (::connect(sockFD, (const struct sockaddr*)&addr, sizeof(addr)) != 0) {
             throw make_runtime_error({
                 "Couldn't connect to the fakeloom server\n"
                 "\n"
                 "(While trying to connect to the socket path:\n"
                 "    ", path, "\n"
-                "    got the error: ", strerror(errno), ")"});
+                "    got the error: ", std::strerror(errno), ")"});
         }
     }
     
