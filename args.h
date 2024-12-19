@@ -28,7 +28,7 @@ struct Options {
     DobbyType dobbyType = DobbyType::Positive;
     int pick;
     std::vector<int> picks;
-    color tabbyColor = color("00ff00");
+    color tabbyColor;
     bool ascii;
     ANSIsupport ansi;
     std::uint64_t tabbyA = 0, tabbyB = 0;

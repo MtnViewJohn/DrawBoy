@@ -191,6 +191,7 @@ Options::getOptions(int argc, const char * argv[])
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
     args::MapFlag<std::string, ANSIsupport> _ansi(parser, "ANSI SUPPORT", "Does the terminal support ANSI style codes and possibly true-color", {"ansi"}, ANSImap, defANSI);
     args::ValueFlag<std::string> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
+    args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks", {"tabbycolor"}, "00FF00");
     
     try {
         parser.Prog("DrawBoy");
@@ -270,6 +271,8 @@ Options::getOptions(int argc, const char * argv[])
         std::cerr << "Tabby A has no shafts set." << std::endl;
     if (tabbyB == 0)
         std::cerr << "Tabby B has no shafts set." << std::endl;
+    
+    tabbyColor = color(args::get(_tabbyColor).c_str());
 
     valid = true;
     return 0;
