@@ -191,6 +191,10 @@ View::displayPrompt()
                             ModePrompt[mode], wifPick);
             break;
         }
+        case Mode::Tabby:
+            std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
+                        ModePrompt[mode], tabbyPick == TabbyPick::A ? 'A' : 'B');
+            break;
         default:
             std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ", ModePrompt[mode]);
             break;
