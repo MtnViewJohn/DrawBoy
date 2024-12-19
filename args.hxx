@@ -1021,9 +1021,9 @@ namespace args
         template<typename T>
         using vector = std::vector<T, std::allocator<T>>;
         
-        template<typename K, typename T>
-        using unordered_map = std::unordered_map<K, T, std::hash<K>, 
-            std::equal_to<K>, std::allocator<std::pair<const K, T> > >;
+        template<typename K, typename T, typename H, typename KE>
+        using unordered_map = std::unordered_map<K, T, H,
+            KE, std::allocator<std::pair<const K, T> > >;
 
         template<typename S, typename T>
         class is_streamable
@@ -3812,12 +3812,14 @@ namespace args
     template <
         typename K,
         typename T,
+        typename H = std::hash<K>,
+        typename KE = std::equal_to<K>,
         typename Reader = ValueReader,
         template <typename...> class Map = detail::unordered_map>
     class MapFlag : public ValueFlagBase
     {
         private:
-            const Map<K, T> map;
+            const Map<K, T, H, KE> map;
             T value;
             const T defaultValue;
             Reader reader;
@@ -3830,16 +3832,16 @@ namespace args
 
         public:
 
-            MapFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T> &map_, const T &defaultValue_, Options options_): ValueFlagBase(name_, help_, std::move(matcher_), options_), map(map_), value(defaultValue_), defaultValue(defaultValue_)
+            MapFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T, H, KE> &map_, const T &defaultValue_, Options options_): ValueFlagBase(name_, help_, std::move(matcher_), options_), map(map_), value(defaultValue_), defaultValue(defaultValue_)
             {
                 group_.Add(*this);
             }
 
-            MapFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T> &map_, const T &defaultValue_ = T(), const bool extraError_ = false): MapFlag(group_, name_, help_, std::move(matcher_), map_, defaultValue_, extraError_ ? Options::Single : Options::None)
+            MapFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T, H, KE> &map_, const T &defaultValue_ = T(), const bool extraError_ = false): MapFlag(group_, name_, help_, std::move(matcher_), map_, defaultValue_, extraError_ ? Options::Single : Options::None)
             {
             }
 
-            MapFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T> &map_, Options options_): MapFlag(group_, name_, help_, std::move(matcher_), map_, T(), options_)
+            MapFlag(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T, H, KE> &map_, Options options_): MapFlag(group_, name_, help_, std::move(matcher_), map_, T(), options_)
             {
             }
 

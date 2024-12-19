@@ -183,13 +183,13 @@ Options::getOptions(int argc, const char * argv[])
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
         "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::None : args::Options::Required);
-    args::MapFlag<std::string, DobbyType> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
+    args::MapFlag<std::string, DobbyType, ci_hash, ci_equal> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
-    args::MapFlag<std::string, ANSIsupport> _ansi(parser, "ANSI SUPPORT", "Does the terminal support ANSI style codes and possibly true-color", {"ansi"}, ANSImap, defANSI);
+    args::MapFlag<std::string, ANSIsupport, ci_hash, ci_equal> _ansi(parser, "ANSI SUPPORT", "Does the terminal support ANSI style codes and possibly true-color", {"ansi"}, ANSImap, defANSI);
     args::ValueFlag<std::string> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B", {'t', "tabby"});
     args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks", {"tabbycolor"}, "00FF00");
     
