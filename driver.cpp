@@ -84,7 +84,7 @@ struct View
     void nextPick();
     void prevPick();
     void setPick(int newPick);
-    void displayPick(PickAction sendToLoom = PickAction::DontSend);
+    void displayPick(PickAction sendToLoom);
     void displayPrompt();
     void run();
 };
@@ -239,7 +239,7 @@ View::handleGlobalEvent(const Term::Event& ev)
                     return true;
                     
                 case '\x0c':      // control-l  - like in vi!
-                    displayPick();
+                    displayPick(PickAction::DontSend);
                     displayPrompt();
                     return true;
                     
@@ -255,7 +255,7 @@ View::handleGlobalEvent(const Term::Event& ev)
         }
             
         case Term::EventType::Resize: {
-            displayPick();
+            displayPick(PickAction::DontSend);
             displayPrompt();
             return true;
         }
@@ -306,8 +306,8 @@ View::handlePickEvent(const Term::Event &ev)
                     default:
                         return false;
                 }
-                displayPick();      // Redisplay current pick with
-                displayPrompt();    // new direction marker
+                displayPick(PickAction::DontSend);  // Redisplay current pick with
+                displayPrompt();                    // new direction marker
                 return true;
             case 's':
             case 'S':
