@@ -12,6 +12,7 @@
 #include <string>
 #include <cstdio>
 #include <vector>
+#include "color.h"
 
 struct Options {
     ~Options();
@@ -27,6 +28,7 @@ struct Options {
     DobbyType dobbyType = DobbyType::Positive;
     int pick;
     std::vector<int> picks;
+    color tabbyColor = color("00ff00");
     bool ascii;
     ANSIsupport ansi;
     std::uint64_t tabbyA = 0, tabbyB = 0;

@@ -97,11 +97,23 @@ View::displayPick(PickAction sendToLoom)
     color weftColor;
     if (mode == Mode::Tabby) {
         lift = tabbyPick == TabbyPick::A ? opts.tabbyA : opts.tabbyB;
-        weftColor = wifContents.weftColor[(std::size_t)(opts.picks[0])];
+        weftColor = opts.tabbyColor;
     } else {
         std::size_t zpick = (std::size_t)(pick) % opts.picks.size();
-        lift = wifContents.liftplan[(std::size_t)(opts.picks[zpick])];
-        weftColor = wifContents.weftColor[(std::size_t)(opts.picks[zpick])];
+        int wifPick = opts.picks[zpick];
+        switch (wifPick) {
+            case -2:
+                lift = opts.tabbyB;
+                weftColor = opts.tabbyColor;
+                break;
+            case -1:
+                lift = opts.tabbyA;
+                weftColor = opts.tabbyColor;
+                break;
+            default:
+                lift = wifContents.liftplan[(std::size_t)wifPick];
+                weftColor = wifContents.weftColor[(std::size_t)(wifPick)];
+        }
         
         if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
             (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
@@ -169,10 +181,16 @@ View::displayPrompt()
             std::printf("Enter the new pick list: %s", pickValue.c_str());
             break;
         case Mode::Weave:
-        case Mode::Unweave:
-            std::printf("[%s:%d]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
-                        ModePrompt[mode], opts.picks[(std::size_t)(pick) % opts.picks.size()]);
+        case Mode::Unweave: {
+            int wifPick = opts.picks[(std::size_t)(pick) % opts.picks.size()];
+            if (wifPick < 0)
+                std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
+                            ModePrompt[mode], wifPick == -1 ? 'A' : 'B');
+            else
+                std::printf("[%s:%d]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
+                            ModePrompt[mode], wifPick);
             break;
+        }
         default:
             std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ", ModePrompt[mode]);
             break;
@@ -372,7 +390,7 @@ bool
 View::handlePickListEntryEvent(const Term::Event &ev)
 {
     if (ev.type == Term::EventType::Char) {
-        if (std::strchr("0123456789-,", ev.character)) {
+        if (std::strchr("0123456789ABab-,", ev.character)) {
             pickValue.push_back(ev.character);
             std::putchar(ev.character);
             return true;

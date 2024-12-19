@@ -111,22 +111,41 @@ Options::parsePicks(const std::string& str)
                     throw std::runtime_error("Syntax error in treadling multiplier.");
                 range.erase(0, multToken + 1);
             }
-            std::size_t rangeToken = std::string::npos;
-            int start = std::stoi(range, &rangeToken);
-            int end = start;
-            if (rangeToken < range.length() && range[rangeToken] == '-') {
-                range.erase(0, rangeToken + 1);
-                end = std::stoi(range, &rangeToken);
-            }
-            if (start < 1 || end < 1)
-                throw std::runtime_error("Bad treadling range.");
-            for (int count = 0; count < mult; ++count) {
-                if (start < end) {
-                    for (int p = start; p <= end; ++p)
-                        newpicks.push_back(p);
-                } else {
-                    for (int p = end; p >= start; --p)
-                        newpicks.push_back(p);
+            if (std::strchr("ABab", range[0])) {
+                for (int count = 0; count < mult; ++count) {
+                    for (char p: range) {
+                        switch (p) {
+                            case 'a':
+                            case 'A':
+                                newpicks.push_back(-1);
+                                break;
+                            case 'b':
+                            case 'B':
+                                newpicks.push_back(-2);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            } else {
+                std::size_t rangeToken = std::string::npos;
+                int start = std::stoi(range, &rangeToken);
+                int end = start;
+                if (rangeToken < range.length() && range[rangeToken] == '-') {
+                    range.erase(0, rangeToken + 1);
+                    end = std::stoi(range, &rangeToken);
+                }
+                if (start < 1 || end < 1)
+                    throw std::runtime_error("Bad treadling range.");
+                for (int count = 0; count < mult; ++count) {
+                    if (start < end) {
+                        for (int p = start; p <= end; ++p)
+                            newpicks.push_back(p);
+                    } else {
+                        for (int p = end; p >= start; --p)
+                            newpicks.push_back(p);
+                    }
                 }
             }
         } catch (std::runtime_error& rte) {
