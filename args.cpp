@@ -259,9 +259,10 @@ Options::getOptions(int argc, const char * argv[])
     }
     
     for (std::size_t shaft = 0; shaft < tabby.length(); ++shaft) {
-        if (tabby[shaft] == 'A')
+        char tabbyChar = (char)std::toupper((unsigned char)tabby[shaft]);
+        if (tabbyChar == 'A')
             tabbyA |= 1 << shaft;
-        else if (tabby[shaft] == 'B')
+        else if (tabbyChar == 'B')
             tabbyB |= 1 << shaft;
         else
             throw std::runtime_error("Bad character in tabby specification.");
