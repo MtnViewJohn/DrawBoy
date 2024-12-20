@@ -375,7 +375,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
             if (!pickValue.empty()) {
                 errno = 0;
                 long p = std::strtol(pickValue.c_str(), nullptr, 10);
-                if (errno || p > 999999 || p < 1) {
+                if (errno || p > 9999 || p < 1) {
                     std::putchar('\a');
                 } else {
                     pick = (int)p - 1;
