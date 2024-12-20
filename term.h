@@ -32,6 +32,7 @@ class Term {
 
   public:
     static void moveCursor(int row, int col, bool flush = false);
+    static void moveCursorRel(int row, int col, bool flush = false);
     static void clearLine(int row);
     static void clearToEOL();
     static void clearDisplay();

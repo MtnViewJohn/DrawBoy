@@ -88,6 +88,19 @@ void Term::moveCursor(int row, int col, bool flush)
     if (flush) std::fflush(stdout);
 }
 
+void Term::moveCursorRel(int row, int col, bool flush)
+{
+    if (row < 0)
+        std::print("\x1b[{}A", -row);
+    if (row > 0)
+        std::print("\x1b[{}B",  row);
+    if (col < 0)
+        std::print("\x1b[{}D", -col);
+    if (col > 0)
+        std::print("\x1b[{}C",  col);
+    if (flush) std::fflush(stdout);
+}
+
 void Term::clearToEOL()
 {
     flushwrite("\x1b[0K" TermStyleReset);

@@ -160,7 +160,8 @@ View::displayPick(PickAction sendToLoom)
     std::putchar('|');
     if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
     if (loomState != Shed::Closed)
-        std::fputs("pending ", stdout);
+        std::printf(" %sPENDING%s ", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
+                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
     
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
@@ -607,10 +608,13 @@ View::run()
                     if (loomOutput == "\x62\x03") {
                         loomState = Shed::Closed;
                         if (pendingPick != NotAShed) {
-                            sendPick(NotAShed);
-                            std::printf("%s SENT%s",
-                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::bold,
-                                        opts.ansi != ANSIsupport::no ? "" : Term::Style::reset);
+                            // Redraw the last pending pick to erase the 'PENDING'
+                            Term::moveCursorRel(-1, 0);
+                            displayPick(PickAction::Send);
+                            displayPrompt();
+                            std::printf("%s SENT%s ",
+                                        opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
+                                        opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
                         } else {
                             nextPick();
                             displayPick(PickAction::Send);
