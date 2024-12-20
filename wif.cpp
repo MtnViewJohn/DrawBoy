@@ -132,11 +132,11 @@ wif::wif(FILE* _wifstream)
     if (ends == 0)
         throw std::runtime_error("Error in wif file: Threads key illegal value in WARP section");
     f = nameKeys.find("color");
-    std::size_t defWarpColor = 1;
+    size_t defWarpColor = 1;
     if (f == nameKeys.end())
         std::cerr << "Wif file does not specify default warp color, using 1." << std::endl;
     else
-        defWarpColor = (std::size_t)valueToInt(f->second, 1);
+        defWarpColor = (size_t)valueToInt(f->second, 1);
 
     if (!readSection("WEFT"))
         throw std::runtime_error("Error in wif file: no WEFT section");
@@ -148,11 +148,11 @@ wif::wif(FILE* _wifstream)
     if (picks == 0)
         throw std::runtime_error("Error in wif file: Threads key illegal value in WEFT section");
     f = nameKeys.find("color");
-    std::size_t defWeftColor = 2;
+    size_t defWeftColor = 2;
     if (f == nameKeys.end())
         std::cerr << "Wif file does not specify default weft color, using 2." << std::endl;
     else
-        defWeftColor = (std::size_t)valueToInt(f->second, 1);
+        defWeftColor = (size_t)valueToInt(f->second, 1);
     
     std::vector<color> palette;
     palette.push_back({0.0,0.0,0.0});   // color 0 is unused
@@ -165,7 +165,7 @@ wif::wif(FILE* _wifstream)
         f = nameKeys.find("entries");
         if (f == nameKeys.end())
             throw std::runtime_error("Error in wif file: Entries key missing from COLOR PALETTE section");
-        std::size_t colors = (std::size_t)valueToInt(f->second, 2);
+        size_t colors = (size_t)valueToInt(f->second, 2);
         f = nameKeys.find("range");
         if (f == nameKeys.end())
             throw std::runtime_error("Error in wif file: Range key missing from COLOR PALETTE section");
@@ -175,23 +175,23 @@ wif::wif(FILE* _wifstream)
         if (!readSection("COLOR TABLE"))
             throw std::runtime_error("Error in wif file: no COLOR TABLE section");
         numberKeys.resize(colors + 1, "0,0,0");
-        for (std::size_t i = 1; i <= colors; ++i) {
+        for (size_t i = 1; i <= colors; ++i) {
             color::tupple3 c = valueToInt3(numberKeys[i], {0,0,0});
             palette[i] = color(c, range);
         }
     }
     
-    warpColor.resize((std::size_t)ends + 1, palette[defWarpColor]);
+    warpColor.resize((size_t)ends + 1, palette[defWarpColor]);
     if (readSection("WARP COLORS")) {
-        auto warpcolors = processColorLines((std::size_t)ends, defWarpColor);
-        for (std::size_t i = 1; i < warpcolors.size(); ++i) {
+        auto warpcolors = processColorLines((size_t)ends, defWarpColor);
+        for (size_t i = 1; i < warpcolors.size(); ++i) {
             warpColor[i] = palette[warpcolors[i]];
         }
     }
-    weftColor.resize((std::size_t)picks + 1, palette[defWeftColor]);
+    weftColor.resize((size_t)picks + 1, palette[defWeftColor]);
     if (readSection("WEFT COLORS")) {
-        auto weftcolors = processColorLines((std::size_t)picks, defWeftColor);
-        for (std::size_t i = 1; i < weftcolors.size(); ++i) {
+        auto weftcolors = processColorLines((size_t)picks, defWeftColor);
+        for (size_t i = 1; i < weftcolors.size(); ++i) {
             weftColor[i] = palette[weftcolors[i]];
         }
     }
@@ -205,7 +205,7 @@ wif::wif(FILE* _wifstream)
     
     if (std::ssize(numberKeys) > ends + 1)
         std::cerr << "Extraneous ends found in THREADING section, discarded." << std::endl;
-    numberKeys.resize((std::size_t)ends + 1);
+    numberKeys.resize((size_t)ends + 1);
     threading = processKeyLines(false);
 
     if (hasLiftplan) {
@@ -218,7 +218,7 @@ wif::wif(FILE* _wifstream)
         
         if (std::ssize(numberKeys) > picks + 1)
             std::cerr << "Extraneous picks found in LIFTPLAN section, discarded." << std::endl;
-        numberKeys.resize((std::size_t)picks + 1);
+        numberKeys.resize((size_t)picks + 1);
         liftplan = processKeyLines(true);
     } else {
         if (!readSection("TIEUP"))
@@ -230,7 +230,7 @@ wif::wif(FILE* _wifstream)
         
         if (std::ssize(numberKeys) > maxTreadles + 1)
             std::cerr << "Extraneous treadles found in TIEUP section, discarded." << std::endl;
-        numberKeys.resize((std::size_t)maxTreadles + 1);
+        numberKeys.resize((size_t)maxTreadles + 1);
         tieup = processKeyLines(true);
         
         if (!readSection("TREADLING"))
@@ -240,12 +240,12 @@ wif::wif(FILE* _wifstream)
         if (numberKeys.empty())
             throw std::runtime_error("Error in wif file: TREADLING has no key lines");
         
-        treadling.resize((std::size_t)picks + 1);
-        liftplan.resize((std::size_t)picks + 1, 0);
+        treadling.resize((size_t)picks + 1);
+        liftplan.resize((size_t)picks + 1, 0);
         if (std::ssize(numberKeys) > picks + 1)
             std::cerr << "Extraneous treadlings found in TREADLING section, discarded." << std::endl;
-        numberKeys.resize((std::size_t)picks + 1);
-        for (size_t i = 1; i <= (std::size_t)picks; ++i) {
+        numberKeys.resize((size_t)picks + 1);
+        for (size_t i = 1; i <= (size_t)picks; ++i) {
             treadling[i] = valueStripWhite(numberKeys[i]);
             if (treadling[i].empty()) continue;
             const char* v = treadling[i].c_str();
@@ -259,7 +259,7 @@ wif::wif(FILE* _wifstream)
                     throw std::runtime_error("Error in wif file: treadle number out of range in liftplan");
                 while (*end == ' ') ++end;      // consume trailing whitespace
 
-                liftplan[i] |= tieup[(std::size_t)treadle];
+                liftplan[i] |= tieup[(size_t)treadle];
                 if (*end != ',') break;
                 v = end + 1;
             }
@@ -272,7 +272,7 @@ wif::seekSection(const char* name)
 {
     std::rewind(wifstream);
     char buf[128];
-    std::size_t len = std::strlen(name);
+    size_t len = std::strlen(name);
     
     while (std::fgets(buf, 128, wifstream) != nullptr) {
         if (buf[0] == '[' && buf[len + 1] == ']' && ::strncasecmp(buf + 1, name, len) == 0)
@@ -312,7 +312,7 @@ wif::readSection(const char *name)
         if (line.empty()) break;
         if (line[0] == ';') continue;
         
-        std::size_t eqpos = line.find('=');
+        size_t eqpos = line.find('=');
         if (eqpos == std::string::npos || eqpos == 0) {
             line.insert(0, "Error in wif file: ");
             throw std::runtime_error(line);
@@ -321,7 +321,7 @@ wif::readSection(const char *name)
         value.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
         if (!value.empty() && value.front() == ';') value.clear();
         
-        std::size_t digpos = 0;
+        size_t digpos = 0;
         while (std::isdigit(+line[digpos])) ++digpos;
         
         if (digpos > 0) {
@@ -330,7 +330,7 @@ wif::readSection(const char *name)
                 throw std::runtime_error(line);
             }
             try {
-                std::size_t i = (std::size_t)std::stoi(line);
+                size_t i = (size_t)std::stoi(line);
                 if (i < 1) {
                     line.insert(0, "Error in wif file: ");
                     throw std::runtime_error(line);
@@ -360,11 +360,11 @@ wif::readSection(const char *name)
     return true;
 }
 
-std::vector<std::uint64_t>
+std::vector<uint64_t>
 wif::processKeyLines(bool multi)
 {
-    std::vector<std::uint64_t> keyLines(numberKeys.size(), 0);
-    for (std::size_t i = 1; i < numberKeys.size(); ++i) {
+    std::vector<uint64_t> keyLines(numberKeys.size(), 0);
+    for (size_t i = 1; i < numberKeys.size(); ++i) {
         std::string shafts = valueStripWhite(numberKeys[i]);
         if (shafts.empty()) continue;
         const char* v = shafts.c_str();
@@ -388,12 +388,12 @@ wif::processKeyLines(bool multi)
     return keyLines;
 }
 
-std::vector<std::size_t>
-wif::processColorLines(std::size_t entries, std::size_t def)
+std::vector<size_t>
+wif::processColorLines(size_t entries, size_t def)
 {
-    std::vector<std::size_t> keyLines(entries + 1, def);
-    for (std::size_t i = 1; i < numberKeys.size(); ++i) {
-        keyLines[i] = (std::size_t)valueToInt(numberKeys[i], (int)def);
+    std::vector<size_t> keyLines(entries + 1, def);
+    for (size_t i = 1; i < numberKeys.size(); ++i) {
+        keyLines[i] = (size_t)valueToInt(numberKeys[i], (int)def);
     }
     return keyLines;
 }

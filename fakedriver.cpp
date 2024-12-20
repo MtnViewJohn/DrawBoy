@@ -142,16 +142,16 @@ View::displayPrompt()
 void
 View::sendToDrawBoy(const char *msg)
 {
-    std::size_t remaining = std::strlen(msg);
-    std::size_t sent = 0;
+    size_t remaining = std::strlen(msg);
+    size_t sent = 0;
     
     while (remaining > 0  &&  mode != Mode::Quit)
     {
         auto result = ::write(socketFD, msg + sent, remaining);
         if (result >= 0) {
             // sent partial or all the remaining data
-            sent += (std::size_t)result;
-            remaining -= (std::size_t)result;
+            sent += (size_t)result;
+            remaining -= (size_t)result;
         } else {
             int err = errno;
             if (err == EPIPE) {
@@ -219,23 +219,23 @@ View::connect()
                         solenoidState = Solenoid::Reset;
                     } else {
                         std::fputs(loomState == Shed::Closed ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
-                        std::uint64_t lift = 0;
+                        uint64_t lift = 0;
                         bool unexpected = false;
-                        std::uint64_t shafts = 0;
+                        uint64_t shafts = 0;
                         std::fputs("\r\n", stdout);
-                        for (std::size_t i = 0; i < DrawBoyOutput.length(); ++i) {
-                            std::uint64_t uc = (unsigned char)DrawBoyOutput[i];
+                        for (size_t i = 0; i < DrawBoyOutput.length(); ++i) {
+                            uint64_t uc = (unsigned char)DrawBoyOutput[i];
                             std::printf("0x%02x ", (int)uc);
                             if (uc >= 0x10 && uc <= 0xaf) {
                                 lift |= (uc & 0xf) << (((uc >> 4) - 1) << 2);
-                                std::uint64_t shaft = (uc & 0xf0) >> 2;
+                                uint64_t shaft = (uc & 0xf0) >> 2;
                                 if (shaft > shafts) shafts = shaft;
                             } else if (uc != 0x07)
                                 unexpected = true;
                         }
                         std::putchar('|');
-                        bool tooMany = shafts > (std::uint64_t)opts.maxShafts;
-                        for (std::uint64_t shaft = 0; shaft < shafts; ++shaft)
+                        bool tooMany = shafts > (uint64_t)opts.maxShafts;
+                        for (uint64_t shaft = 0; shaft < shafts; ++shaft)
                             std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
                         std::putchar('|');
                         std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,

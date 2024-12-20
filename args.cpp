@@ -103,9 +103,9 @@ Options::parsePicks(const std::string& str)
     while (std::getline(ss, range, ',')) {
         try {
             int mult = 1;
-            std::size_t multToken = range.find("x");
+            size_t multToken = range.find("x");
             if (multToken != std::string::npos) {
-                std::size_t check;
+                size_t check;
                 mult = std::stoi(range, &check);
                 if (check != multToken || mult < 1)
                     throw std::runtime_error("Syntax error in treadling multiplier.");
@@ -129,7 +129,7 @@ Options::parsePicks(const std::string& str)
                     }
                 }
             } else {
-                std::size_t rangeToken = std::string::npos;
+                size_t rangeToken = std::string::npos;
                 int start = std::stoi(range, &rangeToken);
                 int end = start;
                 if (rangeToken < range.length() && range[rangeToken] == '-') {
@@ -261,12 +261,12 @@ Options::getOptions(int argc, const char * argv[])
     
     std::string tabby = args::get(_tabby);
     if (tabby.empty()) {
-        tabby.reserve((std::size_t)maxShafts);
-        for (std::size_t shaft = 0; shaft < (std::size_t)maxShafts; shaft += 2)
+        tabby.reserve((size_t)maxShafts);
+        for (size_t shaft = 0; shaft < (size_t)maxShafts; shaft += 2)
             tabby.append("ab");
     }
     
-    for (std::size_t shaft = 0; shaft < tabby.length(); ++shaft) {
+    for (size_t shaft = 0; shaft < tabby.length(); ++shaft) {
         if (tabby[shaft] == 'a')
             tabbyA |= 1 << shaft;
         else if (tabby[shaft] == 'b')

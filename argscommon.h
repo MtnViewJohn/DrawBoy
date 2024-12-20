@@ -14,6 +14,9 @@
 #include <unordered_map>
 #include <system_error>
 
+using std::size_t;
+using std::uint64_t;
+
 enum class DobbyType {
     Positive, Negative
 };
@@ -61,7 +64,7 @@ inline std::runtime_error
 make_runtime_error(std::vector<std::string> parts)
 {
     std::string msg;
-    std::size_t len = 1;
+    size_t len = 1;
     for (auto&& part: parts)
         len += part.length();
     msg.reserve(len);

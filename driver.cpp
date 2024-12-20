@@ -43,7 +43,7 @@ enum class TabbyPick {
     B,
 };
 
-static const std::uint64_t NotAShed = 0xffffffff;
+static const uint64_t NotAShed = 0xffffffff;
 
 enum class PickAction {
     DontSend,
@@ -62,7 +62,7 @@ struct View
     
     std::string loomOutput;
     Shed loomState = Shed::Unknown;
-    std::uint64_t pendingPick = NotAShed;
+    uint64_t pendingPick = NotAShed;
     bool waitingForSolenoids = false;
 
     Mode mode = Mode::Weave;
@@ -78,7 +78,7 @@ struct View
     bool handlePickEntryEvent(const Term::Event& ev);
     bool handlePickListEntryEvent(const Term::Event& ev);
 
-    void sendPick(std::uint64_t _pick = NotAShed);
+    void sendPick(uint64_t _pick = NotAShed);
     void sendToLoom(const char *msg);
     
     void nextPick();
@@ -99,7 +99,7 @@ View::displayPick(PickAction sendToLoom)
         lift = tabbyPick == TabbyPick::A ? opts.tabbyA : opts.tabbyB;
         weftColor = opts.tabbyColor;
     } else {
-        std::size_t zpick = (std::size_t)(pick) % opts.picks.size();
+        size_t zpick = (size_t)(pick) % opts.picks.size();
         int wifPick = opts.picks[zpick];
         switch (wifPick) {
             case -2:
@@ -111,8 +111,8 @@ View::displayPick(PickAction sendToLoom)
                 weftColor = opts.tabbyColor;
                 break;
             default:
-                lift = wifContents.liftplan[(std::size_t)wifPick];
-                weftColor = wifContents.weftColor[(std::size_t)(wifPick)];
+                lift = wifContents.liftplan[(size_t)wifPick];
+                weftColor = wifContents.weftColor[(size_t)(wifPick)];
         }
         
         if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
@@ -126,7 +126,7 @@ View::displayPick(PickAction sendToLoom)
     std::putchar('\r');
     int drawdownWidth = term.cols() - wifContents.maxShafts - 24;
     if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
-    for (std::size_t i = (std::size_t)drawdownWidth; i > 0 ; --i) {
+    for (size_t i = (size_t)drawdownWidth; i > 0 ; --i) {
         if (opts.ansi != ANSIsupport::no) {
             color c = wifContents.threading[i] & lift ? wifContents.warpColor[i] : weftColor;
             std::fputs(Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor), stdout);
@@ -183,7 +183,7 @@ View::displayPrompt()
             break;
         case Mode::Weave:
         case Mode::Unweave: {
-            int wifPick = opts.picks[(std::size_t)(pick) % opts.picks.size()];
+            int wifPick = opts.picks[(size_t)(pick) % opts.picks.size()];
             if (wifPick < 0)
                 std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
                             ModePrompt[mode], wifPick == -1 ? 'A' : 'B');
@@ -479,8 +479,8 @@ View::prevPick()
 void
 View::sendToLoom(const char *msg)
 {
-    std::size_t remaining = std::strlen(msg);
-    std::size_t sent = 0;
+    size_t remaining = std::strlen(msg);
+    size_t sent = 0;
     
     while (remaining > 0  &&  mode != Mode::Quit)
     {
@@ -488,8 +488,8 @@ View::sendToLoom(const char *msg)
         if (result >= 0) {
             if (result == 0) std::putchar('>');
             // sent partial or all the remaining data
-            sent += (std::size_t)result;
-            remaining -= (std::size_t)result;
+            sent += (size_t)result;
+            remaining -= (size_t)result;
         } else {
             int err = errno;
             if ((err == EAGAIN) || (err == EWOULDBLOCK) || (err == EINTR)) {
@@ -512,7 +512,7 @@ View::sendToLoom(const char *msg)
 }
 
 void
-View::sendPick(std::uint64_t lift)
+View::sendPick(uint64_t lift)
 {
     if (loomState != Shed::Closed) {
         pendingPick = lift;
@@ -542,9 +542,9 @@ View::run()
     
     // If no treadle list provided then treadle the whole liftplan
     if (opts.picks.empty()) {
-        opts.picks.resize((std::size_t)wifContents.picks);
+        opts.picks.resize((size_t)wifContents.picks);
         for (int i = 0; i < wifContents.picks; ++i)
-            opts.picks[(std::size_t)i] = i + 1;
+            opts.picks[(size_t)i] = i + 1;
     } else {
         for (auto _pick: opts.picks)
             if (_pick > wifContents.picks)

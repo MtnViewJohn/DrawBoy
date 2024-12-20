@@ -31,6 +31,6 @@ struct Options {
     color tabbyColor;
     bool ascii;
     ANSIsupport ansi;
-    std::uint64_t tabbyA = 0, tabbyB = 0;
+    uint64_t tabbyA = 0, tabbyB = 0;
 };
 
