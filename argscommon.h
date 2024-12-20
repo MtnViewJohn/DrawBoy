@@ -31,26 +31,7 @@ inline const char* envASCII = std::getenv("DRAWBOY_ASCII");
 inline const char* envANSI = std::getenv("DRAWBOY_ANSI");
 inline const char* envSocket = std::getenv("DRAWBOY_SOCKET");
 
-struct ci_equal {
-    constexpr bool operator() (const std::string & s1, const std::string & s2) const {
-        if (s1.length() != s2.length()) return false;
-        for (std::size_t i = 0; i < s1.length(); ++i)
-            if (std::tolower((unsigned char)s1[i]) != std::tolower((unsigned char)s2[i]))
-                return false;
-        return true;
-    }
-};
-struct ci_hash {
-    constexpr std::size_t operator()(const std::string& s) const {
-        std::string t = s;
-        for (char& c: t)
-            c = (char)std::tolower((unsigned char)c);
-        auto hashfn = std::hash<std::string>();
-        return hashfn(t);
-    }
-};
-
-inline std::unordered_map<std::string, DobbyType, ci_hash, ci_equal> dobbyMap{
+inline std::unordered_map<std::string, DobbyType> dobbyMap{
     {"positive", DobbyType::Positive},
     {"negative", DobbyType::Negative},
     {"+", DobbyType::Positive},
@@ -64,7 +45,7 @@ inline std::unordered_map<std::string, int> shaftMap{
     {"32", 32},
     {"40", 40},
 };
-inline std::unordered_map<std::string, ANSIsupport, ci_hash, ci_equal> ANSImap{
+inline std::unordered_map<std::string, ANSIsupport> ANSImap{
     {"no", ANSIsupport::no},
     {"yes", ANSIsupport::yes},
     {"truecolor", ANSIsupport::truecolor},
@@ -89,6 +70,22 @@ make_runtime_error(std::vector<std::string> parts)
     return std::runtime_error(msg);
 }
 
+struct ToLowerReader {
+    std::string operator ()(const char * value)
+    {
+        std::string destination = value;
+        for (char& c: destination)
+            c = (char)std::tolower((unsigned char)c);
+        return destination;
+    }
+    bool operator ()(const std::string &, const std::string &value, std::string &destination) const
+    {
+        destination = value;
+        for (char& c: destination)
+            c = (char)std::tolower((unsigned char)c);
+        return true;
+    }
+};
 
 
 #endif /* argscommon_h */

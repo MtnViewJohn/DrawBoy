@@ -162,13 +162,15 @@ Options::getOptions(int argc, const char * argv[])
 {
     if (!envLoom) envLoom = "";
     
-    auto f1 = envDobby ? dobbyMap.find(envDobby) : dobbyMap.end();
+    ToLowerReader tlr;
+    
+    auto f1 = envDobby ? dobbyMap.find(tlr(envDobby)) : dobbyMap.end();
     DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Positive;
     
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
     int defShaft = f2 != shaftMap.end() ? f2->second : 0;
     
-    auto f3 = envANSI ? ANSImap.find(envANSI) : ANSImap.end();
+    auto f3 = envANSI ? ANSImap.find(tlr(envANSI)) : ANSImap.end();
     ANSIsupport defANSI = f3 != ANSImap.end() ? f3->second : ANSIsupport::yes;
     
     args::ArgumentParser parser("AVL CompuDobby III loom driver.", "Report errors to John Horigan <john@glyphic.com>.");
@@ -183,7 +185,7 @@ Options::getOptions(int argc, const char * argv[])
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
         "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
-    args::MapFlag<std::string, DobbyType, ci_hash, ci_equal> _dobbyType(parser, "DOBBY TYPE",
+    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE",
         "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"},
         dobbyMap, defDobby, args::Options::Single);
     args::ValueFlag<int> _pick(parser, "PICK",
@@ -191,10 +193,10 @@ Options::getOptions(int argc, const char * argv[])
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"}, args::Options::Single);
-    args::MapFlag<std::string, ANSIsupport, ci_hash, ci_equal> _ansi(parser, "ANSI SUPPORT",
+    args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI SUPPORT",
         "Does the terminal support ANSI style codes and possibly true-color", {"ansi"},
         ANSImap, defANSI, args::Options::Single);
-    args::ValueFlag<std::string> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B",
+    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B",
         {'t', "tabby"}, args::Options::Single);
     args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks",
         {"tabbycolor"}, "00FF00", args::Options::Single);
@@ -261,14 +263,13 @@ Options::getOptions(int argc, const char * argv[])
     if (tabby.empty()) {
         tabby.reserve((std::size_t)maxShafts);
         for (std::size_t shaft = 0; shaft < (std::size_t)maxShafts; shaft += 2)
-            tabby.append("AB");
+            tabby.append("ab");
     }
     
     for (std::size_t shaft = 0; shaft < tabby.length(); ++shaft) {
-        char tabbyChar = (char)std::toupper((unsigned char)tabby[shaft]);
-        if (tabbyChar == 'A')
+        if (tabby[shaft] == 'a')
             tabbyA |= 1 << shaft;
-        else if (tabbyChar == 'B')
+        else if (tabby[shaft] == 'b')
             tabbyB |= 1 << shaft;
         else
             throw std::runtime_error("Bad character in tabby specification.");

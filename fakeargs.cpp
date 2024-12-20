@@ -20,7 +20,9 @@ Options::Options(int argc, const char * argv[])
 {
     if (!envSocket) envSocket = "";
     
-    auto f1 = envDobby ? dobbyMap.find(envDobby) : dobbyMap.end();
+    ToLowerReader tlr;
+    
+    auto f1 = envDobby ? dobbyMap.find(tlr(envDobby)) : dobbyMap.end();
     DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Positive;
     
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
@@ -32,7 +34,7 @@ Options::Options(int argc, const char * argv[])
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
         "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::None : args::Options::Required);
-    args::MapFlag<std::string, DobbyType, ci_hash, ci_equal> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
+    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
 
     try
