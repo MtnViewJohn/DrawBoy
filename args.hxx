@@ -3930,6 +3930,8 @@ namespace args
     template <
         typename K,
         typename T,
+        typename H = std::hash<K>,
+        typename KE = std::equal_to<K>,
         template <typename...> class List = detail::vector,
         typename Reader = ValueReader,
         template <typename...> class Map = detail::unordered_map>
@@ -3937,7 +3939,7 @@ namespace args
     {
         private:
             using Container = List<T>;
-            const Map<K, T> map;
+            const Map<K, T, H, KE> map;
             Container values;
             const Container defaultValues;
             Reader reader;
@@ -3962,7 +3964,7 @@ namespace args
             typedef std::reverse_iterator<iterator> reverse_iterator;
             typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-            MapFlagList(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T> &map_, const Container &defaultValues_ = Container()): ValueFlagBase(name_, help_, std::move(matcher_)), map(map_), values(defaultValues_), defaultValues(defaultValues_)
+            MapFlagList(Group &group_, const std::string &name_, const std::string &help_, Matcher &&matcher_, const Map<K, T, H, KE> &map_, const Container &defaultValues_ = Container()): ValueFlagBase(name_, help_, std::move(matcher_)), map(map_), values(defaultValues_), defaultValues(defaultValues_)
             {
                 group_.Add(*this);
             }
@@ -4325,12 +4327,14 @@ namespace args
     template <
         typename K,
         typename T,
+        typename H = std::hash<K>,
+        typename KE = std::equal_to<K>,
         typename Reader = ValueReader,
         template <typename...> class Map = detail::unordered_map>
     class MapPositional : public PositionalBase
     {
         private:
-            const Map<K, T> map;
+            const Map<K, T, H, KE> map;
             T value;
             const T defaultValue;
             Reader reader;
@@ -4343,7 +4347,7 @@ namespace args
 
         public:
 
-            MapPositional(Group &group_, const std::string &name_, const std::string &help_, const Map<K, T> &map_, const T &defaultValue_ = T(), Options options_ = {}):
+            MapPositional(Group &group_, const std::string &name_, const std::string &help_, const Map<K, T, H, KE> &map_, const T &defaultValue_ = T(), Options options_ = {}):
                 PositionalBase(name_, help_, options_), map(map_), value(defaultValue_), defaultValue(defaultValue_)
             {
                 group_.Add(*this);
@@ -4434,6 +4438,8 @@ namespace args
     template <
         typename K,
         typename T,
+        typename H = std::hash<K>,
+        typename KE = std::equal_to<K>,
         template <typename...> class List = detail::vector,
         typename Reader = ValueReader,
         template <typename...> class Map = detail::unordered_map>
@@ -4442,7 +4448,7 @@ namespace args
         private:
             using Container = List<T>;
 
-            const Map<K, T> map;
+            const Map<K, T, H, KE> map;
             Container values;
             const Container defaultValues;
             Reader reader;
@@ -4467,7 +4473,7 @@ namespace args
             typedef std::reverse_iterator<iterator> reverse_iterator;
             typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-            MapPositionalList(Group &group_, const std::string &name_, const std::string &help_, const Map<K, T> &map_, const Container &defaultValues_ = Container(), Options options_ = {}):
+            MapPositionalList(Group &group_, const std::string &name_, const std::string &help_, const Map<K, T, H, KE> &map_, const Container &defaultValues_ = Container(), Options options_ = {}):
                 PositionalBase(name_, help_, options_), map(map_), values(defaultValues_), defaultValues(defaultValues_)
             {
                 group_.Add(*this);
