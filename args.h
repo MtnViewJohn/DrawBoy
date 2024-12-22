@@ -16,16 +16,14 @@
 #include "wif.h"
 
 struct Options {
-    Options();
+    Options(int argc, const char * argv[]);
     ~Options();
-    int getOptions(int argc, const char * argv[]);
     void parsePicks(const std::string& str, int maxPick);
     
-    bool valid = false;
+    int err = 1;
     std::string loomDevice;
     int loomDeviceFD = 0;
     std::string wifFile;
-    FILE* wifFileStream = nullptr;
     wif wifContents;
     int maxShafts;
     DobbyType dobbyType = DobbyType::Positive;

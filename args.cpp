@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include "ipc.h"
 #include <set>
+#include <memory>
 
 namespace {
 int
@@ -91,6 +92,12 @@ initLoomPort(int fd)
         throw make_system_error("Cannot communicate with loom device");
 }
 
+struct file_deleter {
+    void operator()(std::FILE* fp) { std::fclose(fp); }
+};
+
+using unique_file = std::unique_ptr<std::FILE, file_deleter>;
+
 }
 
 void
@@ -159,8 +166,8 @@ Options::parsePicks(const std::string& str, int maxPick)
     std::swap(newpicks, picks);
 }
 
-int
-Options::getOptions(int argc, const char * argv[])
+
+Options::Options(int argc, const char * argv[])
 {
     if (!envLoom) envLoom = "";
     
@@ -208,18 +215,22 @@ Options::getOptions(int argc, const char * argv[])
         parser.ParseCLI(argc, argv);
     } catch (const args::Completion& e) {
         std::cout << e.what();
-        return 0;
+        err = 0;
+        return;
     } catch (const args::Help&) {
         std::cout << parser;
-        return 0;
+        err = 0;
+        return;
     } catch (const args::ParseError& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << parser;
-        return 1;
+        err = 1;
+        return;
     } catch (const args::RequiredError& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << parser;
-        return 1;
+        err = 1;
+        return;
     }
     
     if (findloom) {
@@ -227,7 +238,8 @@ Options::getOptions(int argc, const char * argv[])
         if (!::isatty(0))
             exclude = readfile(std::cin, " ");
         enumSerial(exclude);
-        return 0;
+        err = 0;
+        return;
     }
     
     loomDevice = args::get(_loomDevice);
@@ -239,12 +251,11 @@ Options::getOptions(int argc, const char * argv[])
     ansi = args::get(_ansi);
 
     wifFile = args::get(_wifFile);
-    wifFileStream = std::fopen(wifFile.c_str(), "r");
     
-    if (wifFileStream == nullptr)
+    if (auto wiffileowner = unique_file(std::fopen(wifFile.c_str(), "r")))
+        wifContents.readWif(wiffileowner.get());
+    else
         throw make_system_error("Cannot open wif file");
-    
-    wifContents.readWif(wifFileStream);
     
     if (_picks) {
         parsePicks(args::get(_picks), wifContents.picks);
@@ -295,19 +306,13 @@ Options::getOptions(int argc, const char * argv[])
     
     tabbyColor = color(args::get(_tabbyColor).c_str());
 
-    valid = true;
-    return 0;
+    err = 0;
 }
 
-Options::Options() {}
 Options::~Options()
 {
     if (loomDeviceFD >= 0) {
         ::close(loomDeviceFD);
         loomDeviceFD = -1;
-    }
-    if (wifFileStream != nullptr) {
-        std::fclose(wifFileStream);
-        wifFileStream = nullptr;
     }
 }

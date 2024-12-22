@@ -15,12 +15,12 @@
 
 int main(int argc, const char * argv[]) {
     int returnValue = 0;
-    Options opts;
     try {
-        returnValue = opts.getOptions(argc, argv);
+        Options opts(argc, argv);
         
-        if (opts.valid)
+        if (opts.err == 0)
             driver(opts);
+        returnValue = opts.err;
     } catch (std::system_error& se) {
         std::cerr << se.what() << std::endl;
         returnValue = 4;
