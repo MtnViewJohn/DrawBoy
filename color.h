@@ -16,9 +16,9 @@ public:
     
     // Maps integer range [low,high] to double range [0,1)
     color(tupple3 rgb, std::pair<int,int> range)
-    : red  ((double)(std::get<0>(rgb) - range.first) / ((range.second - range.first) + 1)),
-      green((double)(std::get<1>(rgb) - range.first) / ((range.second - range.first) + 1)),
-      blue ((double)(std::get<2>(rgb) - range.first) / ((range.second - range.first) + 1)) {}
+    : red  ((double)(std::get<0>(rgb) - range.first) / ((range.second - range.first) + 1.0)),
+      green((double)(std::get<1>(rgb) - range.first) / ((range.second - range.first) + 1.0)),
+      blue ((double)(std::get<2>(rgb) - range.first) / ((range.second - range.first) + 1.0)) {}
     color(double r, double g, double b)
     : red(r), green(g), blue(b) {}
     color() : red(0.0), green(0.0), blue(0.0) {}
@@ -31,12 +31,12 @@ public:
         
         switch (std::strlen(rgbhex)) {
             case 3:
-                red   = ((v & 0xf00) >> 8) / 16.0;
+                red   = ((v & 0xf00) >> 8) / 16.0;  // [0,15] -> [0,1)
                 green = ((v & 0x0f0) >> 4) / 16.0;
                 blue  = ((v & 0x00f) >> 0) / 16.0;
                 break;
             case 6:
-                red   = ((v & 0xff0000) >> 16) / 256.0;
+                red   = ((v & 0xff0000) >> 16) / 256.0; // [0,255] -> [0,1)
                 green = ((v & 0x00ff00) >>  8) / 256.0;
                 blue  = ((v & 0x0000ff) >>  0) / 256.0;
                 break;
@@ -47,7 +47,7 @@ public:
     
     tupple3 convert(int range) const
     {
-        int r = (int)(  red * range);
+        int r = (int)(  red * range); // [0,1) -> [0,range-1]
         int g = (int)(green * range);
         int b = (int)( blue * range);
         return {r, g, b};
