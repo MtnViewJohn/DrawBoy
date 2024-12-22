@@ -94,7 +94,7 @@ initLoomPort(int fd)
 }
 
 void
-Options::parsePicks(const std::string& str)
+Options::parsePicks(const std::string& str, int maxPick)
 {
     std::stringstream ss(str);
     std::string range;
@@ -138,6 +138,8 @@ Options::parsePicks(const std::string& str)
                 }
                 if (start < 1 || end < 1)
                     throw std::runtime_error("Bad treadling range.");
+                if (start > maxPick || end > maxPick)
+                    throw std::runtime_error("Pick list includes picks that are not in the wif file.");
                 for (int count = 0; count < mult; ++count) {
                     if (start < end) {
                         for (int p = start; p <= end; ++p)

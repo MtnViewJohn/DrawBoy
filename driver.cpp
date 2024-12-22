@@ -161,7 +161,7 @@ View::displayPick(PickAction sendToLoom)
     if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
     if (loomState != Shed::Closed)
         std::printf(" %sPENDING%s ", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
+                                     opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
     
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
@@ -412,12 +412,12 @@ View::handlePickListEntryEvent(const Term::Event &ev)
         if (ev.character == '\r') {
             if (!pickValue.empty()) {
                 try {
-                    opts.parsePicks(pickValue);
+                    opts.parsePicks(pickValue, wifContents.picks);
                     pick = 0;
                     displayPick(PickAction::Send);
                 } catch (std::exception& e) {
-                    std::printf(" \a%s%s%s\r\n", opts.ansi != ANSIsupport::no ? "" : Term::Style::bold,
-                                e.what(), opts.ansi != ANSIsupport::no ? "" : Term::Style::reset);
+                    std::printf("\r\n\a%s%s%s\r\n", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
+                                          e.what(), opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
                 }
             }
             oldMode = mode = Mode::Weave;

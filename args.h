@@ -13,11 +13,12 @@
 #include <cstdio>
 #include <vector>
 #include "color.h"
+#include <climits>
 
 struct Options {
     ~Options();
     int getOptions(int argc, const char * argv[]);
-    void parsePicks(const std::string& str);
+    void parsePicks(const std::string& str, int maxPick = INT_MAX);
     
     bool valid = false;
     std::string loomDevice;
