@@ -17,7 +17,6 @@
 #include <cstdlib>
 #include "ipc.h"
 #include <set>
-#include "wif.h"
 
 namespace {
 int
@@ -245,18 +244,18 @@ Options::getOptions(int argc, const char * argv[])
     if (wifFileStream == nullptr)
         throw make_system_error("Cannot open wif file");
     
-    wifContents = std::make_unique<wif>(wifFileStream);
+    wifContents.readWif(wifFileStream);
     
     if (_picks) {
-        parsePicks(args::get(_picks), wifContents->picks);
+        parsePicks(args::get(_picks), wifContents.picks);
     } else {
         // If no treadle list provided then treadle the whole liftplan
-        picks.resize((size_t)wifContents->picks);
-        for (int i = 0; i < wifContents->picks; ++i)
+        picks.resize((size_t)wifContents.picks);
+        for (int i = 0; i < wifContents.picks; ++i)
             picks[(size_t)i] = i + 1;
     }
     
-    if (wifContents->maxShafts > maxShafts)
+    if (wifContents.maxShafts > maxShafts)
         throw std::runtime_error("Wif file has more shafts than the loom.");
     
     if (envSocket) {

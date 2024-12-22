@@ -15,7 +15,10 @@ using std::uint64_t;
 
 class wif {
 public:
-    wif(FILE* _wifstream);
+    wif() = default;
+
+    void readWif(FILE* _wifstream);
+    
     
     bool hasTieUp = false;
     bool hasTreadling = false;

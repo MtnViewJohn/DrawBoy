@@ -13,9 +13,7 @@
 #include <cstdio>
 #include <vector>
 #include "color.h"
-#include <memory>
-
-class wif;
+#include "wif.h"
 
 struct Options {
     Options();
@@ -28,7 +26,7 @@ struct Options {
     int loomDeviceFD = 0;
     std::string wifFile;
     FILE* wifFileStream = nullptr;
-    std::unique_ptr<wif> wifContents;
+    wif wifContents;
     int maxShafts;
     DobbyType dobbyType = DobbyType::Positive;
     int pick;

@@ -69,7 +69,7 @@ struct View
     Mode oldMode = Mode::Weave;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), wifContents(*o.wifContents), pick(o.pick - 1)
+    : term(t), opts(o), wifContents(o.wifContents), pick(o.pick - 1)
     {}
     
     void handleEvent(const Term::Event& ev);

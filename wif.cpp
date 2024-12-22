@@ -77,10 +77,11 @@ namespace  {
     }
 }
 
-
-wif::wif(FILE* _wifstream)
-: wifstream(_wifstream)
+void
+wif::readWif(FILE* _wifstream)
 {
+    wifstream = _wifstream;
+    
     if (!seekSection("WIF"))
         throw std::runtime_error("Error in wif file: no WIF section");
     if (!readSection("CONTENTS"))
