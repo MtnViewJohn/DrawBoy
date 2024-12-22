@@ -563,8 +563,8 @@ View::run()
         
         if (FD_ISSET(STDIN_FILENO, &rdset) || nfds == -1) {
             Term::Event ev = term.getEvent();
-            if (ev.type == Term::EventType::None) continue;
-            handleEvent(ev);
+            if (ev.type != Term::EventType::None)
+                handleEvent(ev);
         }
         
         if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
