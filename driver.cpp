@@ -55,7 +55,7 @@ struct View
     Term& term;
     Options& opts;
     
-    wif wifContents;
+    wif& wifContents;
     int pick;
     TabbyPick tabbyPick = TabbyPick::A;
     std::string pickValue;
@@ -69,7 +69,7 @@ struct View
     Mode oldMode = Mode::Weave;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), wifContents(o.wifFileStream), pick(o.pick - 1)
+    : term(t), opts(o), wifContents(*o.wifContents), pick(o.pick - 1)
     {}
     
     void handleEvent(const Term::Event& ev);
@@ -537,20 +537,6 @@ View::sendPick(uint64_t lift)
 void
 View::run()
 {
-    if (wifContents.maxShafts > opts.maxShafts)
-        throw std::runtime_error("Wif file has more shafts than the loom.");
-    
-    // If no treadle list provided then treadle the whole liftplan
-    if (opts.picks.empty()) {
-        opts.picks.resize((size_t)wifContents.picks);
-        for (int i = 0; i < wifContents.picks; ++i)
-            opts.picks[(size_t)i] = i + 1;
-    } else {
-        for (auto _pick: opts.picks)
-            if (_pick > wifContents.picks)
-                throw std::runtime_error("Pick list includes picks that are not in the wif file.");
-    }
-    
     sendToLoom("\x0f\x07");
     waitingForSolenoids = true;
     displayPick(PickAction::Send);    // initialize pending pick
