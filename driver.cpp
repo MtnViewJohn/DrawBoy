@@ -90,7 +90,7 @@ struct View
 };
 
 void
-View::displayPick(PickAction sendToLoom)
+View::displayPick(PickAction _sendToLoom)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
@@ -166,7 +166,7 @@ View::displayPick(PickAction sendToLoom)
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
     
-    if (sendToLoom != PickAction::DontSend)
+    if (_sendToLoom != PickAction::DontSend)
         sendPick(lift);
 }
 
