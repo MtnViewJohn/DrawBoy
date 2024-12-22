@@ -360,6 +360,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 return false;
             pickValue.push_back(ev.character);
             std::putchar(ev.character);
+            std::fflush(stdout);
             return true;
         }
         if (ev.character == '\b') {
@@ -398,6 +399,7 @@ View::handlePickListEntryEvent(const Term::Event &ev)
         if (std::strchr("0123456789ABab-,", ev.character)) {
             pickValue.push_back(ev.character);
             std::putchar(ev.character);
+            std::fflush(stdout);
             return true;
         }
         if (ev.character == '\b') {
