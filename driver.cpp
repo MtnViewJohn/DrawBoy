@@ -569,6 +569,7 @@ View::run()
         
         if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
             char c;
+            int count = 0;
             while (true) {
                 auto n = ::read(opts.loomDeviceFD, &c, 1);
                 if (n < 0) {
@@ -577,8 +578,13 @@ View::run()
                     else
                         throw make_system_error("error in read");
                 }
-                if (n == 0) break;
+                if (n == 0) {
+                    if (count == 0)
+                        throw std::runtime_error("\r\nLoom connection was closed.");
+                    break;
+                }
                 loomOutput.push_back(c);
+                ++count;
             };
             
             if (!loomOutput.empty()) {
