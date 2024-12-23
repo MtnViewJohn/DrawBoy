@@ -94,6 +94,7 @@ View::displayPick(PickAction _sendToLoom)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
+    uint64_t liftMask = (1 << wifContents.maxShafts) - 1;
     color weftColor;
     if (mode == Mode::Tabby) {
         lift = tabbyPick == TabbyPick::A ? opts.tabbyA : opts.tabbyB;
@@ -118,9 +119,12 @@ View::displayPick(PickAction _sendToLoom)
         if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
             (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
         {
-            lift ^= (1 << wifContents.maxShafts) - 1;
+            lift ^= liftMask;
         }
     }
+
+    bool emptyLift =  (lift & liftMask) == 0 || (lift & liftMask) == liftMask;
+    if (emptyLift) weftColor = color();
     
     // Output drawdown
     std::putchar('\r');
@@ -159,9 +163,10 @@ View::displayPick(PickAction _sendToLoom)
             std::putchar(' ');
     std::putchar('|');
     if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
+    if (emptyLift) std::fputs(" EMPTY", stdout);
     if (loomState != Shed::Closed)
-        std::printf(" %sPENDING%s ", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                     opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
+        std::printf(" %sPENDING%s", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
+                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
     
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
