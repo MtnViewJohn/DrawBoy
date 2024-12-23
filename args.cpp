@@ -107,6 +107,14 @@ Options::parsePicks(const std::string& str, int maxPick)
     std::string range;
     std::vector<int> newpicks;
     
+    // If no treadle list provided then treadle the whole liftplan
+    if (str.empty()) {
+        picks.resize((size_t)maxPick);
+        for (int i = 0; i < maxPick; ++i)
+            picks[(size_t)i] = i + 1;
+        return;
+    }
+    
     while (std::getline(ss, range, ',')) {
         try {
             int mult = 1;
@@ -255,14 +263,7 @@ Options::Options(int argc, const char * argv[])
     else
         throw make_system_error("Cannot open wif file");
     
-    if (_picks) {
-        parsePicks(args::get(_picks), wifContents.picks);
-    } else {
-        // If no treadle list provided then treadle the whole liftplan
-        picks.resize((size_t)wifContents.picks);
-        for (int i = 0; i < wifContents.picks; ++i)
-            picks[(size_t)i] = i + 1;
-    }
+    parsePicks(args::get(_picks), wifContents.picks);
     
     if (wifContents.maxShafts > maxShafts)
         throw std::runtime_error("Wif file has more shafts than the loom.");

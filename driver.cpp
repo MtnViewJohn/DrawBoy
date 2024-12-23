@@ -428,16 +428,14 @@ View::handlePickListEntryEvent(const Term::Event &ev)
             return true;
         }
         if (ev.character == '\r') {
-            if (!pickValue.empty()) {
-                try {
-                    opts.parsePicks(pickValue, wifContents.picks);
-                    pick = 0;
-                    mode = toWeave(oldMode);
-                    displayPick(PickAction::Send);
-                } catch (std::exception& e) {
-                    std::printf("\r\n\a%s%s%s\r\n", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                          e.what(), opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
-                }
+            try {
+                opts.parsePicks(pickValue, wifContents.picks);
+                pick = 0;
+                mode = toWeave(oldMode);
+                displayPick(PickAction::Send);
+            } catch (std::exception& e) {
+                std::printf("\r\n\a%s%s%s\r\n", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
+                                      e.what(), opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
             }
             displayPrompt();
             return true;
