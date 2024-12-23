@@ -215,22 +215,20 @@ Options::Options(int argc, const char * argv[])
         parser.ParseCLI(argc, argv);
     } catch (const args::Completion& e) {
         std::cout << e.what();
-        err = 0;
+        driveLoom = false;
         return;
     } catch (const args::Help&) {
         std::cout << parser;
-        err = 0;
+        driveLoom = false;
         return;
     } catch (const args::ParseError& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << parser;
-        err = 1;
-        return;
+        throw std::runtime_error("");   // rethrow, but erase error message
     } catch (const args::RequiredError& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << parser;
-        err = 1;
-        return;
+        throw std::runtime_error("");   // rethrow, but erase error message
     }
     
     if (findloom) {
@@ -238,7 +236,7 @@ Options::Options(int argc, const char * argv[])
         if (!::isatty(0))
             exclude = readfile(std::cin, " ");
         enumSerial(exclude);
-        err = 0;
+        driveLoom = false;
         return;
     }
     
@@ -305,8 +303,6 @@ Options::Options(int argc, const char * argv[])
         std::cerr << "Tabby B has no shafts set." << std::endl;
     
     tabbyColor = color(args::get(_tabbyColor).c_str());
-
-    err = 0;
 }
 
 Options::~Options()

@@ -20,7 +20,7 @@ struct Options {
     ~Options();
     void parsePicks(const std::string& str, int maxPick);
     
-    int err = 1;
+    bool driveLoom = true;
     std::string loomDevice;
     int loomDeviceFD = 0;
     std::string wifFile;
