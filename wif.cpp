@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <exception>
+#include <system_error>
 
 namespace  {
     bool
@@ -96,7 +97,7 @@ wif::readWif(FILE* _wifstream)
     
     if (!seekSection("WIF"))
         throw std::runtime_error("Error in wif file: no WIF section");
-    if (!readSection("CONTENTS"))
+    if (!readSection("CONTENTS", 0, ""))
         throw std::runtime_error("Error in wif file: no CONTENTS section");
     
     auto f = nameKeys.begin();
@@ -113,7 +114,7 @@ wif::readWif(FILE* _wifstream)
     if (hasTreadling && hasLiftplan)
         std::cerr << "Issue in wif file: has treadling and liftplan, using liftplan." << std::endl;
     
-    if (!readSection("WEAVING"))
+    if (!readSection("WEAVING", 0, ""))
         throw std::runtime_error("Error in wif file: no WEAVING section");
     nkEnd = nameKeys.end();
     
@@ -128,7 +129,7 @@ wif::readWif(FILE* _wifstream)
         throw std::runtime_error("Error in wif file: Shafts key missing");
     
     if (maxShafts < 1 || maxShafts > 40)
-        throw std::runtime_error("Error in wif file: Shafts key illegal value");
+        throw annotated_runtime_error("Error in wif file, Shafts key illegal value: ", f->second);
     
     if ((f = nameKeys.find("treadles")) != nkEnd)
         maxTreadles = valueToInt(f->second, 0);
@@ -136,9 +137,9 @@ wif::readWif(FILE* _wifstream)
         throw std::runtime_error("Error in wif file: Treadles key missing");
     
     if (maxTreadles < 1 || maxTreadles > 64)
-        throw std::runtime_error("Error in wif file: Treadles key illegal value");
+        throw annotated_runtime_error("Error in wif file, Treadles key illegal value: ", f->second);
     
-    if (!readSection("WARP"))
+    if (!readSection("WARP", 0, ""))
         throw std::runtime_error("Error in wif file: no WARP section");
     nkEnd = nameKeys.end();
 
@@ -146,8 +147,8 @@ wif::readWif(FILE* _wifstream)
         ends = valueToInt(f->second, 0);
     else
         throw std::runtime_error("Error in wif file: Threads key missing from WARP section");
-    if (ends == 0)
-        throw std::runtime_error("Error in wif file: Threads key illegal value in WARP section");
+    if (ends <= 0)
+        throw annotated_runtime_error("Error in wif file: Threads key illegal value in WARP section", f->second);
     
     size_t defWarpColor = 1;
     if ((f = nameKeys.find("color")) != nkEnd)
@@ -155,7 +156,7 @@ wif::readWif(FILE* _wifstream)
     else
         std::cerr << "Wif file does not specify default warp color, using 1." << std::endl;
 
-    if (!readSection("WEFT"))
+    if (!readSection("WEFT", 0, ""))
         throw std::runtime_error("Error in wif file: no WEFT section");
     nkEnd = nameKeys.end();
 
@@ -164,8 +165,8 @@ wif::readWif(FILE* _wifstream)
     else
         throw std::runtime_error("Error in wif file: Threads key missing from WEFT section");
 
-    if (picks == 0)
-        throw std::runtime_error("Error in wif file: Threads key illegal value in WEFT section");
+    if (picks <= 0)
+        throw annotated_runtime_error("Error in wif file, Threads key illegal value in WEFT section", f->second);
 
     size_t defWeftColor = 2;
     if ((f = nameKeys.find("color")) != nkEnd)
@@ -175,7 +176,7 @@ wif::readWif(FILE* _wifstream)
 
     std::vector<color> palette;
     palette.push_back({0.0,0.0,0.0});   // color 0 is unused
-    if (!readSection("COLOR PALETTE")) {
+    if (!readSection("COLOR PALETTE", 0, "")) {
         std::cerr << "Wif file does not specify color palette. Using default." << std::endl;
         palette.push_back({1.0,1.0,1.0});
         palette.push_back({0.0,0.0,0.0});
@@ -195,81 +196,57 @@ wif::readWif(FILE* _wifstream)
 
         palette.resize(colors + 1, {0.0,0.0,0.0});
         
-        if (!readSection("COLOR TABLE"))
+        // Read the color table, but fail if any are missing or malformed
+        if (!readSection("COLOR TABLE", (int)colors, "illegal"))
             throw std::runtime_error("Error in wif file: no COLOR TABLE section");
 
-        numberKeys.resize(colors + 1, "0,0,0");
         for (size_t i = 1; i <= colors; ++i) {
-            color::tupple3 c = valueToInt3(numberKeys[i], {0,0,0});
+            color::tupple3 c = valueToInt3(numberKeys[i], {INT_MAX, INT_MAX, INT_MAX});
             palette[i] = color(c, range);
         }
     }
     
-    warpColor.resize((size_t)ends + 1, palette[defWarpColor]);
-    if (readSection("WARP COLORS")) {
-        auto warpcolors = processColorLines((size_t)ends, defWarpColor);
-        for (size_t i = 1; i < warpcolors.size(); ++i) {
-            warpColor[i] = palette[warpcolors[i]];
-        }
-    }
-    
-    weftColor.resize((size_t)picks + 1, palette[defWeftColor]);
-    if (readSection("WEFT COLORS")) {
-        auto weftcolors = processColorLines((size_t)picks, defWeftColor);
-        for (size_t i = 1; i < weftcolors.size(); ++i) {
-            weftColor[i] = palette[weftcolors[i]];
-        }
-    }
+    if (readSection("WARP COLORS", ends, ""))
+        warpColor = processColorLines(palette, defWarpColor);
+    else
+        warpColor.resize((size_t)ends + 1, palette[defWarpColor]);
 
-    if (!readSection("THREADING"))
+    if (readSection("WEFT COLORS", picks, ""))
+        weftColor = processColorLines(palette, defWeftColor);
+    else
+        weftColor.resize((size_t)picks + 1, palette[defWeftColor]);
+
+    if (!readSection("THREADING", ends, ""))
         throw std::runtime_error("Error in wif file: THREADING section missing");
     if (!nameKeys.empty())
         std::cerr << "Issue in wif file: spurious named keys in THREADING." << std::endl;
-    if (numberKeys.empty())
-        throw std::runtime_error("Error in wif file: THREADING has no key lines");
     
-    if (std::ssize(numberKeys) > ends + 1)
-        std::cerr << "Extraneous ends found in THREADING section, discarded." << std::endl;
-    numberKeys.resize((size_t)ends + 1);
     threading = processKeyLines(false);
 
     if (hasLiftplan) {
-        if (!readSection("LIFTPLAN"))
+        if (!readSection("LIFTPLAN", picks, ""))
             throw std::runtime_error("Error in wif file: LIFTPLAN section missing");
         if (!nameKeys.empty())
             std::cerr << "Issue in wif file: spurious named keys in LIFTPLAN." << std::endl;
         if (numberKeys.empty())
             throw std::runtime_error("Error in wif file: LIFTPLAN has no key lines");
         
-        if (std::ssize(numberKeys) > picks + 1)
-            std::cerr << "Extraneous picks found in LIFTPLAN section, discarded." << std::endl;
-        numberKeys.resize((size_t)picks + 1);
         liftplan = processKeyLines(true);
     } else {
-        if (!readSection("TIEUP"))
+        if (!readSection("TIEUP", maxTreadles, ""))
             throw std::runtime_error("Error in wif file: TIEUP section missing");
         if (!nameKeys.empty())
             std::cerr << "Issue in wif file: spurious named keys in TIEUP." << std::endl;
-        if (numberKeys.empty())
-            throw std::runtime_error("Error in wif file: TIEUP has no key lines");
         
-        if (std::ssize(numberKeys) > maxTreadles + 1)
-            std::cerr << "Extraneous treadles found in TIEUP section, discarded." << std::endl;
-        numberKeys.resize((size_t)maxTreadles + 1);
         tieup = processKeyLines(true);
         
-        if (!readSection("TREADLING"))
+        if (!readSection("TREADLING", picks, ""))
             throw std::runtime_error("Error in wif file: TREADLING section missing");
         if (!nameKeys.empty())
             std::cerr << "Issue in wif file: spurious named keys in TREADLING." << std::endl;
-        if (numberKeys.empty())
-            throw std::runtime_error("Error in wif file: TREADLING has no key lines");
         
         treadling.resize((size_t)picks + 1);
         liftplan.resize((size_t)picks + 1, 0);
-        if (std::ssize(numberKeys) > picks + 1)
-            std::cerr << "Extraneous treadlings found in TREADLING section, discarded." << std::endl;
-        numberKeys.resize((size_t)picks + 1);
         for (size_t i = 1; i <= (size_t)picks; ++i) {
             treadling[i] = valueStripWhite(numberKeys[i]);
             if (treadling[i].empty()) continue;
@@ -279,9 +256,9 @@ wif::readWif(FILE* _wifstream)
                 errno = 0;
                 long treadle = std::strtol(v, &end, 10);
                 if (errno)
-                    throw std::runtime_error("Error in wif file: bad treadle number in liftplan");
+                    throw annotated_runtime_error("Error in wif file, bad treadle number in liftplan: ", treadling[i]);
                 if (treadle < 1 || treadle > maxTreadles)
-                    throw std::runtime_error("Error in wif file: treadle number out of range in liftplan");
+                    throw annotated_runtime_error("Error in wif file, treadle number out of range in liftplan: ", treadling[i]);
                 while (*end == ' ') ++end;      // consume trailing whitespace
 
                 liftplan[i] |= tieup[(size_t)treadle];
@@ -306,13 +283,14 @@ wif::seekSection(const char* name)
 }
 
 bool
-wif::readSection(const char *name)
+wif::readSection(const char* name, int numlines, const std::string& defValue)
 {
     if (!seekSection(name))
         return false;
     
     nameKeys.clear();
     numberKeys.clear();
+    numberKeys.resize((size_t)numlines + 1, defValue);
     
     std::string line;
     for (;;) {
@@ -361,9 +339,10 @@ wif::readSection(const char *name)
                 size_t i = (size_t)std::stoi(line);
                 if (i < 1)
                     throw annotated_runtime_error("Error in wif file: ", line);
-                if (i >= numberKeys.size())
-                    numberKeys.resize(i + 1);
-                numberKeys[i] = std::move(value);
+                if (i < numberKeys.size())
+                    numberKeys[i] = std::move(value);
+                else
+                    std::cerr << "Extra keyline in section " << name << std::endl;
             } catch (std::logic_error&) {
                 throw annotated_runtime_error("Error in wif file: ", line);
             }
@@ -411,12 +390,13 @@ wif::processKeyLines(bool multi)
     return keyLines;
 }
 
-std::vector<size_t>
-wif::processColorLines(size_t entries, size_t def)
+std::vector<color>
+wif::processColorLines(const std::vector<color>& palette, size_t def)
 {
-    std::vector<size_t> keyLines(entries + 1, def);
+    std::vector<color> colors(numberKeys.size() + 1, palette[def]);
     for (size_t i = 1; i < numberKeys.size(); ++i) {
-        keyLines[i] = (size_t)valueToInt(numberKeys[i], (int)def);
+        auto keyLine = (size_t)valueToInt(numberKeys[i], (int)def);
+        colors[i] = palette[keyLine];
     }
-    return keyLines;
+    return colors;
 }

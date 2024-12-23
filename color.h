@@ -18,7 +18,11 @@ public:
     color(tupple3 rgb, std::pair<int,int> range)
     : red  ((double)(std::get<0>(rgb) - range.first) / ((range.second - range.first) + 1.0)),
       green((double)(std::get<1>(rgb) - range.first) / ((range.second - range.first) + 1.0)),
-      blue ((double)(std::get<2>(rgb) - range.first) / ((range.second - range.first) + 1.0)) {}
+      blue ((double)(std::get<2>(rgb) - range.first) / ((range.second - range.first) + 1.0))
+    {
+        if (std::get<0>(rgb) > range.second || std::get<1>(rgb) > range.second || std::get<2>(rgb) > range.second)
+            throw std::runtime_error("Illegal color value.");
+    }
     color(double r, double g, double b)
     : red(r), green(g), blue(b) {}
     color() : red(0.0), green(0.0), blue(0.0) {}

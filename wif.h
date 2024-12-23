@@ -38,9 +38,9 @@ public:
     
 private:
     bool seekSection(const char* name);
-    bool readSection(const char* name);
+    bool readSection(const char* name, int numlines, const std::string& defValue);
     std::vector<uint64_t> processKeyLines(bool multi);
-    std::vector<size_t> processColorLines(size_t colors, size_t def);
+    std::vector<color> processColorLines(const std::vector<color>& palette, size_t def);
 
     FILE* wifstream = nullptr;
     std::map<std::string, std::string> nameKeys;
