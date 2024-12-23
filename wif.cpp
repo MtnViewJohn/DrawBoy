@@ -80,6 +80,13 @@ namespace  {
             ret.erase(p);
         return ret;
     }
+
+    std::runtime_error
+    annotated_runtime_error(const char* desc, std::string& line)
+    {
+        line.insert(0, desc);
+        return std::runtime_error(line);
+    }
 }
 
 void
@@ -92,12 +99,12 @@ wif::readWif(FILE* _wifstream)
     if (!readSection("CONTENTS"))
         throw std::runtime_error("Error in wif file: no CONTENTS section");
     
-    auto f = nameKeys.find("tieup");
-    if (f != nameKeys.end()) hasTieUp = valueToBool(f->second);
-    f = nameKeys.find("treadling");
-    if (f != nameKeys.end()) hasTreadling = valueToBool(f->second);
-    f = nameKeys.find("liftplan");
-    if (f != nameKeys.end()) hasLiftplan = valueToBool(f->second);
+    auto f = nameKeys.begin();
+    auto nkEnd = nameKeys.end();
+
+    if ((f = nameKeys.find("tieup")) !=     nkEnd) hasTieUp = valueToBool(f->second);
+    if ((f = nameKeys.find("treadling")) != nkEnd) hasTreadling = valueToBool(f->second);
+    if ((f = nameKeys.find("liftplan")) !=  nkEnd) hasLiftplan = valueToBool(f->second);
     
     if (!hasTreadling && !hasLiftplan)
         throw std::runtime_error("Error in wif file: no treadling or liftplan");
@@ -108,58 +115,64 @@ wif::readWif(FILE* _wifstream)
     
     if (!readSection("WEAVING"))
         throw std::runtime_error("Error in wif file: no WEAVING section");
+    nkEnd = nameKeys.end();
     
-    f = nameKeys.find("rising shed");
-    if (f != nameKeys.end()) {
+    if ((f = nameKeys.find("rising shed")) != nkEnd)
         risingShed = valueToBool(f->second);
-    } else {
+    else
         std::cerr << "Wif file does not specify rising/falling shed. Assuming rising shed." << std::endl;
-    }
-    f = nameKeys.find("shafts");
-    if (f == nameKeys.end())
+
+    if ((f = nameKeys.find("shafts")) != nkEnd)
+        maxShafts = valueToInt(f->second, 0);
+    else
         throw std::runtime_error("Error in wif file: Shafts key missing");
-    maxShafts = valueToInt(f->second, 0);
+    
     if (maxShafts < 1 || maxShafts > 40)
         throw std::runtime_error("Error in wif file: Shafts key illegal value");
-    f = nameKeys.find("treadles");
-    if (f == nameKeys.end())
+    
+    if ((f = nameKeys.find("treadles")) != nkEnd)
+        maxTreadles = valueToInt(f->second, 0);
+    else
         throw std::runtime_error("Error in wif file: Treadles key missing");
-    maxTreadles = valueToInt(f->second, 0);
+    
     if (maxTreadles < 1 || maxTreadles > 64)
         throw std::runtime_error("Error in wif file: Treadles key illegal value");
     
     if (!readSection("WARP"))
         throw std::runtime_error("Error in wif file: no WARP section");
-    
-    f = nameKeys.find("threads");
-    if (f == nameKeys.end())
+    nkEnd = nameKeys.end();
+
+    if ((f = nameKeys.find("threads")) != nkEnd)
+        ends = valueToInt(f->second, 0);
+    else
         throw std::runtime_error("Error in wif file: Threads key missing from WARP section");
-    ends = valueToInt(f->second, 0);
     if (ends == 0)
         throw std::runtime_error("Error in wif file: Threads key illegal value in WARP section");
-    f = nameKeys.find("color");
+    
     size_t defWarpColor = 1;
-    if (f == nameKeys.end())
-        std::cerr << "Wif file does not specify default warp color, using 1." << std::endl;
-    else
+    if ((f = nameKeys.find("color")) != nkEnd)
         defWarpColor = (size_t)valueToInt(f->second, 1);
+    else
+        std::cerr << "Wif file does not specify default warp color, using 1." << std::endl;
 
     if (!readSection("WEFT"))
         throw std::runtime_error("Error in wif file: no WEFT section");
-    
-    f = nameKeys.find("threads");
-    if (f == nameKeys.end())
+    nkEnd = nameKeys.end();
+
+    if ((f = nameKeys.find("threads")) != nkEnd)
+        picks = valueToInt(f->second, 0);
+    else
         throw std::runtime_error("Error in wif file: Threads key missing from WEFT section");
-    picks = valueToInt(f->second, 0);
+
     if (picks == 0)
         throw std::runtime_error("Error in wif file: Threads key illegal value in WEFT section");
-    f = nameKeys.find("color");
+
     size_t defWeftColor = 2;
-    if (f == nameKeys.end())
-        std::cerr << "Wif file does not specify default weft color, using 2." << std::endl;
-    else
+    if ((f = nameKeys.find("color")) != nkEnd)
         defWeftColor = (size_t)valueToInt(f->second, 1);
-    
+    else
+        std::cerr << "Wif file does not specify default weft color, using 2." << std::endl;
+
     std::vector<color> palette;
     palette.push_back({0.0,0.0,0.0});   // color 0 is unused
     if (!readSection("COLOR PALETTE")) {
@@ -167,19 +180,24 @@ wif::readWif(FILE* _wifstream)
         palette.push_back({1.0,1.0,1.0});
         palette.push_back({0.0,0.0,0.0});
     } else {
+        nkEnd = nameKeys.end();
         std::pair<int,int> range;
-        f = nameKeys.find("entries");
-        if (f == nameKeys.end())
+        size_t colors;
+        if ((f = nameKeys.find("entries")) != nkEnd)
+            colors = (size_t)valueToInt(f->second, 2);
+        else
             throw std::runtime_error("Error in wif file: Entries key missing from COLOR PALETTE section");
-        size_t colors = (size_t)valueToInt(f->second, 2);
-        f = nameKeys.find("range");
-        if (f == nameKeys.end())
+        
+        if ((f = nameKeys.find("range")) != nkEnd)
+            range = valueToIntPair(f->second, {0, 255});
+        else
             throw std::runtime_error("Error in wif file: Range key missing from COLOR PALETTE section");
-        range = valueToIntPair(f->second, {0, 255});
+
         palette.resize(colors + 1, {0.0,0.0,0.0});
         
         if (!readSection("COLOR TABLE"))
             throw std::runtime_error("Error in wif file: no COLOR TABLE section");
+
         numberKeys.resize(colors + 1, "0,0,0");
         for (size_t i = 1; i <= colors; ++i) {
             color::tupple3 c = valueToInt3(numberKeys[i], {0,0,0});
@@ -194,6 +212,7 @@ wif::readWif(FILE* _wifstream)
             warpColor[i] = palette[warpcolors[i]];
         }
     }
+    
     weftColor.resize((size_t)picks + 1, palette[defWeftColor]);
     if (readSection("WEFT COLORS")) {
         auto weftcolors = processColorLines((size_t)picks, defWeftColor);
@@ -277,11 +296,10 @@ bool
 wif::seekSection(const char* name)
 {
     std::rewind(wifstream);
-    char buf[128];
-    size_t len = std::strlen(name);
+    size_t nameLen = std::strlen(name), lineLen;
     
-    while (std::fgets(buf, 128, wifstream) != nullptr) {
-        if (buf[0] == '[' && buf[len + 1] == ']' && ::strncasecmp(buf + 1, name, len) == 0)
+    while (char* buf = ::fgetln(wifstream, &lineLen)) {
+        if (buf[0] == '[' && buf[nameLen + 1] == ']' && ::strncasecmp(buf + 1, name, nameLen) == 0)
             return true;
     }
     return false;
@@ -296,33 +314,39 @@ wif::readSection(const char *name)
     nameKeys.clear();
     numberKeys.clear();
     
-    char buf[128];
     std::string line;
     for (;;) {
         line.clear();
-        for (;;) {  // read into line until EOL or EOF
-            if (std::fgets(buf, 128, wifstream) == nullptr) break;
-            if (buf[0] == '\0') break;
-            line.append(buf);
+        for (;;) {
+            size_t len;
+            char* buf = ::fgetln(wifstream, &len);
+            if (buf == nullptr) {
+                if (std::ferror(wifstream))
+                    throw std::system_error(errno, std::generic_category(), "Error reading wif file");
+                break;
+            }
+            line.append(buf, len);
             if (line.ends_with("\\\n")) {   // if continuation then keep going
                 line.pop_back();
                 line.pop_back();
                 continue;
             }
-            if (line.back() == '\n') break;
+            if (line.back() == '\\') {
+                line.pop_back();
+                break;          // if continuation at EOF (!?!?) stop
+            }
+            break;
         }
-        if (line.starts_with('[')) break;     // hit next section
+        if (line.starts_with('[')) break;       // hit next section
         
         line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
         line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
-        if (line.empty()) break;
-        if (line[0] == ';') continue;
+        if (line.empty()) break;                // hit end of section
+        if (line.front() == ';') continue;           // hit comment
         
         size_t eqpos = line.find('=');
-        if (eqpos == std::string::npos || eqpos == 0) {
-            line.insert(0, "Error in wif file: ");
-            throw std::runtime_error(line);
-        }
+        if (eqpos == std::string::npos || eqpos == 0 || eqpos == line.length() - 1)
+            throw annotated_runtime_error("Error in wif file: ", line);
         std::string value = line.substr(eqpos + 1);
         value.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
         if (!value.empty() && value.front() == ';') value.clear();
@@ -331,30 +355,23 @@ wif::readSection(const char *name)
         while (std::isdigit(+line[digpos])) ++digpos;
         
         if (digpos > 0) {
-            if (digpos != eqpos && std::isprint(+line[digpos])) {
-                line.insert(0, "Error in wif file: ");
-                throw std::runtime_error(line);
-            }
+            if (digpos != eqpos && std::isprint(+line[digpos]))
+                throw annotated_runtime_error("Error in wif file: ", line);
             try {
                 size_t i = (size_t)std::stoi(line);
-                if (i < 1) {
-                    line.insert(0, "Error in wif file: ");
-                    throw std::runtime_error(line);
-                }
+                if (i < 1)
+                    throw annotated_runtime_error("Error in wif file: ", line);
                 if (i >= numberKeys.size())
                     numberKeys.resize(i + 1);
                 numberKeys[i] = std::move(value);
             } catch (std::logic_error&) {
-                line.insert(0, "Error in wif file: ");
-                throw std::runtime_error(line);
+                throw annotated_runtime_error("Error in wif file: ", line);
             }
         } else {
             std::string key = line.substr(0, eqpos);
             key.erase(key.find_last_not_of(" \t\n\r\f\v") + 1);
-            if (key.empty()) {
-                line.insert(0, "Error in wif file: ");
-                throw std::runtime_error(line);
-            }
+            if (key.empty())
+                throw annotated_runtime_error("Error in wif file: ", line);
             for (char& c: key)
                 c = (char)std::tolower(+c);
             auto there = nameKeys.try_emplace(std::move(key), std::move(value));
