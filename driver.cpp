@@ -15,13 +15,31 @@
 #include <map>
 
 enum class Mode {
-    Weave,
-    Unweave,
-    Tabby,
+    Weave = 0,
+    Unweave = 1,
+    Tabby = 2,
+    Untabby = 3,
     PickEntry,
     PickListEntry,
     Quit,
 };
+
+namespace {
+Mode toWeave(Mode m)
+{
+    return (Mode)((int)m & 1);
+}
+
+Mode toTabby(Mode m)
+{
+    return (Mode)(((int)m & 1) + 2);
+}
+
+Mode toReverse(Mode m)
+{
+    return (Mode)((int)m ^ 1);
+}
+}
 
 enum class Shed {
     Open,
@@ -33,6 +51,7 @@ std::map<Mode, const char*> ModePrompt{
     {Mode::Weave, "Weaving"},
     {Mode::Unweave, "Reverse weaving"},
     {Mode::Tabby, "Tabby"},
+    {Mode::Untabby, "Tabby"},
     {Mode::PickEntry, "Select pick"},
     {Mode::PickListEntry, "Enter pick list"},
     {Mode::Quit, "Quitting"},
@@ -96,7 +115,9 @@ View::displayPick(PickAction _sendToLoom)
     uint64_t lift = 0;
     uint64_t liftMask = (1 << wifContents.maxShafts) - 1;
     color weftColor;
-    if (mode == Mode::Tabby) {
+    bool isTabby = mode == Mode::Tabby || mode == Mode::Untabby;
+    bool isReverse = mode == Mode::Unweave || mode == Mode::Untabby;
+    if (isTabby) {
         lift = tabbyPick == TabbyPick::A ? opts.tabbyA : opts.tabbyB;
         weftColor = opts.tabbyColor;
     } else {
@@ -146,11 +167,11 @@ View::displayPick(PickAction _sendToLoom)
         std::fputs(Term::colorToStyle(weftColor, opts.ansi == ANSIsupport::truecolor), stdout);
     }
     const char *leftArrow = "", *rightArrow = "";
-    if (mode == Mode::Unweave || (mode == Mode::Tabby && oldMode == Mode::Unweave))
+    if (isReverse)
         leftArrow = opts.ascii ? " <-- " : " \xE2\xAC\x85  ";
     else
         rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
-    if (mode == Mode::Tabby)
+    if (isTabby)
         std::printf(" %s   %c%s |", leftArrow, tabbyPick == TabbyPick::A ? 'A' : 'B', rightArrow);
     else
         std::printf(" %s%4d%s |", leftArrow, pick + 1, rightArrow);
@@ -198,6 +219,7 @@ View::displayPrompt()
             break;
         }
         case Mode::Tabby:
+        case Mode::Untabby:
             std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
                         ModePrompt[mode], tabbyPick == TabbyPick::A ? 'A' : 'B');
             break;
@@ -218,6 +240,7 @@ View::handleEvent(const Term::Event &ev)
         case Mode::Weave:
         case Mode::Unweave:
         case Mode::Tabby:
+        case Mode::Untabby:
             if (handlePickEvent(ev))
                 return;
             break;
@@ -278,55 +301,43 @@ View::handlePickEvent(const Term::Event &ev)
     if (ev.type == Term::EventType::Char) {
         switch (ev.character) {
             case 't':
-            case 'T':
-                if (mode == Mode::Weave || mode == Mode::Unweave)
-                    oldMode = mode;
-                if (mode != Mode::Tabby) {
-                    mode = Mode::Tabby;
-                    tabbyPick = oldMode == Mode::Weave ? TabbyPick::A : TabbyPick::B;
-                    displayPick(PickAction::Send);
-                    displayPrompt();
-                }
+            case 'T': {
+                Mode newMode = toTabby(mode);
+                if (mode == newMode) return true;
+                mode = newMode;
+                displayPick(PickAction::Send);
+                displayPrompt();
                 return true;
+            }
             case 'l':
-            case 'L':
-                if (mode == Mode::Tabby) {
-                    mode = oldMode;
-                    displayPick(PickAction::Send);
-                    displayPrompt();
-                }
+            case 'L': {
+                Mode newMode = toWeave(mode);
+                if (mode == newMode) return true;
+                mode = newMode;
+                displayPick(PickAction::Send);
+                displayPrompt();
                 return true;
+            }
             case 'q':
             case 'Q':
                 mode = Mode::Quit;
                 return true;
             case 'r':
             case 'R':
-                switch (mode) {
-                    case Mode::Weave:
-                        mode = Mode::Unweave;
-                        break;
-                    case Mode::Unweave:
-                        mode = Mode::Weave;
-                        break;
-                    default:
-                        return false;
-                }
-                displayPick(PickAction::DontSend);  // Redisplay current pick with
-                displayPrompt();                    // new direction marker
+                mode = toReverse(mode);
+                displayPick(PickAction::Send);
+                displayPrompt();
                 return true;
             case 's':
             case 'S':
-                if (mode == Mode::Weave || mode == Mode::Unweave)
-                    oldMode = mode;
+                oldMode = mode;
                 mode = Mode::PickEntry;
                 pickValue.clear();
                 displayPrompt();
                 return true;
             case 'p':
             case 'P':
-                if (mode == Mode::Weave || mode == Mode::Unweave)
-                    oldMode = mode;
+                oldMode = mode;
                 mode = Mode::PickListEntry;
                 pickValue.clear();
                 displayPrompt();
@@ -388,7 +399,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
                     displayPick(PickAction::Send);
                 }
             }
-            mode = oldMode;
+            mode = toWeave(oldMode);
             displayPrompt();
             return true;
         }
@@ -421,13 +432,13 @@ View::handlePickListEntryEvent(const Term::Event &ev)
                 try {
                     opts.parsePicks(pickValue, wifContents.picks);
                     pick = 0;
+                    mode = toWeave(oldMode);
                     displayPick(PickAction::Send);
                 } catch (std::exception& e) {
                     std::printf("\r\n\a%s%s%s\r\n", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
                                           e.what(), opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
                 }
             }
-            oldMode = mode = Mode::Weave;
             displayPrompt();
             return true;
         }
@@ -458,6 +469,7 @@ View::nextPick()
             setPick(pick - 1);
             break;
         case Mode::Tabby:
+        case Mode::Untabby:
             tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
             break;
         default:
@@ -476,6 +488,7 @@ View::prevPick()
             setPick(pick + 1);
             break;
         case Mode::Tabby:
+        case Mode::Untabby:
             tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
             break;
         default:
