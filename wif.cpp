@@ -17,11 +17,16 @@ namespace  {
     bool
     valueToBool(const std::string& v)
     {
-        if (::strcasecmp(v.c_str(), "true") == 0) return true;
-        if (::strcasecmp(v.c_str(), "on") == 0) return true;
-        if (std::strcmp(v.c_str(), "1") == 0) return true;
-        if (::strcasecmp(v.c_str(), "yes") == 0) return true;
-        return false;
+        if (v.empty()) throw std::runtime_error("Bad boolean value in wif file");
+        if (::strncasecmp(v.c_str(), "true", 4) == 0) return true;
+        if (::strncasecmp(v.c_str(), "on", 2) == 0) return true;
+        if (v.front() == '1') return true;
+        if (::strncasecmp(v.c_str(), "yes", 3) == 0) return true;
+        if (::strncasecmp(v.c_str(), "false", 5) == 0) return false;
+        if (::strncasecmp(v.c_str(), "off", 3) == 0) return false;
+        if (v.front() == '0') return false;
+        if (::strncasecmp(v.c_str(), "no", 2) == 0) return false;
+        throw std::runtime_error("Bad boolean value in wif file");
     }
 
     int
@@ -44,7 +49,7 @@ namespace  {
         if (errno || *end != ',' || *(end + 1) == '\0')
             return def;
         ret.second = (int)std::strtol(end + 1, &end, 10);
-        if (errno || *end != '\0')
+        if (errno)
             return def;
         return ret;
     }
@@ -62,7 +67,7 @@ namespace  {
         if (errno || *end != ',' || *(end + 1) == '\0')
             return def;
         std::get<2>(ret) = (int)std::strtol(end + 1, &end, 10);
-        if (errno || *end != '\0')
+        if (errno)
             return def;
         return ret;
     }
