@@ -152,14 +152,18 @@ View::displayPick(PickAction _sendToLoom)
     int drawdownWidth = term.cols() - wifContents.maxShafts - 24;
     if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
     for (size_t i = (size_t)drawdownWidth; i > 0 ; --i) {
+        bool activated = wifContents.threading[i] & lift;
+        bool raised = ( activated && opts.dobbyType == DobbyType::Positive) ||
+                      (!activated && opts.dobbyType == DobbyType::Negative);
+        
         if (opts.ansi != ANSIsupport::no) {
-            color c = wifContents.threading[i] & lift ? wifContents.warpColor[i] : weftColor;
+            color& c = raised ? wifContents.warpColor[i] : weftColor;
             std::fputs(Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor), stdout);
         }
         if (opts.ascii)
-            std::putchar(wifContents.threading[i] & lift ? '|' : '-');
+            std::putchar(raised ? '|' : '-');
         else
-            std::fputs(wifContents.threading[i] & lift ? "\xE2\x95\x91" : "\xE2\x95\x90", stdout);
+            std::fputs(raised ? "\xE2\x95\x91" : "\xE2\x95\x90", stdout);
     }
     
     // Output direction arrows and pick #
