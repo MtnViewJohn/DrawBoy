@@ -15,31 +15,12 @@
 #include <map>
 
 enum class Mode {
-    Weave = 0,
-    Unweave = 1,
-    Tabby = 2,
-    Untabby = 3,
+    Weave,
+    Tabby,
     PickEntry,
     PickListEntry,
     Quit,
 };
-
-namespace {
-Mode toWeave(Mode m)
-{
-    return (Mode)((int)m & 1);
-}
-
-Mode toTabby(Mode m)
-{
-    return (Mode)(((int)m & 1) + 2);
-}
-
-Mode toReverse(Mode m)
-{
-    return (Mode)((int)m ^ 1);
-}
-}
 
 enum class Shed {
     Open,
@@ -49,9 +30,7 @@ enum class Shed {
 
 std::map<Mode, const char*> ModePrompt{
     {Mode::Weave, "Weaving"},
-    {Mode::Unweave, "Reverse weaving"},
     {Mode::Tabby, "Tabby"},
-    {Mode::Untabby, "Tabby"},
     {Mode::PickEntry, "Select pick"},
     {Mode::PickListEntry, "Enter pick list"},
     {Mode::Quit, "Quitting"},
@@ -86,6 +65,7 @@ struct View
 
     Mode mode = Mode::Weave;
     Mode oldMode = Mode::Weave;
+    bool weaveForward = true;
     
     View(Term& t, Options& o)
     : term(t), opts(o), wifContents(o.wifContents), pick(o.pick - 1)
@@ -115,9 +95,8 @@ View::displayPick(PickAction _sendToLoom)
     uint64_t lift = 0;
     uint64_t liftMask = (1 << wifContents.maxShafts) - 1;
     color weftColor;
-    bool isTabby = mode == Mode::Tabby || mode == Mode::Untabby;
-    bool isReverse = mode == Mode::Unweave || mode == Mode::Untabby;
-    if (isTabby) {
+
+    if (mode == Mode::Tabby) {
         lift = tabbyPick == TabbyPick::A ? opts.tabbyA : opts.tabbyB;
         weftColor = opts.tabbyColor;
     } else {
@@ -171,11 +150,11 @@ View::displayPick(PickAction _sendToLoom)
         std::fputs(Term::colorToStyle(weftColor, opts.ansi == ANSIsupport::truecolor), stdout);
     }
     const char *leftArrow = "", *rightArrow = "";
-    if (isReverse)
-        leftArrow = opts.ascii ? " <-- " : " \xE2\xAC\x85  ";
-    else
+    if (weaveForward)
         rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
-    if (isTabby)
+    else
+        leftArrow = opts.ascii ? " <-- " : " \xE2\xAC\x85  ";
+    if (mode == Mode::Tabby)
         std::printf(" %s   %c%s |", leftArrow, tabbyPick == TabbyPick::A ? 'A' : 'B', rightArrow);
     else
         std::printf(" %s%4d%s |", leftArrow, pick + 1, rightArrow);
@@ -211,8 +190,7 @@ View::displayPrompt()
         case Mode::PickListEntry:
             std::printf("Enter the new pick list: %s", pickValue.c_str());
             break;
-        case Mode::Weave:
-        case Mode::Unweave: {
+        case Mode::Weave: {
             int wifPick = opts.picks[(size_t)(pick) % opts.picks.size()];
             if (wifPick < 0)
                 std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
@@ -223,7 +201,6 @@ View::displayPrompt()
             break;
         }
         case Mode::Tabby:
-        case Mode::Untabby:
             std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
                         ModePrompt[mode], tabbyPick == TabbyPick::A ? 'A' : 'B');
             break;
@@ -242,9 +219,7 @@ View::handleEvent(const Term::Event &ev)
     
     switch (mode) {
         case Mode::Weave:
-        case Mode::Unweave:
         case Mode::Tabby:
-        case Mode::Untabby:
             if (handlePickEvent(ev))
                 return;
             break;
@@ -305,30 +280,27 @@ View::handlePickEvent(const Term::Event &ev)
     if (ev.type == Term::EventType::Char) {
         switch (ev.character) {
             case 't':
-            case 'T': {
-                Mode newMode = toTabby(mode);
-                if (mode == newMode) return true;
-                mode = newMode;
+            case 'T':
+                if (mode == Mode::Tabby) return true;
+                mode = Mode::Tabby;
+                tabbyPick = weaveForward ? TabbyPick::A : TabbyPick::B;
                 displayPick(PickAction::Send);
                 displayPrompt();
                 return true;
-            }
             case 'l':
-            case 'L': {
-                Mode newMode = toWeave(mode);
-                if (mode == newMode) return true;
-                mode = newMode;
+            case 'L':
+                if (mode == Mode::Weave) return true;
+                mode = Mode::Weave;
                 displayPick(PickAction::Send);
                 displayPrompt();
                 return true;
-            }
             case 'q':
             case 'Q':
                 mode = Mode::Quit;
                 return true;
             case 'r':
             case 'R':
-                mode = toReverse(mode);
+                weaveForward = !weaveForward;
                 displayPick(PickAction::Send);
                 displayPrompt();
                 return true;
@@ -400,10 +372,10 @@ View::handlePickEntryEvent(const Term::Event &ev)
                     std::putchar('\a');
                 } else {
                     pick = (int)p - 1;
+                    mode = Mode::Weave;
                     displayPick(PickAction::Send);
                 }
             }
-            mode = toWeave(oldMode);
             displayPrompt();
             return true;
         }
@@ -435,7 +407,7 @@ View::handlePickListEntryEvent(const Term::Event &ev)
             try {
                 opts.parsePicks(pickValue, wifContents.picks);
                 pick = 0;
-                mode = toWeave(oldMode);
+                mode = Mode::Weave;
                 displayPick(PickAction::Send);
             } catch (std::exception& e) {
                 std::printf("\r\n\a%s%s%s\r\n", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
@@ -465,13 +437,9 @@ View::nextPick()
 {
     switch (mode) {
         case Mode::Weave:
-            setPick(pick + 1);
-            break;
-        case Mode::Unweave:
-            setPick(pick - 1);
+            setPick(pick + (weaveForward ? 1 : -1));
             break;
         case Mode::Tabby:
-        case Mode::Untabby:
             tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
             break;
         default:
@@ -484,13 +452,9 @@ View::prevPick()
 {
     switch (mode) {
         case Mode::Weave:
-            setPick(pick - 1);
-            break;
-        case Mode::Unweave:
-            setPick(pick + 1);
+            setPick(pick + (weaveForward ? -1 : 1));
             break;
         case Mode::Tabby:
-        case Mode::Untabby:
             tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
             break;
         default:
