@@ -323,7 +323,7 @@ View::handlePickEvent(const Term::Event &ev)
         }
     }
     
-    if (ev.type == Term::EventType::Key && mode != Mode::PickEntry) {
+    if (ev.type == Term::EventType::Key) {
         switch (ev.key) {
             case Term::Key::Up:
             case Term::Key::Left:
@@ -375,6 +375,8 @@ View::handlePickEntryEvent(const Term::Event &ev)
                     mode = Mode::Weave;
                     displayPick(PickAction::Send);
                 }
+            } else {
+                mode = oldMode;
             }
             displayPrompt();
             return true;
