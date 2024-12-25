@@ -212,40 +212,38 @@ View::connect()
             if (n == 0) return LoopingState::ShouldWait;
             DrawBoyOutput.push_back(c);
             
-            if (!DrawBoyOutput.empty()) {
-                if (DrawBoyOutput.back() == '\x07') {
-                    if (DrawBoyOutput == "\x0f\x07") {
-                        std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
-                        solenoidState = Solenoid::Reset;
-                    } else {
-                        std::fputs(loomState == Shed::Closed ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
-                        uint64_t lift = 0;
-                        bool unexpected = false;
-                        uint64_t shafts = 0;
-                        std::fputs("\r\n", stdout);
-                        for (size_t i = 0; i < DrawBoyOutput.length(); ++i) {
-                            uint64_t uc = (unsigned char)DrawBoyOutput[i];
-                            std::printf("0x%02x ", (int)uc);
-                            if (uc >= 0x10 && uc <= 0xaf) {
-                                lift |= (uc & 0xf) << (((uc >> 4) - 1) << 2);
-                                uint64_t shaft = (uc & 0xf0) >> 2;
-                                if (shaft > shafts) shafts = shaft;
-                            } else if (uc != 0x07)
-                                unexpected = true;
-                        }
-                        std::putchar('|');
-                        bool tooMany = shafts > (uint64_t)opts.maxShafts;
-                        for (uint64_t shaft = 0; shaft < shafts; ++shaft)
-                            std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
-                        std::putchar('|');
-                        std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
-                                    tooMany ? "too many shafts!" : "",
-                                    unexpected ? "unexpected character!" : "",
-                                    opts.ascii ? "" : Term::Style::reset);
+            if (!DrawBoyOutput.empty() && DrawBoyOutput.back() == '\x07') {
+                if (DrawBoyOutput == "\x0f\x07") {
+                    std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
+                    solenoidState = Solenoid::Reset;
+                } else {
+                    std::fputs(loomState == Shed::Closed ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
+                    uint64_t lift = 0;
+                    bool unexpected = false;
+                    uint64_t shafts = 0;
+                    std::fputs("\r\n", stdout);
+                    for (size_t i = 0; i < DrawBoyOutput.length(); ++i) {
+                        uint64_t uc = (unsigned char)DrawBoyOutput[i];
+                        std::printf("0x%02x ", (int)uc);
+                        if (uc >= 0x10 && uc <= 0xaf) {
+                            lift |= (uc & 0xf) << (((uc >> 4) - 1) << 2);
+                            uint64_t shaft = (uc & 0xf0) >> 2;
+                            if (shaft > shafts) shafts = shaft;
+                        } else if (uc != 0x07)
+                            unexpected = true;
                     }
-                    DrawBoyOutput.clear();
-                    displayPrompt();
+                    std::putchar('|');
+                    bool tooMany = shafts > (uint64_t)opts.maxShafts;
+                    for (uint64_t shaft = 0; shaft < shafts; ++shaft)
+                        std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
+                    std::putchar('|');
+                    std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
+                                tooMany ? "too many shafts!" : "",
+                                unexpected ? "unexpected character!" : "",
+                                opts.ascii ? "" : Term::Style::reset);
                 }
+                DrawBoyOutput.clear();
+                displayPrompt();
             }
         }
     }

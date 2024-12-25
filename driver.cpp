@@ -575,34 +575,33 @@ View::run()
                 ++count;
             };
             
-            if (!loomOutput.empty()) {
-                if (loomOutput.back() == '\x03') {
-                    if (loomOutput == "\x7f\x03") {
-                        waitingForSolenoids = false;
-                        std::fputs(" solenoid reset received", stdout);
-                    }
-                    if (loomOutput == "\x61\x03" && loomState == Shed::Closed) {
-                        loomState = Shed::Open;
-                        std::fputs(" open", stdout);
-                    }
-                    if (loomOutput == "\x62\x03") {
-                        loomState = Shed::Closed;
-                        if (pendingPick != NotAShed) {
-                            // Redraw the last pending pick to erase the 'PENDING'
-                            Term::moveCursorRel(-1, 0);
-                            displayPick(PickAction::Send);
-                            displayPrompt();
-                            std::printf("%s SENT%s ",
-                                        opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                        opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
-                        } else {
-                            nextPick();
-                            displayPick(PickAction::Send);
-                            displayPrompt();
-                        }
-                    }
-                    loomOutput.clear();
+            if (!loomOutput.empty() && loomOutput.back() == '\x03') {
+                if (loomOutput == "\x7f\x03") {
+                    waitingForSolenoids = false;
+                    std::fputs(" solenoid reset received", stdout);
                 }
+                if (loomOutput == "\x61\x03" && loomState == Shed::Closed) {
+                    loomState = Shed::Open;
+                    std::fputs(" open", stdout);
+                }
+                if (loomOutput == "\x62\x03") {
+                    loomState = Shed::Closed;
+                    if (pendingPick != NotAShed) {
+                        // Redraw the last pending pick to erase the 'PENDING'
+                        Term::moveCursorRel(-1, 0);
+                        displayPick(PickAction::Send);
+                        displayPrompt();
+                        std::printf("%s SENT%s ",
+                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
+                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
+                    } else {
+                        nextPick();
+                        displayPick(PickAction::Send);
+                        displayPrompt();
+                    }
+                }
+                loomOutput.clear();
+                std::fflush(stdout);
             }
         }
     }
