@@ -102,24 +102,19 @@ View::displayPick(PickAction _sendToLoom)
     } else {
         size_t zpick = (size_t)(pick) % opts.picks.size();
         int wifPick = opts.picks[zpick];
-        switch (wifPick) {
-            case -2:
-                lift = opts.tabbyB;
-                weftColor = opts.tabbyColor;
-                break;
-            case -1:
-                lift = opts.tabbyA;
-                weftColor = opts.tabbyColor;
-                break;
-            default:
-                lift = wifContents.liftplan[(size_t)wifPick];
-                weftColor = wifContents.weftColor[(size_t)(wifPick)];
-        }
-        
-        if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
-            (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
-        {
-            lift ^= liftMask;
+
+        if (wifPick < 0) {
+            lift = wifPick == -1 ? opts.tabbyA : opts.tabbyB;
+            weftColor = opts.tabbyColor;
+        } else {
+            lift = wifContents.liftplan[(size_t)wifPick];
+            weftColor = wifContents.weftColor[(size_t)(wifPick)];
+            
+            if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
+                (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
+            {
+                lift ^= liftMask;
+            }
         }
     }
 
