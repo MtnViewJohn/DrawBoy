@@ -60,7 +60,7 @@ struct View
     
     std::string loomOutput;
     Shed loomState = Shed::Unknown;
-    uint64_t pendingPick = NotAShed;
+    bool pendingPick = false;
     bool waitingForSolenoids = false;
 
     Mode mode = Mode::Weave;
@@ -168,14 +168,14 @@ View::displayPick(PickAction _sendToLoom)
     std::putchar('|');
     if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
     if (emptyLift) std::fputs(" EMPTY", stdout);
-    if (loomState != Shed::Closed)
+    if (loomState != Shed::Closed && _sendToLoom == PickAction::Send)
         std::printf(" %sPENDING%s", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
                                     opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
     
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
     
-    if (_sendToLoom != PickAction::DontSend)
+    if (_sendToLoom == PickAction::Send)
         sendPick(lift);
 }
 
@@ -301,7 +301,7 @@ View::handlePickEvent(const Term::Event &ev)
             case 'r':
             case 'R':
                 weaveForward = !weaveForward;
-                displayPick(PickAction::Send);
+                displayPick(PickAction::DontSend);
                 displayPrompt();
                 return true;
             case 's':
@@ -503,17 +503,15 @@ void
 View::sendPick(uint64_t lift)
 {
     if (loomState != Shed::Closed) {
-        pendingPick = lift;
+        pendingPick = true;
         return;
     }
     
-    if (lift == NotAShed) lift = pendingPick;
-    pendingPick = NotAShed;
-    if (lift == NotAShed) return;
+    pendingPick = false;
     
     char shaftCmd = '\x10';
     std::string command;
-    for (int i = 0; i < wifContents.maxShafts >> 2; ++i) {
+    for (int shaft = 0; shaft < wifContents.maxShafts; shaft += 4) {
         command.push_back(shaftCmd | (char)(lift & 0xf));
         shaftCmd += '\x10';
         lift >>= 4;
@@ -586,7 +584,7 @@ View::run()
                 }
                 if (loomOutput == "\x62\x03") {
                     loomState = Shed::Closed;
-                    if (pendingPick != NotAShed) {
+                    if (pendingPick) {
                         // Redraw the last pending pick to erase the 'PENDING'
                         Term::moveCursorRel(-1, 0);
                         displayPick(PickAction::Send);
