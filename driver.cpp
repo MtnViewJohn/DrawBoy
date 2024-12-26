@@ -123,8 +123,9 @@ View::displayPick(PickAction _sendToLoom)
     
     // Output drawdown
     std::putchar('\r');
-    int drawdownWidth = term.cols() - wifContents.maxShafts - 24;
+    int drawdownWidth = term.cols() - (wifContents.maxShafts + 24);
     if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
+    if (drawdownWidth < 10) drawdownWidth = 10;
     for (size_t i = (size_t)drawdownWidth; i > 0 ; --i) {
         bool activated = wifContents.threading[i] & lift;
         bool raised = ( activated && opts.dobbyType == DobbyType::Positive) ||
@@ -258,6 +259,7 @@ View::handleGlobalEvent(const Term::Event& ev)
         }
             
         case Term::EventType::Resize: {
+            Term::moveCursorRel(-1, 0);
             displayPick(PickAction::DontSend);
             displayPrompt();
             return true;
