@@ -58,7 +58,7 @@ enumSerial(const std::set<std::string>& exclude)
 
 
 std::set<std::string>
-readfile(std::istream& in, const std::string& commentPrefix)
+readfile(std::istream& in)
 {
     std::set<std::string> buf;
     std::string line;
@@ -66,9 +66,8 @@ readfile(std::istream& in, const std::string& commentPrefix)
     while (std::getline(in, line)) {
         line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
         line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
-        if (line.empty() || line.find(commentPrefix) == 0)
-            continue;
-        buf.emplace(std::move(line));
+        if (!line.empty())
+            buf.emplace(std::move(line));
     }
     return buf;
 }
@@ -242,7 +241,7 @@ Options::Options(int argc, const char * argv[])
     if (findloom) {
         std::set<std::string> exclude;
         if (!::isatty(0))
-            exclude = readfile(std::cin, " ");
+            exclude = readfile(std::cin);
         enumSerial(exclude);
         driveLoom = false;
         return;
