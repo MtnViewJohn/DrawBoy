@@ -168,11 +168,11 @@ View::displayPick(PickAction _sendToLoom)
         std::printf(" %sPENDING%s", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
                                     opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
     
-    Term::clearToEOL();
-    std::fputs("\r\n", stdout);
-    
     if (_sendToLoom == PickAction::Send)
         sendPick(lift);
+
+    Term::clearToEOL();
+    std::fputs("\r\n", stdout);
 }
 
 void
@@ -575,11 +575,11 @@ View::run()
                     waitingForSolenoids = false;
                     std::fputs(" solenoid reset received", stdout);
                 }
-                if (loomOutput == "\x61\x03" && loomState == Shed::Closed) {
+                if (loomOutput == "\x62\x03" && loomState == Shed::Closed) {
                     loomState = Shed::Open;
                     std::fputs(" open", stdout);
                 }
-                if (loomOutput == "\x62\x03") {
+                if (loomOutput == "\x61\x03") {
                     loomState = Shed::Closed;
                     if (pendingPick) {
                         // Redraw the last pending pick to erase the 'PENDING'

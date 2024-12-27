@@ -102,7 +102,7 @@ View::handleEvent(const Term::Event &ev)
                     else
                         std::fputs(opts.ascii ? "^" : "\xE2\x86\x91", stdout);
                     std::fflush(stdout);
-                    sendToDrawBoy("\x61\x03");
+                    sendToDrawBoy("\x62\x03");
                     loomState = Shed::Open;
                     break;
                     
@@ -112,7 +112,7 @@ View::handleEvent(const Term::Event &ev)
                     else
                         std::fputs(opts.ascii ? "v" : "\xE2\x86\x93", stdout);
                     std::fflush(stdout);
-                    sendToDrawBoy("\x62\x03");
+                    sendToDrawBoy("\x61\x03");
                     loomState = Shed::Closed;
                     break;
                     
