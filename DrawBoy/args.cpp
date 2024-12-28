@@ -35,42 +35,38 @@ checkForSerial(std::string& name)
     return fd;
 }
 
-void
-enumSerial(const std::set<std::string>& exclude)
-{
-    DIR* devDir = ::opendir("/dev");
-    struct dirent *entry = ::readdir(devDir);
-    while (entry != NULL) {
-        if (entry->d_type == DT_CHR) {
-            std::string dname = "/dev/";
-            dname.append(entry->d_name);
-            int fd = checkForSerial(dname);
-            if (fd != 1 && fd != 2) {
-                ::close(fd);
-                if (!exclude.contains(dname))
-                    std::cout << dname << std::endl;
-            }
-        }
-        entry = ::readdir(devDir);
-    }
-    ::closedir(devDir);
-}
+struct dir_deleter {
+    void operator()(DIR* dp) { ::closedir(dp); }
+};
 
+using unique_dir = std::unique_ptr<DIR, dir_deleter>;
 
 std::set<std::string>
-readfile(std::istream& in)
+enumSerial(const std::set<std::string>& exclude)
 {
-    std::set<std::string> buf;
-    std::string line;
-    if (!in) return buf;
-    while (std::getline(in, line)) {
-        line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
-        line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
-        if (!line.empty())
-            buf.emplace(std::move(line));
+    std::set<std::string> result;
+    
+    auto devDir = unique_dir(::opendir("/dev"));
+    
+    if (devDir) {
+        while (struct dirent *entry = ::readdir(devDir.get())) {
+            if (entry->d_type == DT_CHR) {
+                std::string dname = "/dev/";
+                dname.append(entry->d_name);
+                if (exclude.contains(dname))
+                    continue;
+                std::putchar('.');
+                int fd = checkForSerial(dname);
+                if (fd != 1 && fd != 2) {
+                    ::close(fd);
+                    result.emplace(std::move(dname));
+                }
+            }
+        }
     }
-    return buf;
+    return result;
 }
+
 
 void
 initLoomPort(int fd)
@@ -239,10 +235,22 @@ Options::Options(int argc, const char * argv[])
     }
     
     if (findloom) {
-        std::set<std::string> exclude;
-        if (!::isatty(0))
-            exclude = readfile(std::cin);
-        enumSerial(exclude);
+        char buf[100];
+        std::cout << "\nMake sure that the USB dongle is unplugged, and then type return.";
+        std::cin.getline(buf, 100, '\n');
+        std::cout << "Scanning for pre-existing devices";
+        auto exclude = enumSerial({});
+        std::cout << "\nOK! Now plug in the USB dongle, wait a few seconds, and type return.";
+        std::cin.getline(buf, 100, '\n');
+        std::cout << "Scanning for new devices";
+        auto results = enumSerial(exclude);
+        if (results.empty()) {
+            std::cout << "\nBummer! No new devices were found." << std::endl;
+        } else {
+            std::cout << "\nCandidate devices:" << std::endl;
+            for (const auto& dev: results)
+                std::cout << dev << std::endl;
+        }
         driveLoom = false;
         return;
     }
