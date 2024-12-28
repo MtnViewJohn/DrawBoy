@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <csignal>
 #include "ipc.h"
+#include <cstring>
 
 enum class Shed {
     Open,

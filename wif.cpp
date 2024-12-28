@@ -13,6 +13,8 @@
 #include <string>
 #include <exception>
 #include <system_error>
+#include <climits>
+#include <cstdlib>
 
 namespace  {
     bool
@@ -88,6 +90,17 @@ namespace  {
         line.insert(0, desc);
         return std::runtime_error(line);
     }
+
+    struct malloc_holder {
+        malloc_holder(size_t _cap)
+        : buffer(_cap ? (char*)std::malloc(_cap) : nullptr),
+          capacity(_cap) {}
+        ~malloc_holder() { std::free((void*)buffer);}
+        char* buffer = nullptr;
+        size_t capacity = 0;
+    };
+
+
 }
 
 void
@@ -273,11 +286,17 @@ bool
 wif::seekSection(const char* name)
 {
     std::rewind(wifstream);
-    size_t nameLen = std::strlen(name), lineLen;
+    size_t nameLen = std::strlen(name);
+    malloc_holder mh(1024);
     
-    while (char* buf = ::fgetln(wifstream, &lineLen)) {
-        if (buf[0] == '[' && buf[nameLen + 1] == ']' && ::strncasecmp(buf + 1, name, nameLen) == 0)
+    while (::getline(&mh.buffer, &mh.capacity, wifstream) >= 0)
+    {
+        if (mh.buffer[0] == '[' &&
+            ::strncasecmp(mh.buffer + 1, name, nameLen) == 0
+            && mh.buffer[nameLen + 1] == ']')
+        {
             return true;
+        }
     }
     return false;
 }
@@ -292,18 +311,19 @@ wif::readSection(const char* name, int numlines, const std::string& defValue)
     numberKeys.clear();
     numberKeys.resize((size_t)numlines + 1, defValue);
     
+    malloc_holder mh(1024);
+    
     std::string line;
     for (;;) {
         line.clear();
         for (;;) {
-            size_t len;
-            char* buf = ::fgetln(wifstream, &len);
-            if (buf == nullptr) {
+            ssize_t len = ::getline(&mh.buffer, &mh.capacity, wifstream);
+            if (len < 0) {
                 if (std::ferror(wifstream))
                     throw std::system_error(errno, std::generic_category(), "Error reading wif file");
                 break;
             }
-            line.append(buf, len);
+            line.append(mh.buffer);
             if (line.ends_with("\\\n")) {   // if continuation then keep going
                 line.pop_back();
                 line.pop_back();

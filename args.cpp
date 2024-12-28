@@ -43,7 +43,7 @@ enumSerial(const std::set<std::string>& exclude)
     while (entry != NULL) {
         if (entry->d_type == DT_CHR) {
             std::string dname = "/dev/";
-            dname.append(entry->d_name, entry->d_namlen);
+            dname.append(entry->d_name);
             int fd = checkForSerial(dname);
             if (fd != 1 && fd != 2) {
                 ::close(fd);

@@ -10,8 +10,6 @@
 #include <csignal>
 #include <exception>
 #include <system_error>
-#include <format>
-#include <print>
 #include <cstdio>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -84,20 +82,20 @@ void Term::fetchWindowSize()
 
 void Term::moveCursor(int row, int col, bool flush)
 {
-    std::print("\x1b[{};{}H", row, col);
+    std::printf("\x1b[%d;%dH", row, col);
     if (flush) std::fflush(stdout);
 }
 
 void Term::moveCursorRel(int row, int col, bool flush)
 {
     if (row < 0)
-        std::print("\x1b[{}A", -row);
+        std::printf("\x1b[%dA", -row);
     if (row > 0)
-        std::print("\x1b[{}B",  row);
+        std::printf("\x1b[%dB",  row);
     if (col < 0)
-        std::print("\x1b[{}D", -col);
+        std::printf("\x1b[%dD", -col);
     if (col > 0)
-        std::print("\x1b[{}C",  col);
+        std::printf("\x1b[%dC",  col);
     if (flush) std::fflush(stdout);
 }
 

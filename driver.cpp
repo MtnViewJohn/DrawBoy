@@ -157,7 +157,7 @@ View::displayPick(PickAction _sendToLoom)
         std::printf(" %s%4d%s |", leftArrow, pick + 1, rightArrow);
     
     // Output liftplan
-    for (uint64_t shaftMask = 1; shaftMask != 1 << wifContents.maxShafts; shaftMask <<= 1)
+    for (uint64_t shaftMask = 1; shaftMask != (1ull << wifContents.maxShafts); shaftMask <<= 1)
         if (shaftMask & lift)
             std::fputs(opts.ascii ? "*" : "\xE2\x96\xA0", stdout);
         else

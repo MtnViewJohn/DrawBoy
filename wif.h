@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 #include "color.h"
+#include <cstdint>
 
 using std::size_t;
 using std::uint64_t;

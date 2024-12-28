@@ -9,6 +9,10 @@
 #define color_h
 
 #include <tuple>
+#include <cstring>
+#include <stdexcept>
+#include <cerrno>
+#include <cstdlib>
 
 class color {
 public:
