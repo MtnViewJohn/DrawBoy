@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <map>
+#include <string_view>
 
 enum class Mode {
     Weave,
@@ -78,7 +79,7 @@ struct View
     bool handlePickListEntryEvent(const Term::Event& ev);
 
     void sendPick(uint64_t _pick = NotAShed);
-    void sendToLoom(const char *msg);
+    void sendToLoom(std::string_view msg);
     
     void nextPick();
     void prevPick();
@@ -462,22 +463,17 @@ View::prevPick()
 }
 
 void
-View::sendToLoom(const char *msg)
+View::sendToLoom(std::string_view msg)
 {
-    size_t remaining = std::strlen(msg);
-    size_t sent = 0;
-    
-    while (remaining > 0  &&  mode != Mode::Quit)
+    while (!msg.empty() && mode != Mode::Quit)
     {
-        auto result = ::write(opts.loomDeviceFD, msg + sent, remaining);
+        auto result = ::write(opts.loomDeviceFD, msg.data(), msg.length());
         if (result >= 0) {
             if (result == 0) std::putchar('>');
             // sent partial or all the remaining data
-            sent += (size_t)result;
-            remaining -= (size_t)result;
+            msg.remove_prefix((size_t)result);
         } else {
-            int err = errno;
-            if ((err == EAGAIN) || (err == EWOULDBLOCK) || (err == EINTR)) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 timeval tv = {};
                 fd_set fds = {};
                 int selectresult;
@@ -490,6 +486,7 @@ View::sendToLoom(const char *msg)
                 if (selectresult == -1 && errno != EINTR)
                     throw make_system_error("loom select failed");
             } else {
+                // from the write
                 throw make_system_error("loom write failed");
             }
         }
@@ -514,7 +511,7 @@ View::sendPick(uint64_t lift)
         lift >>= 4;
     }
     command.push_back('\x07');
-    sendToLoom(command.c_str());
+    sendToLoom(command);
 }
 
 void
