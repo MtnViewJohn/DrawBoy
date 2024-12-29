@@ -245,7 +245,7 @@ Options::Options(int argc, const char * argv[])
         std::cout << "Scanning for new devices";
         auto results = enumSerial(exclude);
         if (results.empty()) {
-            std::cout << "\nBummer! No new devices were found." << std::endl;
+            std::cout << "\nAlas! No new devices were found." << std::endl;
         } else {
             std::cout << "\nCandidate devices:" << std::endl;
             for (const auto& dev: results)
@@ -273,7 +273,7 @@ Options::Options(int argc, const char * argv[])
     parsePicks(args::get(_picks), wifContents.picks);
     
     if (wifContents.maxShafts > maxShafts)
-        throw std::runtime_error("Wif file has more shafts than the loom.");
+        throw std::runtime_error("Wif file requires more shafts than the loom possesses.");
     
     if (envSocket) {
         IPC::Client fakeLoom(envSocket);
