@@ -26,11 +26,11 @@ checkForSerial(std::string& name)
     int fd = ::open(name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
     int modemBits = 0;
     if (fd == -1)
-        return 1;
+        return -1;
     if (!::isatty(fd) || ::ioctl(fd, TIOCMGET, &modemBits) == -1)
     {
         ::close(fd);
-        return 2;
+        return -2;
     }
     return fd;
 }
@@ -57,7 +57,7 @@ enumSerial(const std::set<std::string>& exclude)
                     continue;
                 std::putchar('.');
                 int fd = checkForSerial(dname);
-                if (fd != 1 && fd != 2) {
+                if (fd >= 0) {
                     ::close(fd);
                     result.emplace(std::move(dname));
                 }
@@ -281,9 +281,9 @@ Options::Options(int argc, const char * argv[])
     } else {
         loomDeviceFD = checkForSerial(loomDevice);
         
-        if (loomDeviceFD == 1)
+        if (loomDeviceFD == -1)
             throw std::runtime_error("Cannot open loom device.");
-        if (loomDeviceFD == 2)
+        if (loomDeviceFD == -2)
             throw std::runtime_error("Loom device is not a serial port.");
         
         initLoomPort(loomDeviceFD);

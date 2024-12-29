@@ -108,7 +108,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--loomDevice=/dev/cu.Bluetooth-Incoming-Port"
+            argument = "--loomDevice=/dev/ttyu8"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -131,7 +131,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"
