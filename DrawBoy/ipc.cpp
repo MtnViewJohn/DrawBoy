@@ -11,6 +11,11 @@
 
 namespace {
 
+enum class Mode {
+    Client,
+    Server,
+};
+
 void
 removeSocketFile(const std::string& path)
 {
@@ -22,7 +27,7 @@ removeSocketFile(const std::string& path)
 }
 
 
-int makeSocket(const std::string& path, bool server)
+int makeSocket(const std::string& path, Mode _mode)
 {
     int sockFD = ::socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockFD == -1)
@@ -30,34 +35,35 @@ int makeSocket(const std::string& path, bool server)
     
     int flags = ::fcntl(sockFD, F_GETFL);
     if (flags == -1)
-        throw make_system_error("Could not get socket flags.");
+        throw make_system_error("Could not get socket flags");
     if (::fcntl(sockFD, F_SETFL, flags | O_NONBLOCK) == -1)
-        throw make_system_error("Could not set socket flags.");
-    
-    if (server) removeSocketFile(path);
+        throw make_system_error("Could not set socket flags");
     
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
+    if (path.length() > sizeof(addr.sun_path) - 1) {
+        errno = ENAMETOOLONG;
+        throw make_system_error({"Cannot connect to socket path ", path});
+    }
     std::strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
-    if (path.length() > sizeof(addr.sun_path) - 1)
-        throw make_runtime_error({"Socket path is too long: ", path});
     
-    if (server) {
-        auto oldmask = ::umask(0007); // allow group access (usually audio)
+    if (_mode == Mode::Server) {
+        removeSocketFile(path);
+        auto oldmask = ::umask(0077); // allow user access only
         if (::bind(sockFD, (const struct sockaddr*)&addr, sizeof(addr)) != 0)
-            throw make_runtime_error({"Couldn't bind socket to path ", path});
+            throw make_system_error({"Couldn't bind socket to path ", path});
         ::umask(oldmask);
         
         if (::listen(sockFD, 2) != 0)   // don't need a long backlog
-            throw make_runtime_error({"Couldn't listen to socket path ", path});
+            throw make_system_error({"Couldn't listen to socket path ", path});
     } else {
         if (::connect(sockFD, (const struct sockaddr*)&addr, sizeof(addr)) != 0) {
-            throw make_runtime_error({
+            throw make_system_error({
                 "Couldn't connect to the fakeloom server\n"
                 "\n"
-                "(While trying to connect to the socket path:\n"
+                "While trying to connect to the socket path:\n"
                 "    ", path, "\n"
-                "    got the error: ", std::strerror(errno), ")"});
+                "    got the error"});
         }
     }
     
@@ -101,8 +107,9 @@ SocketError::SocketError(const char* what)
 { }
 
 
+
 Client::Client(const std::string& path)
-: Socket(makeSocket(path, false))  { }
+: Socket(makeSocket(path, Mode::Client))  { }
 Client::~Client()                  { }
 
 
@@ -118,7 +125,7 @@ Connection& Connection::operator=(Connection&& other) noexcept
 }
 
 Server::Server(const std::string& path)
-: Socket(makeSocket(path, true)), socketPath(path) { }
+: Socket(makeSocket(path, Mode::Server)), socketPath(path) { }
 Server::~Server()                { removeSocketFile(socketPath); }
 
 
@@ -131,7 +138,7 @@ Server::accept()
             return {};
         }
         
-        throw make_system_error("Accepting a connection failed");
+        throw SocketError("Accepting a connection failed");
     }
     
     return Connection(connFD);

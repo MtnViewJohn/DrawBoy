@@ -17,10 +17,13 @@ int main(int argc, const char * argv[]) {
         driver(opts);
     } catch (std::system_error& e) {
         std::fputs(e.what(), stderr); fputc('\n', stderr);
-    } catch (std::runtime_error& /* e */) {
+        return 2;
+    } catch (std::runtime_error& e) {
+        std::fputs(e.what(), stderr); fputc('\n', stderr);
         return 1;
     } catch (std::exception& e) {
         std::fputs(e.what(), stderr); fputc('\n', stderr);
+        return 3;
     }
     return 0;
 }

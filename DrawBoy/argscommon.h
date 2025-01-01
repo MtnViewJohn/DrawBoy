@@ -13,6 +13,7 @@
 #include <vector>
 #include <unordered_map>
 #include <system_error>
+#include <numeric>
 
 using std::size_t;
 using std::uint64_t;
@@ -60,17 +61,16 @@ make_system_error(const char* what) {
   return std::system_error(ec, what);
 }
 
+inline std::system_error
+make_system_error(const std::vector<std::string>& parts) {
+  auto ec = std::error_code(errno, std::generic_category());
+  return std::system_error(ec, std::accumulate(parts.begin(), parts.end(), std::string()));
+}
+
 inline std::runtime_error
-make_runtime_error(std::vector<std::string> parts)
+make_runtime_error(const std::vector<std::string>& parts)
 {
-    std::string msg;
-    size_t len = 1;
-    for (auto&& part: parts)
-        len += part.length();
-    msg.reserve(len);
-    for (auto&& part: parts)
-        msg.append(part);
-    return std::runtime_error(msg);
+    return std::runtime_error(std::accumulate(parts.begin(), parts.end(), std::string()));
 }
 
 struct ToLowerReader {

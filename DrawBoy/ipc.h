@@ -34,6 +34,7 @@ public:
     int release();
 };
 
+// Recoverable std::system_error
 class SocketError : public std::system_error {
 public:
     SocketError(const char*);
