@@ -14,7 +14,8 @@
 int main(int argc, const char * argv[]) {
     try {
         Options opts(argc, argv);
-        driver(opts);
+        if (opts.fakeLoom)
+            driver(opts);
     } catch (std::system_error& e) {
         std::fputs(e.what(), stderr); fputc('\n', stderr);
         return 2;

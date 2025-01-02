@@ -17,6 +17,7 @@ struct Options {
     int maxShafts;
     DobbyType dobbyType = DobbyType::Positive;
     bool ascii;
+    bool fakeLoom = false;
 };
 
 #endif /* fakeargs_h */

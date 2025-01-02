@@ -32,9 +32,9 @@ Options::Options(int argc, const char * argv[])
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::ValueFlag<std::string> _socketPath(parser, "SOCKET PATH", "Path for the socket", {"socket"}, envSocket, *envSocket ? args::Options::None : args::Options::Required);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
-        "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
+        "Number of shafts on the loom", {"shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::None : args::Options::Required);
-    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"}, dobbyMap, defDobby);
+    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {"dobbyType"}, dobbyMap, defDobby);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
 
     try
@@ -59,4 +59,5 @@ Options::Options(int argc, const char * argv[])
 
     socketPath = args::get(_socketPath);
     ascii = args::get(_ascii) || envASCII != nullptr;
+    fakeLoom = true;
 }
