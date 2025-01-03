@@ -14,6 +14,8 @@
 struct Options {
     Options(int argc, const char * argv[]);
     std::string socketPath;
+    std::string autoInput;
+    bool autoReset;
     int maxShafts;
     DobbyType dobbyType = DobbyType::Positive;
     bool ascii;

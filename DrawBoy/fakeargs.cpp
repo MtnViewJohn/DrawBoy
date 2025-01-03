@@ -36,6 +36,10 @@ Options::Options(int argc, const char * argv[])
         defShaft ? args::Options::None : args::Options::Required);
     args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE", "Is the loom a positive or negative dobby (+ and - are also accepted)", {"dobbyType"}, dobbyMap, defDobby);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"});
+    args::ValueFlag<std::string> _autoInput(parser, "INPUT STREAM",
+        "Automatically sent input stream", {"auto"}, "");
+    args::Flag _autoReset(parser, "Automatic reset", "Automatically respond to solenoid reset",
+        {"autoreset"});
 
     try
     {
@@ -59,6 +63,8 @@ Options::Options(int argc, const char * argv[])
 
     socketPath = args::get(_socketPath);
     ascii = args::get(_ascii) || envASCII != nullptr;
+    autoInput = args::get(_autoInput);
+    autoReset = args::get(_autoReset);
     maxShafts = args::get(_maxShafts);
     fakeLoom = true;
 }

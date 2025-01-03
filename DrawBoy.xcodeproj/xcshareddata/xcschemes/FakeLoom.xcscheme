@@ -59,6 +59,14 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--autoreset"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--auto 1u1d1u1d1u1d1u1d1u1d1u1d1u1d1u1d1q"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--socket /tmp/drawboy.socket"
             isEnabled = "YES">
          </CommandLineArgument>

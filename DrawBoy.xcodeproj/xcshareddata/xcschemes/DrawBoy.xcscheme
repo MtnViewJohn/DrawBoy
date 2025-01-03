@@ -131,7 +131,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"

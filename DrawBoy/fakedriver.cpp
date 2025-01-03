@@ -13,6 +13,7 @@
 #include <csignal>
 #include "ipc.h"
 #include <cstring>
+#include <chrono>
 
 enum class Shed {
     Open,
@@ -48,9 +49,14 @@ struct View
     std::string DrawBoyOutput;
     Shed loomState = Shed::Unknown;
     Solenoid solenoidState = Solenoid::Normal;
+    
+    std::string autoInput;
+    bool autoReset;
+    std::chrono::time_point<std::chrono::system_clock> autoDelay;
 
     View(Term& t, Options& o)
-    : term(t), opts(o)
+    : term(t), opts(o), autoInput(o.autoInput), autoReset(opts.autoReset),
+      autoDelay(std::chrono::system_clock::now())
     {}
     
     void handleEvent(const Term::Event& ev);
@@ -187,11 +193,51 @@ View::connect()
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(socketFD, &rdset);
         timeval onesec{1,0};
-        
+        if (!autoInput.empty() && !autoReset && std::isdigit((unsigned char)autoInput.front())) {
+            size_t pos = 0;
+            int delay = std::stoi(autoInput, &pos);
+            autoDelay = std::chrono::system_clock::now() + std::chrono::seconds(delay);
+            autoInput.erase(0, pos);
+            std::printf("\r\nInserting %d second delay. ", (int)onesec.tv_sec);
+        }
+
         int nfds = ::select(socketFD + 1, &rdset, nullptr, nullptr, &onesec);
         
         if (nfds == -1 && errno != EINTR)
             throw make_system_error("select failed");
+
+        if (!autoInput.empty() && !autoReset &&
+            std::chrono::system_clock::now() > autoDelay &&
+            std::isalpha((unsigned char)autoInput.front()))
+        {
+            auto c = autoInput.front();
+            autoInput.erase(0, 1);
+            switch (c) {
+                case 'u':
+                case 'd': {
+                    Term::Event ev{
+                        Term::EventType::Key,
+                        ' ',
+                        c == 'u' ? Term::Key::Up : Term::Key::Down,
+                        false, false, false, false, ""
+                    };
+                    std::printf("\r\nInserting %s event. ", c == 'u' ? "UP" : "DOWN");
+                    handleEvent(ev);
+                    break;
+                }
+                default: {
+                    Term::Event ev{
+                        Term::EventType::Char,
+                        c,
+                        Term::Key::Up,
+                        false, false, false, false, ""
+                    };
+                    std::printf("\r\nInserting '%c' event. ", c);
+                    handleEvent(ev);
+                    break;
+                }
+            }
+        }
 
         if (nfds == 0) continue;
         
@@ -215,8 +261,14 @@ View::connect()
             
             if (!DrawBoyOutput.empty() && DrawBoyOutput.back() == '\x07') {
                 if (DrawBoyOutput == "\x0f\x07") {
-                    std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
-                    solenoidState = Solenoid::Reset;
+                    if (autoReset) {
+                        std::fputs("\r\nResponding to solenoid reset command.\r\n", stdout);
+                        sendToDrawBoy("\x7f\03");
+                        autoReset = false;
+                    } else {
+                        std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
+                        solenoidState = Solenoid::Reset;
+                    }
                 } else {
                     std::fputs(loomState == Shed::Closed ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
                     uint64_t lift = 0;
