@@ -220,8 +220,8 @@ Term::Event Term::getEvent()
             case 'B':   ev.key = Term::Key::Down;   break;
             case 'C':   ev.key = Term::Key::Right;  break;
             case 'D':   ev.key = Term::Key::Left;   break;
-            case 'F':   ev.key = Term::Key::Home;   break;
-            case 'H':   ev.key = Term::Key::End;    break;
+            case 'H':   ev.key = Term::Key::Home;   break;
+            case 'F':   ev.key = Term::Key::End;    break;
             default:
                 goto unknown;
         }
