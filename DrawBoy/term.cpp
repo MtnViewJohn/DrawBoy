@@ -65,7 +65,11 @@ Term::~Term()
 
     std::signal(SIGWINCH, SIG_DFL);
 
-    //flushwrite("\x1b[?1049l");  // use original buffer, restore cursor
+    flushwrite(
+        //"\x1b[?1049l"   // use original buffer, restore cursor
+        "\x1b[?7h"      // turn on wrapping
+        TermStyleReset  // reset style
+    );
 
     ::tcsetattr(STDOUT_FILENO, TCSAFLUSH, &_original_termios);
 }
