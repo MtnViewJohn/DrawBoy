@@ -59,5 +59,6 @@ Options::Options(int argc, const char * argv[])
 
     socketPath = args::get(_socketPath);
     ascii = args::get(_ascii) || envASCII != nullptr;
+    maxShafts = args::get(_maxShafts);
     fakeLoom = true;
 }
