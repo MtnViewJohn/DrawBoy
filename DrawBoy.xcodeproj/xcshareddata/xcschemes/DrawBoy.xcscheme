@@ -80,35 +80,35 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--wif &apos;gudruns towel.wif&apos;"
+            argument = "--findloom"
             isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--wif &quot;Penny-wise table runner.wif&quot;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--wif &quot;cross shadow 10thread 11sdobby.wif&quot;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--wif &apos;shibori mw.wif&apos;"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--wif &apos;simple test8.wif&apos;"
-            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1-8,10,5x20-29,7x40"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--findloom"
+            argument = "--loomDevice=/dev/ttyu8"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--loomDevice=/dev/ttyu8"
+            argument = "&apos;gudruns towel.wif&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;Penny-wise table runner.wif&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;cross shadow 10thread 11sdobby.wif&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;shibori mw.wif&apos;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&apos;simple test8.wif&apos;"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

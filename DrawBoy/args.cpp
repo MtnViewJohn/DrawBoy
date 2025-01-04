@@ -192,8 +192,8 @@ Options::Options(int argc, const char * argv[])
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
         "The path of the loom device in the /dev directory", {'l', "loomDevice"},
         envLoom, (*envLoom || envSocket) ? args::Options::Single : args::Options::Required | args::Options::Single);
-    args::ValueFlag<std::string> _wifFile(parser, "WIF PATH",
-        "The path of the WIF file", {'f', "wif"}, "", args::Options::Required | args::Options::Single);
+    args::Positional<std::string> _wifFile(parser, "WIF PATH", "The path of the WIF file",
+        args::Options::Required);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
         "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
