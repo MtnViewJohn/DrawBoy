@@ -179,6 +179,7 @@ View::displayPick(PickAction _sendToLoom)
 void
 View::displayPrompt()
 {
+    static const char* menu = "T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit   ";
     std::putchar('\r');
     switch (mode) {
         case Mode::PickEntry:
@@ -190,19 +191,16 @@ View::displayPrompt()
         case Mode::Weave: {
             int wifPick = opts.picks[(size_t)(pick) % opts.picks.size()];
             if (wifPick < 0)
-                std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
-                            ModePrompt[mode], wifPick == -1 ? 'A' : 'B');
+                std::printf("[%s:%c] %s", ModePrompt[mode], wifPick == -1 ? 'A' : 'B', menu);
             else
-                std::printf("[%s:%d]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
-                            ModePrompt[mode], wifPick);
+                std::printf("[%s:%d] %s", ModePrompt[mode], wifPick, menu);
             break;
         }
         case Mode::Tabby:
-            std::printf("[%s:%c]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ",
-                        ModePrompt[mode], tabbyPick == TabbyPick::A ? 'A' : 'B');
+            std::printf("[%s:%c] %s", ModePrompt[mode], tabbyPick == TabbyPick::A ? 'A' : 'B', menu);
             break;
         default:
-            std::printf("[%s]  t)abby mode  l)iftplan mode  r)everse  s)elect next pick  P)ick list  q)uit   ", ModePrompt[mode]);
+            std::printf("[%s] %s", ModePrompt[mode], menu);
             break;
     }
     Term::clearToEOL();
