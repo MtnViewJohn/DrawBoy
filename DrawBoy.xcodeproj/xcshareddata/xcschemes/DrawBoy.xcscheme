@@ -60,12 +60,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--pick=493"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--tabbycolor=FF00FF"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ascii"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--ansi=Yes"
@@ -93,7 +97,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel.wif&apos;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.wif&quot;"

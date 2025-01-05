@@ -28,6 +28,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		522754BC2D2A5C4C00EA754F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		5231792A2D0B98540085FB15 /* FakeLoom */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FakeLoom; sourceTree = BUILT_PRODUCTS_DIR; };
 		52DE6CB12CBE3015008EB99F /* DrawBoy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DrawBoy; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -94,6 +95,7 @@
 		52DE6CA82CBE3015008EB99F = {
 			isa = PBXGroup;
 			children = (
+				522754BC2D2A5C4C00EA754F /* README.md */,
 				52DE6CB32CBE3015008EB99F /* DrawBoy */,
 				5231792B2D0B98540085FB15 /* FakeLoom */,
 				52DE6CB22CBE3015008EB99F /* Products */,
@@ -170,6 +172,7 @@
 					};
 					52DE6CB02CBE3015008EB99F = {
 						CreatedOnToolsVersion = 16.0;
+						LastSwiftMigration = 1620;
 					};
 				};
 			};
@@ -369,18 +372,23 @@
 		52DE6CB92CBE3015008EB99F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		52DE6CBA2CBE3015008EB99F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
