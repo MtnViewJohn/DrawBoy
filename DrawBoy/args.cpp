@@ -189,30 +189,30 @@ Options::Options(int argc, const char * argv[])
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::CompletionFlag completion(parser, {"complete"});
     args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut);
-    args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
-        "The path of the loom device in the /dev directory", {'l', "loomDevice"},
-        envLoom, (*envLoom || envSocket) ? args::Options::Single : args::Options::Required | args::Options::Single);
-    args::Positional<std::string> _wifFile(parser, "WIF PATH", "The path of the WIF file",
-        args::Options::Required);
-    args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
-        "Number of shafts on the loom", {'s', "shafts"}, shaftMap, defShaft,
-        defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
-    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE",
-        "Is the loom a positive or negative dobby (+ and - are also accepted)", {'t', "dobbyType"},
-        dobbyMap, defDobby, args::Options::Single);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
+    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B",
+        {"tabby"}, args::Options::Single);
+    args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks",
+        {"tabbycolor"}, "00FF00", args::Options::Single);
+    args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
+        "The path of the loom device in the /dev directory", {"loomDevice"},
+        envLoom, (*envLoom || envSocket) ? args::Options::Single : args::Options::Required | args::Options::Single);
+    args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
+        "Number of shafts on the loom", {"shafts"}, shaftMap, defShaft,
+        defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
+    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE",
+        "Is the loom a positive or negative dobby (+ and - are also accepted)", {"dobbyType"},
+        dobbyMap, defDobby, args::Options::Single);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"}, args::Options::Single);
     args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI SUPPORT",
         "Does the terminal support ANSI style codes and possibly true-color", {"ansi"},
         ANSImap, defANSI, args::Options::Single);
-    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B",
-        {'t', "tabby"}, args::Options::Single);
-    args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks",
-        {"tabbycolor"}, "00FF00", args::Options::Single);
-    
+    args::Positional<std::string> _wifFile(parser, "WIF PATH", "The path of the WIF file",
+        args::Options::Required);
+
     try {
         parser.Prog("DrawBoy");
         parser.ParseCLI(argc, argv);
