@@ -9,7 +9,7 @@ MKDIR_P ?= mkdir -p
 
 BUILD_DIR ?= ./build
 
-all: bin format-man-pages
+all: bin
 bin: $(BUILD_DIR)/$(TARGET_TEST) $(BUILD_DIR)/$(TARGET_USER)
 
 install:
@@ -62,19 +62,6 @@ $(BUILD_DIR)/$(TARGET_USER): $(OBJS_USER)
 
 clean:
 	$(RM) -r $(BUILD_DIR)
-
-# man files
-
-MANDIR ?= man
-MANPAGES ?= DrawBoy.1
-MANFILES ?= $(foreach page,$(MANPAGES),$(MANDIR)/$(page))
-MANFORMATED ?= $(foreach file,$(MANFILES),$(file).txt)
-
-$(MANFORMATED): %.txt : %
-	groff -t -man -Tutf8 $< | col -b -x > $@
-
-format-man-pages: $(MANFORMATED)
-
 
 # dependencies
 
