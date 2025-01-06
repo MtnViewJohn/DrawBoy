@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <cerrno>
 #include <cstdlib>
+#include <algorithm>
 
 class color {
 public:
@@ -20,16 +21,23 @@ public:
     
     // Maps integer range [low,high] to double range [0,1)
     color(tupple3 rgb, std::pair<int,int> range)
-    : red  ((double)(std::get<0>(rgb) - range.first) / ((range.second - range.first) + 1.0)),
-      green((double)(std::get<1>(rgb) - range.first) / ((range.second - range.first) + 1.0)),
-      blue ((double)(std::get<2>(rgb) - range.first) / ((range.second - range.first) + 1.0))
     {
-        if (std::get<0>(rgb) > range.second || std::get<1>(rgb) > range.second || std::get<2>(rgb) > range.second)
+        auto [r, g, b] = rgb;
+        auto [low, high] = range;
+        double delta = (high - low) + 1.0;
+        if (r != std::clamp(r, low, high) || g != std::clamp(g, low, high) || b != std::clamp(b, low, high))
             throw std::runtime_error("Illegal color value.");
+        
+        red   = (r - low) / delta;
+        green = (g - low) / delta;
+        blue  = (b - low) / delta;
     }
+    
     color(double r, double g, double b)
     : red(r), green(g), blue(b) {}
+    
     color() : red(0.0), green(0.0), blue(0.0) {}
+    
     color(const char* rgbhex)
     {
         errno = 0;
@@ -60,6 +68,7 @@ public:
         int b = (int)( blue * range);
         return {r, g, b};
     }
+    
     int convertGray(int range) const
     {
         int r = (int)(  red * range); // [0,1) -> [0,range-1]
@@ -67,6 +76,7 @@ public:
         int b = (int)( blue * range);
         return (r == b && b == g) ? r : -1;
     }
+    
     bool useWhiteText() const
     { return (red * 0.299) + (green * 0.587) + (blue * 0.114) < 0.5; }
 
