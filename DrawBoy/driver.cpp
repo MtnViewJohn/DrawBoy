@@ -351,7 +351,7 @@ View::handlePickEntryEvent(const Term::Event &ev)
             std::fflush(stdout);
             return true;
         }
-        if (ev.character == '\b') {
+        if (ev.character == '\x7f') {
             if (pickValue.empty()) {
                 std::putchar('\a');
             } else {
@@ -392,7 +392,7 @@ View::handlePickListEntryEvent(const Term::Event &ev)
             std::fflush(stdout);
             return true;
         }
-        if (ev.character == '\b') {
+        if (ev.character == '\x7f') {
             if (pickValue.empty()) {
                 std::putchar('\a');
             } else {
