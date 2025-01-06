@@ -33,5 +33,8 @@ struct Options {
     bool ascii;
     ANSIsupport ansi;
     uint64_t tabbyA = 0, tabbyB = 0;
+    TabbyPattern tabbyPattern = TabbyPattern::xAyB;
+private:
+    void addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool& isTabbyA);
 };
 

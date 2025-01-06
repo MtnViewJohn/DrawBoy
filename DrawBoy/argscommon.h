@@ -28,6 +28,13 @@ enum class ANSIsupport {
     truecolor,
 };
 
+enum class TabbyPattern {
+    xAyB,
+    AxBy,
+    xByA,
+    BxAy,
+};
+
 inline const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
 inline const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
 inline const char* envDobby = std::getenv("DRAWBOY_DOBBY");
@@ -53,6 +60,12 @@ inline std::unordered_map<std::string, ANSIsupport> ANSImap{
     {"no", ANSIsupport::no},
     {"yes", ANSIsupport::yes},
     {"truecolor", ANSIsupport::truecolor},
+};
+inline std::unordered_map<std::string, TabbyPattern> tabbyMap {
+    {"xayb", TabbyPattern::xAyB},
+    {"axby", TabbyPattern::AxBy},
+    {"xbya", TabbyPattern::xByA},
+    {"bxay", TabbyPattern::BxAy},
 };
 
 inline std::system_error

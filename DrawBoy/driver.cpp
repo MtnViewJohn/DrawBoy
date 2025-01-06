@@ -386,7 +386,7 @@ bool
 View::handlePickListEntryEvent(const Term::Event &ev)
 {
     if (ev.type == Term::EventType::Char) {
-        if (std::strchr("0123456789ABab-,", ev.character)) {
+        if (std::strchr("0123456789ABab-~,", ev.character)) {
             pickValue.push_back(ev.character);
             std::putchar(ev.character);
             std::fflush(stdout);

@@ -110,8 +110,12 @@ Options::parsePicks(const std::string& str, int maxPick)
         return;
     }
     
+    bool tabbyIsA = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
+    
     while (std::getline(ss, range, ',')) {
         try {
+            if (range.empty())
+                throw std::runtime_error("Empty treadling range.");
             int mult = 1;
             size_t multToken = range.find("x");
             if (multToken != std::string::npos) {
@@ -121,17 +125,17 @@ Options::parsePicks(const std::string& str, int maxPick)
                     throw std::runtime_error("Syntax error in treadling multiplier.");
                 range.erase(0, multToken + 1);
             }
-            if (std::strchr("ABab", range[0])) {
+            if (std::strchr("ABab", range.front())) {
                 for (int count = 0; count < mult; ++count) {
                     for (char p: range) {
                         switch (p) {
                             case 'a':
                             case 'A':
-                                newpicks.push_back(-1);
+                                addpick(-1, newpicks, false, tabbyIsA);
                                 break;
                             case 'b':
                             case 'B':
-                                newpicks.push_back(-2);
+                                addpick(-2, newpicks, false, tabbyIsA);
                                 break;
                             default:
                                 break;
@@ -140,12 +144,20 @@ Options::parsePicks(const std::string& str, int maxPick)
                 }
             } else {
                 size_t rangeToken = std::string::npos;
+                bool tabbyRange = range.front() == '~';     // single pick w/tabby
+                if (tabbyRange)
+                    range.erase(0, 1);
                 int start = std::stoi(range, &rangeToken);
                 int end = start;
-                if (rangeToken < range.length() && range[rangeToken] == '-') {
+                if (rangeToken < range.length() && (range[rangeToken] == '~' || range[rangeToken] == '-')) {
+                    if (tabbyRange)
+                        throw std::runtime_error("Spurious ~ in treadling range.");
+                    tabbyRange = range[rangeToken] == '~';  // pick range w/tabby
                     range.erase(0, rangeToken + 1);
                     end = std::stoi(range, &rangeToken);
                 }
+                if (rangeToken < range.length())
+                    throw std::runtime_error("Unparsed text in treadling range.");
                 if (start < 1 || end < 1)
                     throw std::runtime_error("Bad treadling range.");
                 if (start > maxPick || end > maxPick)
@@ -153,10 +165,10 @@ Options::parsePicks(const std::string& str, int maxPick)
                 for (int count = 0; count < mult; ++count) {
                     if (start < end) {
                         for (int p = start; p <= end; ++p)
-                            newpicks.push_back(p);
+                            addpick(p, newpicks, tabbyRange, tabbyIsA);
                     } else {
                         for (int p = end; p >= start; --p)
-                            newpicks.push_back(p);
+                            addpick(p, newpicks, tabbyRange, tabbyIsA);
                     }
                 }
             }
@@ -169,6 +181,23 @@ Options::parsePicks(const std::string& str, int maxPick)
     std::swap(newpicks, picks);
 }
 
+void
+Options::addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool &isTabbyA)
+{
+    if (isTabby) {
+        if (tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::xByA) {
+            newpicks.push_back(_pick);
+            newpicks.push_back(isTabbyA ? -1 : -2);
+        } else {
+            newpicks.push_back(isTabbyA ? -1 : -2);
+            newpicks.push_back(_pick);
+        }
+        isTabbyA = !isTabbyA;
+    } else {
+        newpicks.push_back(_pick);
+        isTabbyA = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
+    }
+}
 
 Options::Options(int argc, const char * argv[])
 {
@@ -195,6 +224,8 @@ Options::Options(int argc, const char * argv[])
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B",
         {"tabby"}, args::Options::Single);
+    args::MapFlag<std::string, TabbyPattern> _tabbyPattern(parser, "TABBY TYPE", "Which pattern is used for inserted tabby picks",
+        {"tabbytype"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
     args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks",
         {"tabbycolor"}, "00FF00", args::Options::Single);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
@@ -262,6 +293,7 @@ Options::Options(int argc, const char * argv[])
     dobbyType = args::get(_dobbyType);
     ascii = args::get(_ascii) || envASCII != nullptr;
     ansi = args::get(_ansi);
+    tabbyPattern = args::get(_tabbyPattern);
 
     wifFile = args::get(_wifFile);
     
