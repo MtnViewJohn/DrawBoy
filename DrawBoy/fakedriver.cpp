@@ -189,6 +189,14 @@ View::connect()
     const char* shaftChar = opts.ascii ? "*" : "\xE2\x96\xA0";
     
     while (mode == Mode::Run) {
+        // Drain pending terminal events because select() won't see them
+        while (term.pendingEvent()) {
+            Term::Event ev = term.getEvent();
+            if (ev.type == Term::EventType::None)
+                break;
+            handleEvent(ev);
+        }
+        
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(socketFD, &rdset);
