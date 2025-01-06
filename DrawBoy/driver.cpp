@@ -521,6 +521,14 @@ View::run()
     displayPrompt();
 
     while (mode != Mode::Quit) {
+        // Drain pending terminal events because select() won't see them
+        while (term.pendingEvent()) {
+            Term::Event ev = term.getEvent();
+            if (ev.type == Term::EventType::None)
+                break;
+            handleEvent(ev);
+        }
+        
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(opts.loomDeviceFD, &rdset);

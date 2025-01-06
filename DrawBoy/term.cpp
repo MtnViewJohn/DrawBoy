@@ -171,6 +171,10 @@ std::string Term::readInput()
     return o;
 }
 
+bool Term::pendingEvent()
+{
+    return (!_pending_input.empty()) || pendingResize;
+}
 
 Term::Event Term::getEvent()
 {

@@ -79,6 +79,7 @@ class Term {
     };
 
     Event getEvent();
+    bool pendingEvent();
 
   private:
     std::string _pending_input;
