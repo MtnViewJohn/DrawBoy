@@ -81,7 +81,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--shafts 12"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--findloom"
@@ -101,11 +101,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.wif&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;cross shadow 10thread 11sdobby.wif&quot;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;shibori mw.wif&apos;"

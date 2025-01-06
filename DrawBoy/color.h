@@ -62,9 +62,10 @@ public:
     }
     int convertGray(int range) const
     {
-        if (red != green || red != blue) return -1;
-        int w = (int)(  red * range);
-        return w;
+        int r = (int)(  red * range); // [0,1) -> [0,range-1]
+        int g = (int)(green * range);
+        int b = (int)( blue * range);
+        return (r == b && b == g) ? r : -1;
     }
     bool useWhiteText() const
     { return (red * 0.299) + (green * 0.587) + (blue * 0.114) < 0.5; }
