@@ -134,16 +134,12 @@ const char* Term::colorToStyle(const color &c, bool truecolor)
     
     const char* foregnd = c.useWhiteText() ? "1;37" : "0;30";
     if (truecolor) {
-        auto c24bit = c.convert(256);
-        std::snprintf(buf, 32, "\x1b[%s;48;2;%d;%d;%dm", foregnd,
-                      std::get<0>(c24bit),
-                      std::get<1>(c24bit),
-                      std::get<2>(c24bit));
+        auto [r, g, b] = c.convert(256);
+        std::snprintf(buf, 32, "\x1b[%s;48;2;%d;%d;%dm", foregnd, r, g, b);
     } else {
-        auto c666 = c.convert(6);
+        auto [r, g, b] = c.convert(6);
         int gray = c.convertGray(24);
-        int bkgnd = gray >= 0 ? gray + 232 :
-            std::get<0>(c666) * 36 + std::get<1>(c666) * 6 + std::get<2>(c666) + 16;
+        int bkgnd = gray >= 0 ? gray + 232 : r * 36 + g * 6 + b + 16;
         std::snprintf(buf, 32, "\x1b[%s;48;5;%dm", foregnd, bkgnd);
     }
     
