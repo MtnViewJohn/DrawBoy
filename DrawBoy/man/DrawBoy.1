@@ -36,13 +36,13 @@ Engages the loom finder wizard to help the user determine which device file is
 the USB serial port interface. Fixed (non\-USB) serial ports cannot be found
 using the loom finder wizard, consult your system documentation.
 .TP
-.B \-p [PICK], \-\-pick=[PICK]
+\fB\-p\fP\fIpick\fP, \fB\-\-pick\fP=\fIpick\fP
 Sets the initial pick from the pick list to start weaving. The default pick is
 the first pick in the pick list. If the specified pick is larger than size of
 the pick list then a modulo calculation is performed to determine where to
 start weaving in the pick list.
 .TP
-.B \-P [PICK LIST], \-\-picks=[PICK LIST]
+\fB\-P\fP\fIpicklist\fP, \fB\-\-picks\fP=\fIpicklist\fP
 Sets the list of picks from the WIF file to weave. This is a comma\-separated
 list of pick ranges with an optional multiplier in front. The optional multiplier
 is a number followed by the letter \fIx\fP. The pick range can a single number,
@@ -50,33 +50,44 @@ a pair of numbers separated by a hyphen, or an arbitrary list of tabby picks
 (ab).
 
 .IP
+Pick ranges can also insert a tabby pick with each pattern pick from the WIF file.
+A single pick preceeded by a tilde (~) will insert the appropriate tabby pick
+along with the specified WIF pick. A range of picks separated by a tilde instead
+of a hyphen will insert a tabby pick with each WIF pick.
+
+.IP
 The default pick list is the entire WIF file.
 
 .TP
-.B \-\-tabby=[TABBY SPEC]
-Sets the tabby for the current weaving. The \fBTABBY SPEC\fP is a string of the
+\fB\-\-tabby\fP=\fItabby\~spec\fP
+Sets the tabby for the current weaving. The \fItabby\~spec\fP is a string of the
 letters A and B. It indicates which shafts are in tabby A and which are in tabby
 B. For example, \fB\-\-tabby=AABBBBBB\fP indicates that shafts 1 and 2 are tabby
 A and shafts 3 through 8 are tabby B. The default is odd shafts on tabby A and
 even shafts on tabby B.
 .TP
-.B \-\-tabbycolor=[TABBY COLOR]
-Specifies what color to display for tabby picks. The \fBTABBY COLOR\fP is a six
+\fB\-\-tabbycolor\fP=\fItabby\~color\fP
+Specifies what color to display for tabby picks. The \fItabby\~color\fP is a six
 or three digit hexadecimal number that indicates an RGB color triple, RRGGBB
 for six digits and RGB for three digits. The default tabby color is 00FF00, or
 green.
 .TP
-.B \-\-loomDevice=[LOOM PATH]
+\fB\-\-tabbyPattern\fP=\fItabby\~pattern\fP
+Specifies whether inserted tabby picks are before or after the pattern pick and
+whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy,
+xByA, and BxAy.
+.TP
+\fB\-\-loomDevice\fP=\fIloom\~path\fP
 The path to the serial port in the /dev directory. The loom path is required for
 DrawBoy to operate. It can also be specified with the \fBDRAWBOY_LOOMDEVICE\fP
 environment variable.
 .TP
-.B \-\-shafts=[SHAFT COUNT]
+\fB\-\-shafts\fP=\fIshaft\~count\fP
 Number of shafts supported by the loom. The shaft count is required for
 DrawBoy to operate. It can also be specified with the \fBDRAWBOY_SHAFTS\fP
-environment variable.
+environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
 .TP
-.B \-\-dobbyType=[DOBBY TYPE]
+\fB\-\-dobbyType\fP=\fIdobby\~type\fP
 Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or
 negative). The dobby type is required for DrawBoy to operate. It can also be
 specified with the \fBDRAWBOY_DOBBY\fP environment variable. Most AVL looms
@@ -87,7 +98,7 @@ Indicates that the terminal does not support Unicode characters and that only
 ASCII characters can be used. It can also be specified with the
 \fBDRAWBOY_ASCII\fP environment variable.
 .TP
-.B \-\-ansi=[ANSI SUPPORT]
+\fB\-\-ansi\fP=\fIANSI\~support\fP
 Indicates whether the terminal supports ANSI display modes (e.g., bold or color).
 Accepted values are \fByes\fP for normal ANSI support, \fBno\fP for no ANSI
 support, and \fBtruecolor\fP for ANSI support with 24\-bit color. It can also be
@@ -247,6 +258,9 @@ visible in your terminal window and the last pick was 493.
 .RE
 
 .SH ENVIRONMENT
+The following environment variables affect the behavior of DrawBoy. They
+provide information that will likely be common to all DrawBoy runs. It may
+be useful to set them in the users account profile.
 .TP
 .B DRAWBOY_LOOMDEVICE
 Indicates the path to the serial device for talking to the loom.

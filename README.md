@@ -27,7 +27,7 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 # OPTIONS
 
-**-h, \--help**
+**\-h**, **\--help**
 
 > Outputs a help message and exits.
 
@@ -35,33 +35,39 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 > Engages the loom finder wizard to help the user determine which device file is the USB serial port interface. Fixed (non-USB) serial ports cannot be found using the loom finder wizard, consult your system documentation.
 
-**-p \[PICK\], \--pick=\[PICK\]**
+**\-p**_pick_, **\--pick**=*pick*
 
 > Sets the initial pick from the pick list to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list.
 
-**-P \[PICK LIST\], \--picks=\[PICK LIST\]**
+**\-P**_picklist_, **\--picks**=*picklist*
 
 > Sets the list of picks from the WIF file to weave. This is a comma-separated list of pick ranges with an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The pick range can a single number, a pair of numbers separated by a hyphen, or an arbitrary list of tabby picks (ab).
 
+> Pick ranges can also insert a tabby pick with each pattern pick from the WIF file. A single pick preceeded by a tilde (~) will insert the appropriate tabby pick along with the specified WIF pick. A range of picks separated by a tilde instead of a hyphen will insert a tabby pick with each WIF pick.
+
 > The default pick list is the entire WIF file.
 
-**\--tabby=\[TABBY SPEC\]**
+**\--tabby**=*tabby spec*
 
 > Sets the tabby for the current weaving. The **TABBY SPEC** is a string of the letters A and B. It indicates which shafts are in tabby A and which are in tabby B. For example, **\--tabby=AABBBBBB** indicates that shafts 1 and 2 are tabby A and shafts 3 through 8 are tabby B. The default is odd shafts on tabby A and even shafts on tabby B.
 
-**\--tabbycolor=\[TABBY COLOR\]**
+**\--tabbycolor**=*tabby color*
 
 > Specifies what color to display for tabby picks. The **TABBY COLOR** is a six or three digit hexadecimal number that indicates an RGB color triple, RRGGBB for six digits and RGB for three digits. The default tabby color is 00FF00, or green.
 
-**\--loomDevice=\[LOOM PATH\]**
+**\--tabbyPattern**=*tabby pattern*
+
+> Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy.
+
+**\--loomDevice**=*loom path*
 
 > The path to the serial port in the /dev directory. The loom path is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
 
-**\--shafts=\[SHAFT COUNT\]**
+**\--shafts**=*shaft count*
 
-> Number of shafts supported by the loom. The shaft count is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_SHAFTS** environment variable.
+> Number of shafts supported by the loom. The shaft count is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
 
-**\--dobbyType=\[DOBBY TYPE\]**
+**\--dobbyType**=*dobby type*
 
 > Whether the loom is a positive dobby (+ or positive), or a negative dobby (- or negative). The dobby type is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the workshop dobby loom (WDL) is a negative dobby.
 
@@ -69,7 +75,7 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 > Indicates that the terminal does not support Unicode characters and that only ASCII characters can be used. It can also be specified with the **DRAWBOY_ASCII** environment variable.
 
-**\--ansi=\[ANSI SUPPORT\]**
+**\--ansi**=*ANSI support*
 
 > Indicates whether the terminal supports ANSI display modes (e.g., bold or color). Accepted values are **yes** for normal ANSI support, **no** for no ANSI support, and **truecolor** for ANSI support with 24-bit color. It can also be specified with the **DRAWBOY_ANSI** environment variable.
 
@@ -206,7 +212,12 @@ weaving is still visible in your terminal window and the last pick was
 --|||--||--||-||--||--|||--||--||-||--||--|||--||--||-  503 -->  |*  *  * |
 [Weaving:55]  T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit
 ```
+
 # ENVIRONMENT
+
+The following environment variables affect the behavior of DrawBoy. They
+provide information that will likely be common to all DrawBoy runs. It may
+be useful to set them in the users account profile.
 
 **DRAWBOY_LOOMDEVICE**
 
