@@ -49,11 +49,11 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 **\--tabby**=*tabby spec*
 
-> Sets the tabby for the current weaving. The **TABBY SPEC** is a string of the letters A and B. It indicates which shafts are in tabby A and which are in tabby B. For example, **\--tabby=AABBBBBB** indicates that shafts 1 and 2 are tabby A and shafts 3 through 8 are tabby B. The default is odd shafts on tabby A and even shafts on tabby B.
+> Sets the tabby for the current weaving. The *tabby spec* is a string of the letters A and B. It indicates which shafts are in tabby A and which are in tabby B. For example, **\--tabby=AABBBBBB** indicates that shafts 1 and 2 are tabby A and shafts 3 through 8 are tabby B. The default is odd shafts on tabby A and even shafts on tabby B.
 
 **\--tabbycolor**=*tabby color*
 
-> Specifies what color to display for tabby picks. The **TABBY COLOR** is a six or three digit hexadecimal number that indicates an RGB color triple, RRGGBB for six digits and RGB for three digits. The default tabby color is 00FF00, or green.
+> Specifies what color to display for tabby picks. The *tabby color* is a three or six digit hexadecimal number that indicates an RGB color triple, RRGGBB for six digits and RGB for three digits. The default tabby color is 00FF00, or green.
 
 **\--tabbyPattern**=*tabby pattern*
 
@@ -69,7 +69,7 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 **\--dobbyType**=*dobby type*
 
-> Whether the loom is a positive dobby (+ or positive), or a negative dobby (- or negative). The dobby type is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the workshop dobby loom (WDL) is a negative dobby.
+> Whether the loom is a positive dobby (+ or positive), or a negative dobby (- or negative). The dobby type is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
 
 **\--ascii**
 
