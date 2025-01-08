@@ -521,33 +521,22 @@ View::run()
     displayPrompt();
 
     while (mode != Mode::Quit) {
-        // Drain pending terminal events because select() won't see them
-        while (term.pendingEvent()) {
-            Term::Event ev = term.getEvent();
-            if (ev.type == Term::EventType::None)
-                break;
-            handleEvent(ev);
-        }
-        
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(opts.loomDeviceFD, &rdset);
-        timeval threesec{3,0};
+        timeval threesec{term.pendingEvent() ? 0 : 3, 0};
         
         int nfds = ::select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
         
         if (nfds == -1 && errno != EINTR)
             throw make_system_error("select failed");
 
-        if (nfds == 0) {
-            if (waitingForSolenoids) {
-                sendToLoom("\x0f\x07");
-                std::putchar('.');
-            }
-            continue;
+        if (nfds == 0 && waitingForSolenoids) {
+            sendToLoom("\x0f\x07");
+            std::putchar('.');
         }
         
-        if (FD_ISSET(STDIN_FILENO, &rdset) || nfds == -1) {
+        if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
             Term::Event ev = term.getEvent();
             if (ev.type != Term::EventType::None)
                 handleEvent(ev);

@@ -189,18 +189,10 @@ View::connect()
     const char* shaftChar = opts.ascii ? "*" : "\xE2\x96\xA0";
     
     while (mode == Mode::Run) {
-        // Drain pending terminal events because select() won't see them
-        while (term.pendingEvent()) {
-            Term::Event ev = term.getEvent();
-            if (ev.type == Term::EventType::None)
-                break;
-            handleEvent(ev);
-        }
-        
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(socketFD, &rdset);
-        timeval onesec{1,0};
+        timeval onesec{term.pendingEvent() ? 0 : 1, 0};
         if (!autoInput.empty() && !autoReset && std::isdigit((unsigned char)autoInput.front())) {
             size_t pos = 0;
             int delay = std::stoi(autoInput, &pos);
@@ -247,9 +239,7 @@ View::connect()
             }
         }
 
-        if (nfds == 0) continue;
-        
-        if (FD_ISSET(STDIN_FILENO, &rdset) || nfds == -1) {
+        if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
             Term::Event ev = term.getEvent();
             if (ev.type == Term::EventType::None) continue;
             handleEvent(ev);
@@ -322,16 +312,14 @@ View::run(IPC::Server& server)
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(server.fd(), &rdset);
-        timeval onesec{1,0};
+        timeval onesec{term.pendingEvent() ? 0 : 1, 0};
         
         int nfds = select(server.fd() + 1, &rdset, nullptr, nullptr, &onesec);
         
         if (nfds == -1 && errno != EINTR)
             throw make_system_error("select failed");
 
-        if (nfds == 0) continue;
-
-        if (FD_ISSET(STDIN_FILENO, &rdset) || nfds == -1) {
+        if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
             Term::Event ev = term.getEvent();
             if (ev.type == Term::EventType::Char) {
                 if (ev.character == '\x03' || ev.character == 'q' || ev.character == 'Q')
