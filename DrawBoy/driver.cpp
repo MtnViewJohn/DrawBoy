@@ -47,6 +47,7 @@ static const uint64_t NotAShed = 0xffffffff;
 enum class PickAction {
     DontSend,
     Send,
+    SendFinally,
 };
 
 struct View
@@ -165,11 +166,14 @@ View::displayPick(PickAction _sendToLoom)
     std::putchar('|');
     if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
     if (emptyLift) std::fputs(" EMPTY", stdout);
-    if (loomState != Shed::Closed && _sendToLoom == PickAction::Send)
-        std::printf(" %sPENDING%s", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
+    const char* endMessage = nullptr;
+    if (loomState != Shed::Closed && _sendToLoom == PickAction::Send) endMessage = "PENDING";
+    if (loomState == Shed::Closed && _sendToLoom == PickAction::SendFinally) endMessage = "SENT";
+    if (endMessage)
+        std::printf(" %s%s%s", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold, endMessage,
+                               opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
     
-    if (_sendToLoom == PickAction::Send)
+    if (_sendToLoom != PickAction::DontSend)
         sendPick(lift);
 
     Term::clearToEOL();
@@ -576,11 +580,8 @@ View::run()
                     if (pendingPick) {
                         // Redraw the last pending pick to erase the 'PENDING'
                         Term::moveCursorRel(-1, 0);
-                        displayPick(PickAction::Send);
+                        displayPick(PickAction::SendFinally);
                         displayPrompt();
-                        std::printf("%s SENT%s ",
-                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                    opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
                     } else {
                         nextPick();
                         displayPick(PickAction::Send);
