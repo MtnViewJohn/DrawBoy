@@ -57,7 +57,7 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 **\--tabbyPattern**=*tabby pattern*
 
-> Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy.
+> Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy. Default is xAyB.
 
 **\--loomDevice**=*loom path*
 
@@ -193,7 +193,7 @@ time passes
 -||-||--||--|||--||--||-||--||--|||--||--||-||--||--||  493 -->  | * *  * |
 [Weaving:45]  T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit
 ```
-It\'s time to turn the loom off for the night, so you quit DrawBoy. The
+It is time to turn the loom off for the night, so you quit DrawBoy. The
 next day you continue weaving. The draw-down from the previous days
 weaving is still visible in your terminal window and the last pick was
 493.

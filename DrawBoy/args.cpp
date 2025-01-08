@@ -222,10 +222,11 @@ Options::Options(int argc, const char * argv[])
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
-    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC", "Which shafts are activated for tabby A and tabby B",
-        {"tabby"}, args::Options::Single);
-    args::MapFlag<std::string, TabbyPattern> _tabbyPattern(parser, "TABBY TYPE", "Which pattern is used for inserted tabby picks",
-        {"tabbytype"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
+    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC",
+        "Which shafts are activated for tabby A and tabby B", {"tabby"}, args::Options::Single);
+    args::MapFlag<std::string, TabbyPattern, ToLowerReader> _tabbyPattern(parser, "TABBY PATTERN",
+        "Which pattern is used for inserted tabby picks",
+        {"tabbyPattern"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
     args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks",
         {"tabbycolor"}, "00FF00", args::Options::Single);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",

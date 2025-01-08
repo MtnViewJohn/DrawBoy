@@ -92,12 +92,20 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--picks=1~8"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--tabbyPattern=AxBy"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--loomDevice=/dev/ttyu8"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel.wif&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.wif&quot;"
@@ -113,7 +121,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;simple test8.wif&apos;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
