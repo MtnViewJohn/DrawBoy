@@ -88,6 +88,13 @@ struct View
     void displayPick(PickAction sendToLoom);
     void displayPrompt();
     void run();
+    
+    const char* toColor(const color& c)
+    { return opts.ansi == ANSIsupport::no ? "" : Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor); }
+    const char* bold()
+    { return opts.ansi == ANSIsupport::no ? "" : Term::Style::bold; }
+    const char* reset()
+    { return opts.ansi == ANSIsupport::no ? "" : Term::Style::reset; }
 };
 
 void
@@ -133,10 +140,8 @@ View::displayPick(PickAction _sendToLoom)
         bool raised = ( activated && opts.dobbyType == DobbyType::Positive) ||
                       (!activated && opts.dobbyType == DobbyType::Negative);
         
-        if (opts.ansi != ANSIsupport::no) {
-            color& c = raised ? wifContents.warpColor[i] : weftColor;
-            std::fputs(Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor), stdout);
-        }
+        color& c = raised ? wifContents.warpColor[i] : weftColor;
+        std::fputs(toColor(c), stdout);
         if (opts.ascii)
             std::putchar(raised ? '|' : '-');
         else
@@ -144,9 +149,7 @@ View::displayPick(PickAction _sendToLoom)
     }
     
     // Output direction arrows and pick #
-    if (opts.ansi != ANSIsupport::no) {
-        std::fputs(Term::colorToStyle(weftColor, opts.ansi == ANSIsupport::truecolor), stdout);
-    }
+    std::fputs(toColor(weftColor), stdout);
     const char *leftArrow = "", *rightArrow = "";
     if (weaveForward)
         rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
@@ -164,14 +167,13 @@ View::displayPick(PickAction _sendToLoom)
         else
             std::putchar(' ');
     std::putchar('|');
-    if (opts.ansi != ANSIsupport::no) std::fputs(Term::Style::reset, stdout);
+    std::fputs(reset(), stdout);
     if (emptyLift) std::fputs(" EMPTY", stdout);
     const char* endMessage = nullptr;
     if (loomState != Shed::Closed && _sendToLoom == PickAction::Send) endMessage = "PENDING";
     if (loomState == Shed::Closed && _sendToLoom == PickAction::SendFinally) endMessage = "SENT";
     if (endMessage)
-        std::printf(" %s%s%s", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold, endMessage,
-                               opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
+        std::printf(" %s%s%s", bold(), endMessage, reset());
     
     if (_sendToLoom != PickAction::DontSend)
         sendPick(lift);
@@ -412,8 +414,7 @@ View::handlePickListEntryEvent(const Term::Event &ev)
                 mode = Mode::Weave;
                 displayPick(PickAction::Send);
             } catch (std::exception& e) {
-                std::printf("\r\n\a%s%s%s\r\n", opts.ansi == ANSIsupport::no ? "" : Term::Style::bold,
-                                      e.what(), opts.ansi == ANSIsupport::no ? "" : Term::Style::reset);
+                std::printf("\r\n\a%s%s%s\r\n", bold(), e.what(), reset());
             }
             displayPrompt();
             return true;
