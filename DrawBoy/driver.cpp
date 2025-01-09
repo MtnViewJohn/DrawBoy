@@ -580,7 +580,8 @@ View::run()
                     loomState = Shed::Closed;
                     if (pendingPick) {
                         // Redraw the last pending pick to erase the 'PENDING'
-                        Term::moveCursorRel(-1, 0);
+                        if (opts.ansi != ANSIsupport::no)
+                            Term::moveCursorRel(-1, 0);
                         displayPick(PickAction::SendFinally);
                         displayPrompt();
                     } else {
@@ -598,7 +599,7 @@ View::run()
 
 void driver(Options& opts)
 {
-    Term term;
+    Term term(opts.ansi != ANSIsupport::no);
     
     if (!term.good())
         throw std::runtime_error("Could not open terminal.");

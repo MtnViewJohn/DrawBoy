@@ -24,9 +24,10 @@ namespace {
         { auto ret = std::fputs(str, f); std::fflush(f); return ret; }
 }
 
-Term::Term()
+Term::Term(bool ansi)
 {
     _good = false;
+    _ansiOK = ansi;
     _rows = 0;
     _cols = 0;
 
@@ -49,12 +50,13 @@ Term::Term()
     std::signal(SIGWINCH, sigwinch_handler);
     fetchWindowSize();
 
-    flushwrite(
-        //"\x1b[?1049h"   // use alternate buffer, saving cursor first
-        //"\x1b[2J"       // erase whole screen
-        "\x1b[?7l"      // turn off wrapping
-        TermStyleReset  // reset style
-    );
+    if (ansi)
+        flushwrite(
+            //"\x1b[?1049h"   // use alternate buffer, saving cursor first
+            //"\x1b[2J"       // erase whole screen
+            "\x1b[?7l"      // turn off wrapping
+            TermStyleReset  // reset style
+        );
 
     _good = true;
 }
@@ -65,11 +67,12 @@ Term::~Term()
 
     std::signal(SIGWINCH, SIG_DFL);
 
-    flushwrite(
-        //"\x1b[?1049l"   // use original buffer, restore cursor
-        "\x1b[?7h"      // turn on wrapping
-        TermStyleReset  // reset style
-    );
+    if (_ansiOK)
+        flushwrite(
+            //"\x1b[?1049l"   // use original buffer, restore cursor
+            "\x1b[?7h"      // turn on wrapping
+            TermStyleReset  // reset style
+        );
 
     ::tcsetattr(STDOUT_FILENO, TCSAFLUSH, &_original_termios);
 }

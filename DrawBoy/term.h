@@ -14,7 +14,7 @@ class color;
 
 class Term {
   public:
-    Term();
+    Term(bool ansi);
     ~Term();
 
     bool good() const { return _good; }
@@ -24,6 +24,7 @@ class Term {
 
   private:
     bool _good;
+    bool _ansiOK;
 
     struct termios _original_termios;
 
