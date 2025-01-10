@@ -187,7 +187,8 @@ DrawBoy --picks=7x1-8,9-60,4x61-212,7x213-220,AB "braided twill towel.wif"
 .RE
 .PP
 The braided twill towel starting with 56 picks (7x1-8) of basket
-weave header. Then we have 52 picks (9-60) pattern lead-in. Then 608 picks of the
+weave header. Then we have 52 picks (9-60) pattern lead-in. Then the 152 pick
+repeating part of the pattern is repeated four times to get 608 picks of the
 main body of the towel (4x61-212). 56 more picks of basket weave for the footer.
 Lastly, two picks of tabby with waste yarn to show the cut line between towels.
 .SS Continuing between weaving sessions:
@@ -241,7 +242,7 @@ visible in your terminal window and the last pick was 493.
 .PP
 .RS
 .EX
-% DrawBoy --pick=493 "fancy twill.wif"
+% DrawBoy "fancy twill.wif" --pick=493
 -||-||--||--|||--||--||-||--||--|||--||--||-||--||--||  493 -->  | * *  * |
 ||---||--||--|--||--||---||--||--|--||--||---||--||--|  494 -->  | ** ** *|
 |--|--||--||---||--||--|--||--||---||--||--|--||--||--  495 -->  |* * ** *|
@@ -276,5 +277,7 @@ dobby (negative or \-).
 If it exists then DrawBoy will only output ASCII characters.
 .TP
 .B DRAWBOY_ANSI
-Indicates the ANSI support level for the terminal.
+Indicates the ANSI support level for the terminal. Accepted values are \fByes\fP
+for normal ANSI support, \fBno\fP for no ANSI support, and \fBtruecolor\fP for
+ANSI support with 24\-bit color.
 

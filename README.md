@@ -17,12 +17,12 @@ quickly change to adjacent picks.
 
 The terminal should support xterm/ANSI style control sequences and
 Unicode, which pretty much all do these days. If the terminal does not
-display the Unicode characters used by DrawBoy then the **\--ascii**
+display the Unicode characters used by DrawBoy then the **\-\-ascii**
 option will force DrawBoy to restrict itself to ASCII characters. If
 ANSI styling (bold, color, etc.) do not display properly then the
-**\--ansi=no** option will force plain-text output. Some terminals
+**\-\-ansi=no** option will force plain-text output. Some terminals
 support 24-bit color, which DrawBoy can take advantage of (macOS
-Terminal does not). Use the **\--ansi=truecolor** option to enable
+Terminal does not). Use the **\-\-ansi=truecolor** option to enable
 24-bit TrueColor output.
 
 # OPTIONS
@@ -31,15 +31,15 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 > Outputs a help message and exits.
 
-**\--findloom**
+**\-\-findloom**
 
 > Engages the loom finder wizard to help the user determine which device file is the USB serial port interface. Fixed (non-USB) serial ports cannot be found using the loom finder wizard, consult your system documentation.
 
-**\-p**_pick_, **\--pick**=*pick*
+**\-p**_pick_, **\-\-pick**=*pick*
 
 > Sets the initial pick from the pick list to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list.
 
-**\-P**_picklist_, **\--picks**=*picklist*
+**\-P**_picklist_, **\-\-picks**=*picklist*
 
 > Sets the list of picks from the WIF file to weave. This is a comma-separated list of pick ranges with an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The pick range can a single number, a pair of numbers separated by a hyphen, or an arbitrary list of tabby picks (ab).
 
@@ -47,35 +47,35 @@ Terminal does not). Use the **\--ansi=truecolor** option to enable
 
 > The default pick list is the entire WIF file.
 
-**\--tabby**=*tabby spec*
+**\-\-tabby**=*tabby spec*
 
 > Sets the tabby for the current weaving. The *tabby spec* is a string of the letters A and B. It indicates which shafts are in tabby A and which are in tabby B. For example, **\--tabby=AABBBBBB** indicates that shafts 1 and 2 are tabby A and shafts 3 through 8 are tabby B. The default is odd shafts on tabby A and even shafts on tabby B.
 
-**\--tabbycolor**=*tabby color*
+**\-\-tabbycolor**=*tabby color*
 
 > Specifies what color to display for tabby picks. The *tabby color* is a three or six digit hexadecimal number that indicates an RGB color triple, RRGGBB for six digits and RGB for three digits. The default tabby color is 00FF00, or green.
 
-**\--tabbyPattern**=*tabby pattern*
+**\-\-tabbyPattern**=*tabby pattern*
 
 > Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy. Default is xAyB.
 
-**\--loomDevice**=*loom path*
+**\-\-loomDevice**=*loom path*
 
 > The path to the serial port in the /dev directory. The loom path is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
 
-**\--shafts**=*shaft count*
+**\-\-shafts**=*shaft count*
 
 > Number of shafts supported by the loom. The shaft count is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
 
-**\--dobbyType**=*dobby type*
+**\-\-dobbyType**=*dobby type*
 
-> Whether the loom is a positive dobby (+ or positive), or a negative dobby (- or negative). The dobby type is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
+> Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or negative). The dobby type is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
 
-**\--ascii**
+**\-\-ascii**
 
 > Indicates that the terminal does not support Unicode characters and that only ASCII characters can be used. It can also be specified with the **DRAWBOY_ASCII** environment variable.
 
-**\--ansi**=*ANSI support*
+**\-\-ansi**=*ANSI support*
 
 > Indicates whether the terminal supports ANSI display modes (e.g., bold or color). Accepted values are **yes** for normal ANSI support, **no** for no ANSI support, and **truecolor** for ANSI support with 24-bit color. It can also be specified with the **DRAWBOY_ANSI** environment variable.
 
@@ -151,7 +151,8 @@ with waste yarn picks to indicate the cut line between towels.
 DrawBoy --picks=7x1-8,9-60,4x61-212,7x213-220,AB "braided twill towel.wif"
 ```
 The braided twill towel starting with 56 picks (7x1-8) of basket weave
-header. Then we have 52 picks (9-60) pattern lead-in. Then 608 picks
+header. Then we have 52 picks (9-60) pattern lead-in. Then the 152 pick
+repeating part of the pattern is repeated four times to get 608 picks
 of the main body of the towel (4x61-212). 56 more picks of basket
 weave for the footer. Lastly, two picks of tabby with waste yarn to
 show the cut line between towels.
@@ -198,7 +199,7 @@ next day you continue weaving. The draw-down from the previous days
 weaving is still visible in your terminal window and the last pick was
 493.
 ```
-% DrawBoy --pick=493 "fancy twill.wif"
+% DrawBoy "fancy twill.wif" --pick=493
 -||-||--||--|||--||--||-||--||--|||--||--||-||--||--||  493 -->  | * *  * |
 ||---||--||--|--||--||---||--||--|--||--||---||--||--|  494 -->  | ** ** *|
 |--|--||--||---||--||--|--||--||---||--||--|--||--||--  495 -->  |* * ** *|
@@ -237,4 +238,6 @@ If it exists then DrawBoy will only output ASCII characters.
 
 **DRAWBOY_ANSI**
 
-Indicates the ANSI support level for the terminal.
+Indicates the ANSI support level for the terminal. Accepted values are **yes** 
+for normal ANSI support, **no** for no ANSI support, and **truecolor** for ANSI 
+support with 24-bit color. 
