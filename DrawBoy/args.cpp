@@ -59,6 +59,7 @@ enumSerial(const std::set<std::string>& exclude)
                 int fd = checkForSerial(dname);
                 if (fd >= 0) {
                     ::close(fd);
+                    std::cout << '\n' << dname << std::endl;
                     result.emplace(std::move(dname));
                 }
             }

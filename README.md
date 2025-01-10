@@ -33,7 +33,7 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 **\-\-findloom**
 
-> Engages the loom finder wizard to help the user determine which device file is the USB serial port interface. Fixed (non-USB) serial ports cannot be found using the loom finder wizard, consult your system documentation.
+> Engages the loom finder wizard to help the user determine which device file is the USB serial port interface. Fixed (non-USB) serial ports cannot be found using the loom finder wizard, consult your system documentation. The wizard can output the possible device paths for fixed serial ports.
 
 **\-p**_pick_, **\-\-pick**=*pick*
 
@@ -226,11 +226,12 @@ Indicates the path to the serial device for talking to the loom.
 
 **DRAWBOY_SHAFTS**
 
-Indicates how many shafts the loom supports.
+Indicates how many shafts the loom supports. Accepted values are 8, 12, 16, 24,
+32, or 40.
 
 **DRAWBOY_DOBBY**
 
-Indicates whether the loom has a positive dobby (positive or +)or a negative dobby (negative or -).
+Indicates whether the loom has a positive dobby (positive or +) or a negative dobby (negative or -).
 
 **DRAWBOY_ASCII**
 

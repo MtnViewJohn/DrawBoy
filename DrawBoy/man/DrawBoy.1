@@ -34,7 +34,8 @@ Outputs a help message and exits.
 .B \-\-findloom
 Engages the loom finder wizard to help the user determine which device file is
 the USB serial port interface. Fixed (non\-USB) serial ports cannot be found
-using the loom finder wizard, consult your system documentation.
+using the loom finder wizard, consult your system documentation. The wizard can
+output the possible device paths for fixed serial ports.
 .TP
 \fB\-p\fP\fIpick\fP, \fB\-\-pick\fP=\fIpick\fP
 Sets the initial pick from the pick list to start weaving. The default pick is
@@ -267,10 +268,11 @@ be useful to set them in the users account profile.
 Indicates the path to the serial device for talking to the loom.
 .TP
 .B DRAWBOY_SHAFTS
-Indicates how many shafts the loom supports.
+Indicates how many shafts the loom supports. Accepted values are 8, 12, 16, 24,
+32, or 40.
 .TP
 .B DRAWBOY_DOBBY
-Indicates whether the loom has a positive dobby (positive or +)or a negative
+Indicates whether the loom has a positive dobby (positive or +) or a negative
 dobby (negative or \-).
 .TP
 .B DRAWBOY_ASCII
