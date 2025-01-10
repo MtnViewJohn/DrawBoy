@@ -42,8 +42,6 @@ enum class TabbyPick {
     B,
 };
 
-static const uint64_t NotAShed = 0xffffffff;
-
 enum class PickAction {
     DontSend,
     Send,
@@ -79,11 +77,10 @@ struct View
     bool handlePickEntryEvent(const Term::Event& ev);
     bool handlePickListEntryEvent(const Term::Event& ev);
 
-    void sendPick(uint64_t _pick = NotAShed);
+    void sendPick(uint64_t _pick);
     void sendToLoom(std::string_view msg);
     
-    void nextPick();
-    void prevPick();
+    void nextPick(bool forward);
     void setPick(int newPick);
     void displayPick(PickAction sendToLoom);
     void displayPrompt();
@@ -329,11 +326,11 @@ View::handlePickEvent(const Term::Event &ev)
         switch (ev.key) {
             case Term::Key::Up:
             case Term::Key::Left:
-                prevPick();
+                nextPick(false);
                 break;
             case Term::Key::Down:
             case Term::Key::Right:
-                nextPick();
+                nextPick(true);
                 break;
             default:
                 return false;
@@ -436,26 +433,12 @@ View::setPick(int newPick)
 }
 
 void
-View::nextPick()
+View::nextPick(bool forward)
 {
     switch (mode) {
         case Mode::Weave:
-            setPick(pick + (weaveForward ? 1 : -1));
-            break;
-        case Mode::Tabby:
-            tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
-            break;
-        default:
-            break;
-    }
-}
-
-void
-View::prevPick()
-{
-    switch (mode) {
-        case Mode::Weave:
-            setPick(pick + (weaveForward ? -1 : 1));
+                                //   VV     logical XNOR
+            setPick(pick + ((forward == weaveForward) ? 1 : -1));
             break;
         case Mode::Tabby:
             tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
@@ -585,7 +568,7 @@ View::run()
                         displayPick(PickAction::SendFinally);
                         displayPrompt();
                     } else {
-                        nextPick();
+                        nextPick(true);
                         displayPick(PickAction::Send);
                         displayPrompt();
                     }
