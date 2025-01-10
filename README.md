@@ -17,12 +17,12 @@ quickly change to adjacent picks.
 
 The terminal should support xterm/ANSI style control sequences and
 Unicode, which pretty much all do these days. If the terminal does not
-display the Unicode characters used by DrawBoy then the **\-\-ascii**
+display the Unicode characters used by DrawBoy then the **&#8209;&#8209;ascii**
 option will force DrawBoy to restrict itself to ASCII characters. If
 ANSI styling (bold, color, etc.) do not display properly then the
-**\-\-ansi=no** option will force plain-text output. Some terminals
+**&#8209;&#8209;ansi=no** option will force plain-text output. Some terminals
 support 24-bit color, which DrawBoy can take advantage of (macOS
-Terminal does not). Use the **\-\-ansi=truecolor** option to enable
+Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 24-bit TrueColor output.
 
 # OPTIONS
