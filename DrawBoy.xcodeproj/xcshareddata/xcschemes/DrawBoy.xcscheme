@@ -60,7 +60,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pick=493"
+            argument = "--pick=322"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -72,7 +72,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--ansi=Yes"
+            argument = "--ansi=No"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -88,8 +88,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--picks=1-8,10,5x20-29,7x40"
-            isEnabled = "NO">
+            argument = "--picks=7x1-8,14x9-36,93-100,7x101-108,AB"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1~8"
@@ -97,15 +97,15 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabbyPattern=AxBy"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--loomDevice=/dev/ttyu8"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&apos;gudruns towel.wif&apos;"
-            isEnabled = "NO">
+            argument = "&apos;gudruns towel4.wif&apos;"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.wif&quot;"
@@ -121,7 +121,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;simple test8.wif&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
