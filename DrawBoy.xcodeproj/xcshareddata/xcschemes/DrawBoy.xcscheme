@@ -89,7 +89,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=7x1-8,14x9-36,93-100,7x101-108,AB"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1~8"
@@ -143,7 +143,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"

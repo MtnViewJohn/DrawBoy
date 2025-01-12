@@ -14,7 +14,7 @@ class color;
 
 class Term {
   public:
-    Term(bool ansi);
+    Term(bool ansi = true);
     ~Term();
 
     bool good() const { return _good; }

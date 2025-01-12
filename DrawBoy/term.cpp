@@ -50,7 +50,7 @@ Term::Term(bool ansi)
     std::signal(SIGWINCH, sigwinch_handler);
     fetchWindowSize();
 
-    if (ansi)
+    if (_ansiOK)
         flushwrite(
             //"\x1b[?1049h"   // use alternate buffer, saving cursor first
             //"\x1b[2J"       // erase whole screen
