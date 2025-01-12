@@ -83,7 +83,10 @@ initLoomPort(int fd)
     term.c_cflag &= (tcflag_t)(~PARENB);            // set 8N1
     term.c_cflag &= (tcflag_t)(~CSTOPB);
     term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
-    
+    term.c_cflag |= CLOCAL;
+    term.c_cc[VMIN] = 0;
+    term.c_cc[VTIME] = 1;
+
     if (::tcsetattr(fd, TCSAFLUSH, &term) < 0)
         throw make_system_error("Cannot communicate with loom device");
 }
