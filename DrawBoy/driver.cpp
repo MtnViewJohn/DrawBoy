@@ -461,16 +461,25 @@ View::sendToLoom(std::string_view msg)
         } else {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
                 timeval tv = {};
-                fd_set fds = {};
+                fd_set wrfds = {};
+                fd_set rdfds = {};
                 int selectresult;
                 
                 tv.tv_sec = 1;
-                FD_ZERO(&fds);
+                FD_ZERO(&wrfds);
+                FD_ZERO(&rdfds);
                 std::putchar('>');
-                FD_SET(opts.loomDeviceFD, &fds);
-                selectresult = ::select(opts.loomDeviceFD + 1, nullptr, &fds, nullptr, &tv);
+                std::fflush(stdout);
+                FD_SET(opts.loomDeviceFD, &wrfds);
+                FD_SET(STDIN_FILENO, &rdfds);
+                selectresult = ::select(opts.loomDeviceFD + 1, &rdfds, &wrfds, nullptr, &tv);
                 if (selectresult == -1 && errno != EINTR)
                     throw make_system_error("loom select failed");
+                if (FD_ISSET(STDIN_FILENO, &rdfds) || term.pendingEvent()) {
+                    Term::Event ev = term.getEvent();
+                    if (ev.type != Term::EventType::None)
+                        handleEvent(ev);
+                }
             } else {
                 // from the write
                 throw make_system_error("loom write failed");
