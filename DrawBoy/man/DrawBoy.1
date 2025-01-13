@@ -1,28 +1,28 @@
 .TH DRAWBOY 1
 .SH NAME
-DrawBoy \- CompuDobby III loom driver
+drawboy \- CompuDobby III loom driver
 .SH SYNOPSIS
-\fBDrawBoy\fP [\fIOptions\fP] <\fIwif\~file\~path\fP>
+\fBdrawboy\fP [\fIOptions\fP] <\fIwif\~file\~path\fP>
 
 .SH DESCRIPTION
-.B DrawBoy
+.B drawboy
 is a tool for driving an AVL CompuDobby III loom from a terminal interface. The
 picks in the specified WIF file are sent to the loom over a serial interface
 as the user treadles the draft. In addition to responding to treadle events
-from the loom, DrawBoy is interactive and responds to a number of commands:
+from the loom, \fBdrawboy\fP is interactive and responds to a number of commands:
 reversing weaving direction, tabby mode vs. lift\-plan mode, changing the current
 pick, and changing the set of picks to be woven. The up and down arrow keys can
 also be used to quickly change to adjacent picks.
 .PP
 The terminal should support xterm/ANSI style control sequences and Unicode,
 which pretty much all do these days. If the terminal does not display the
-Unicode characters used by DrawBoy then the
+Unicode characters used by \fBdrawboy\fP then the
 .B \-\-ascii
-option will force DrawBoy to restrict itself to ASCII characters. If ANSI styling
+option will force \fBdrawboy\fP to restrict itself to ASCII characters. If ANSI styling
 (bold, color, etc.) do not display properly then the
 .B \-\-ansi=no
 option will force plain\-text output. Some terminals support 24\-bit color, which
-DrawBoy can take advantage of (macOS Terminal does not). Use the
+\fBdrawboy\fP can take advantage of (macOS Terminal does not). Use the
 .B \-\-ansi=truecolor
 option to enable 24\-bit TrueColor output.
 
@@ -80,17 +80,17 @@ xByA, and BxAy. Default tabby pattern is xAyB.
 .TP
 \fB\-\-loomDevice\fP=\fIloom\~path\fP
 The path to the serial port in the /dev directory. The loom path is required for
-DrawBoy to operate. It can also be specified with the \fBDRAWBOY_LOOMDEVICE\fP
+\fBdrawboy\fP to operate. It can also be specified with the \fBDRAWBOY_LOOMDEVICE\fP
 environment variable.
 .TP
 \fB\-\-shafts\fP=\fIshaft\~count\fP
 Number of shafts supported by the loom. The shaft count is required for
-DrawBoy to operate. It can also be specified with the \fBDRAWBOY_SHAFTS\fP
+\fBdrawboy\fP to operate. It can also be specified with the \fBDRAWBOY_SHAFTS\fP
 environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
 .TP
 \fB\-\-dobbyType\fP=\fIdobby\~type\fP
 Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or
-negative). The dobby type is required for DrawBoy to operate. It can also be
+negative). The dobby type is required for \fBdrawboy\fP to operate. It can also be
 specified with the \fBDRAWBOY_DOBBY\fP environment variable. Most AVL looms
 are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
 .TP
@@ -106,14 +106,14 @@ support, and \fBtruecolor\fP for ANSI support with 24\-bit color. It can also be
 specified with the \fBDRAWBOY_ANSI\fP environment variable.
 
 .SH OPERATION
-When DrawBoy is started it does not know the state of the loom, whether the
+When \fBdrawboy\fP is started it does not know the state of the loom, whether the
 shed is open or closed, whether or not it is OK to send shaft commands to the
 loom. It will display the first pick in your pick list with the \fBPENDING\fP
 flag at the end of the pick. Treadle to open and close the shed. This will
-sync DrawBoy with the loom, it will send the liftplan for the first pick to
+sync \fBdrawboy\fP with the loom, it will send the liftplan for the first pick to
 the loom and you can now start weaving.
 .PP
-From this point on, when you close the shed DrawBoy will send the liftplan for
+From this point on, when you close the shed \fBdrawboy\fP will send the liftplan for
 the next pick to the loom and it will display the next pick. The pick line
 will begin with a color\-coded draw\-down for the pick, followed by the pick
 number and lift\-plan for the pick. These last two will be color\-coded with
@@ -122,14 +122,14 @@ the weft color for the pick.
 Under the pick line will be the input prompt for the current pick. It will
 display the current weaving mode (lift\-plan or tabby) and the current line
 in the WIF file. Treadling the loom will advance to the next pick. At any time,
-the user can type commands to change the behavior of DrawBoy:
+the user can type commands to change the behavior of \fBdrawboy\fP:
 
 .TP
 l \- \fBLift\-plan Mode\fP
-DrawBoy weaves picks from the pick list.
+\fBdrawboy\fP weaves picks from the pick list.
 .TP
 t \- \fBTabby Mode\fP
-DrawBoy weaves alternating picks of tabby A and tabby B.
+\fBdrawboy\fP weaves alternating picks of tabby A and tabby B.
 .TP
 r \- \fBReverse Weaving\fP
 Changes the weaving direction from the pick list. This has no effect in tabby
@@ -145,7 +145,7 @@ Overrides the pick list. The pick list specification is the same format as with
 the command line option. Changing the pick list resets the pick to 1.
 .TP
 q \- \fBQuit\fP
-Quits DrawBoy.
+Quits \fBdrawboy\fP.
 
 .SH EXAMPLES
 
@@ -154,7 +154,7 @@ Here is an example of the various elements in a pick list.
 .PP
 .RS
 .EX
-DrawBoy --picks=1-8,7-1,10,5x20-29,7x40 towels.wif
+drawboy --picks=1-8,7-1,10,5x20-29,7x40 towels.wif
 .EE
 .RE
 .PP
@@ -183,7 +183,7 @@ picks to indicate the cut line between towels.
 .PP
 .RS
 .EX
-DrawBoy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
+drawboy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
 .EE
 .RE
 .PP
@@ -195,11 +195,11 @@ Lastly, two picks of tabby with waste yarn to show the cut line between towels.
 .SS Continuing between weaving sessions:
 
 .PP
-DrawBoy does not remember where you are weaving between sessions. Instead, the
+\fBdrawboy\fP does not remember where you are weaving between sessions. Instead, the
 history buffer of the terminal is used to remember the weaving state.
 .PP
 .EX
-% DrawBoy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
+% drawboy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
 --||--||--||--||--||--||--||--||--||--||--||--||--||--||--    1 -->  | ** * * |
 --||--||--||--||--||--||--||--||--||--||--||--||--||--||--    2 -->  | ** * * |
 ||--||--||--||--||--||--||--||--||--||--||--||--||--||--||    3 -->  |*  * * *|
@@ -246,12 +246,12 @@ history buffer of the terminal is used to remember the weaving state.
 %
 .EE
 .PP
-It's time to turn the loom off for the night, so you quit DrawBoy. The next day
+It's time to turn the loom off for the night, so you quit \fBdrawboy\fP. The next day
 you continue weaving. The draw\-down from the previous days weaving is still
 visible in your terminal window and the last pick was 322.
 .PP
 .EX
-% DrawBoy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif --pick=322
+% drawboy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif --pick=322
 -|||--||-||--||--||--|||--||-||--||--||--|||--||--||--||--  322 -->  | **  * *|
 |--||--||---||--||--|--||--||---||--||--|--|||--||--||--||  323 -->  |* * ** *|
 ||--||--||-||--||--|||--||--||-||--||--|||--||--||--||--||  324 -->  |*  *  * |
@@ -272,8 +272,8 @@ visible in your terminal window and the last pick was 322.
 .EE
 
 .SH ENVIRONMENT
-The following environment variables affect the behavior of DrawBoy. They
-provide information that will likely be common to all DrawBoy runs. It may
+The following environment variables affect the behavior of \fBdrawboy\fP. They
+provide information that will likely be common to all \fBdrawboy\fP runs. It may
 be useful to set them in the users account profile.
 .TP
 .B DRAWBOY_LOOMDEVICE
@@ -288,7 +288,7 @@ Indicates whether the loom has a positive dobby (positive or +) or a negative
 dobby (negative or \-).
 .TP
 .B DRAWBOY_ASCII
-If it exists then DrawBoy will only output ASCII characters.
+If it exists then \fBdrawboy\fP will only output ASCII characters.
 .TP
 .B DRAWBOY_ANSI
 Indicates the ANSI support level for the terminal. Accepted values are \fByes\fP

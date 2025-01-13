@@ -1,15 +1,15 @@
-# DrawBoy - CompuDobby III loom driver
+# drawboy - CompuDobby III loom driver
 
 # SYNOPSIS
 
-**DrawBoy** \[*Options*\] \<*wif file path*\>
+**drawboy** \[*Options*\] \<*wif file path*\>
 
 # DESCRIPTION
 
-**DrawBoy** is a tool for driving an AVL CompuDobby III loom from a
+**drawboy** is a tool for driving an AVL CompuDobby III loom from a
 terminal interface. The picks in the specified WIF file are sent to the
 loom over a serial interface as the user treadles the draft. In addition
-to responding to treadle events from the loom, DrawBoy is interactive
+to responding to treadle events from the loom, **drawboy** is interactive
 and responds to a number of commands: reversing weaving direction, tabby
 mode vs. lift-plan mode, changing the current pick, and changing the set
 of picks to be woven. The up and down arrow keys can also be used to
@@ -17,11 +17,11 @@ quickly change to adjacent picks.
 
 The terminal should support xterm/ANSI style control sequences and
 Unicode, which pretty much all do these days. If the terminal does not
-display the Unicode characters used by DrawBoy then the **&#8209;&#8209;ascii**
-option will force DrawBoy to restrict itself to ASCII characters. If
+display the Unicode characters used by **drawboy** then the **&#8209;&#8209;ascii**
+option will force **drawboy** to restrict itself to ASCII characters. If
 ANSI styling (bold, color, etc.) do not display properly then the
 **&#8209;&#8209;ansi=no** option will force plain-text output. Some terminals
-support 24-bit color, which DrawBoy can take advantage of (macOS
+support 24-bit color, which **drawboy** can take advantage of (macOS
 Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 24-bit TrueColor output.
 
@@ -61,15 +61,15 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 **\-\-loomDevice**=*loom path*
 
-> The path to the serial port in the /dev directory. The loom path is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
+> The path to the serial port in the /dev directory. The loom path is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
 
 **\-\-shafts**=*shaft count*
 
-> Number of shafts supported by the loom. The shaft count is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
+> Number of shafts supported by the loom. The shaft count is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
 
 **\-\-dobbyType**=*dobby type*
 
-> Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or negative). The dobby type is required for DrawBoy to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
+> Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or negative). The dobby type is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
 
 **\-\-ascii**
 
@@ -81,14 +81,14 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 # OPERATION
 
-When DrawBoy is started it does not know the state of the loom, whether
+When **drawboy** is started it does not know the state of the loom, whether
 the shed is open or closed, whether or not it is OK to send shaft
 commands to the loom. It will display the first pick in your pick list
 with the **PENDING** flag at the end of the pick. Treadle to open and
-close the shed. This will sync DrawBoy with the loom, it will send the
+close the shed. This will sync **drawboy** with the loom, it will send the
 liftplan for the first pick to the loom and you can now start weaving.
 
-From this point on, when you close the shed DrawBoy will send the
+From this point on, when you close the shed **drawboy** will send the
 liftplan for the next pick to the loom and it will display the next
 pick. The pick line will begin with a color-coded draw-down for the
 pick, followed by the pick number and lift-plan for the pick. These last
@@ -98,15 +98,15 @@ Under the pick line will be the input prompt for the current pick. It
 will display the current weaving mode (lift-plan or tabby) and the
 current line in the WIF file. Treadling the loom will advance to the
 next pick. At any time, the user can type commands to change the
-behavior of DrawBoy:
+behavior of **drawboy**:
 
 l - **Lift-plan Mode**
 
-> DrawBoy weaves picks from the pick list.
+> **drawboy** weaves picks from the pick list.
 
 t - **Tabby Mode**
 
-> DrawBoy weaves alternating picks of tabby A and tabby B.
+> **drawboy** weaves alternating picks of tabby A and tabby B.
 
 r - **Reverse Weaving**
 
@@ -122,7 +122,7 @@ p - **Change Pick List**
 
 q - **Quit**
 
-> Quits DrawBoy.
+> Quits **drawboy**.
 
 # EXAMPLES
 
@@ -130,7 +130,7 @@ q - **Quit**
 
 Here is an example of the various elements in a pick list.
 ```
-DrawBoy --picks=1-8,7-1,10,5x20-29,7x40 towels.wif
+drawboy --picks=1-8,7-1,10,5x20-29,7x40 towels.wif
 ```
 This sets the pick list:  
 1 2 3 4 5 6 7 8  
@@ -148,7 +148,7 @@ Here a compact draft for a braided twill has various subparts
 multiplied to produce 2.25\" headers and an overall length of 32\",
 at 24ppi with waste yarn picks to indicate the cut line between towels.
 ```
-DrawBoy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
+drawboy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
 ```
 The braided twill towel starting with 56 picks (7x1-8) of basket weave
 header. Then the 28 pick repeating part of the pattern is repeated 24 times to 
@@ -158,11 +158,11 @@ Lastly, two picks of tabby with waste yarn to show the cut line between towels.
 
 ## Continuing between weaving sessions:
 
-DrawBoy does not remember where you are weaving between sessions.
+**drawboy** does not remember where you are weaving between sessions.
 Instead, the history buffer of the terminal is used to remember the
 weaving state.
 ```
-% DrawBoy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
+% drawboy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif"
 --||--||--||--||--||--||--||--||--||--||--||--||--||--||--    1 -->  | ** * * |
 --||--||--||--||--||--||--||--||--||--||--||--||--||--||--    2 -->  | ** * * |
 ||--||--||--||--||--||--||--||--||--||--||--||--||--||--||    3 -->  |*  * * *|
@@ -206,12 +206,12 @@ time passes
 [Weaving:22] T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit
 %
 ```
-It is time to turn the loom off for the night, so you quit DrawBoy. The
+It is time to turn the loom off for the night, so you quit **drawboy**. The
 next day you continue weaving. The draw-down from the previous days
 weaving is still visible in your terminal window and the last pick was
 322.
 ```
-% DrawBoy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif --pick=322
+% drawboy --picks=7x1-8,24x9-36,93-100,7x101-108,AB "gudruns towel4.wif --pick=322
 -|||--||-||--||--||--|||--||-||--||--||--|||--||--||--||--  322 -->  | **  * *|
 |--||--||---||--||--|--||--||---||--||--|--|||--||--||--||  323 -->  |* * ** *|
 ||--||--||-||--||--|||--||--||-||--||--|||--||--||--||--||  324 -->  |*  *  * |
@@ -233,8 +233,8 @@ weaving is still visible in your terminal window and the last pick was
 
 # ENVIRONMENT
 
-The following environment variables affect the behavior of DrawBoy. They
-provide information that will likely be common to all DrawBoy runs. It may
+The following environment variables affect the behavior of **drawboy**. They
+provide information that will likely be common to all **drawboy** runs. It may
 be useful to set them in the users account profile.
 
 **DRAWBOY_LOOMDEVICE**
@@ -252,7 +252,7 @@ Indicates whether the loom has a positive dobby (positive or +) or a negative do
 
 **DRAWBOY_ASCII**
 
-If it exists then DrawBoy will only output ASCII characters.
+If it exists then **drawboy** will only output ASCII characters.
 
 **DRAWBOY_ANSI**
 

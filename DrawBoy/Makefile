@@ -1,7 +1,8 @@
-TARGET_TEST ?= FakeLoom
-TARGET_USER ?= DrawBoy
+TARGET_TEST ?= fakeLoom
+TARGET_USER ?= drawboy
 PREFIX ?= /usr/local
 BINARY_DIR ?= $(PREFIX)/bin
+MAN_DIR ?= $(PREFIX)/share/man
 INSTALL ?= install
 INSTALL_PROGRAM ?= $(INSTALL) -s
 INSTALL_DATA ?= $(INSTALL) -m 644
@@ -16,6 +17,8 @@ install:
 	$(MKDIR_P) $(DESTDIR)$(BINARY_DIR)
 	$(INSTALL_PROGRAM) $(BUILD_DIR)/$(TARGET_TEST) $(DESTDIR)$(BINARY_DIR)/
 	$(INSTALL_PROGRAM) $(BUILD_DIR)/$(TARGET_USER) $(DESTDIR)$(BINARY_DIR)/
+	$(MKDIR_P) $(DESTDIR)$(MAN_DIR)/man1
+	$(INSTALL_DATA) man/drawboy.1 $(DESTDIR)$(MAN_DIR)/man1/
 
 SRCS_COMMON := term.cpp ipc.cpp
 
