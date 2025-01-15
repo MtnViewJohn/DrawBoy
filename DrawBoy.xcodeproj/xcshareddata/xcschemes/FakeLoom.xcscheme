@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "523179292D0B98540085FB15"
-               BuildableName = "FakeLoom"
+               BuildableName = "fakeloom"
                BlueprintName = "FakeLoom"
                ReferencedContainer = "container:DrawBoy.xcodeproj">
             </BuildableReference>
@@ -48,7 +48,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "523179292D0B98540085FB15"
-            BuildableName = "FakeLoom"
+            BuildableName = "fakeloom"
             BlueprintName = "FakeLoom"
             ReferencedContainer = "container:DrawBoy.xcodeproj">
          </BuildableReference>
@@ -83,7 +83,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "523179292D0B98540085FB15"
-            BuildableName = "FakeLoom"
+            BuildableName = "fakeloom"
             BlueprintName = "FakeLoom"
             ReferencedContainer = "container:DrawBoy.xcodeproj">
          </BuildableReference>
