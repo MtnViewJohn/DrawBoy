@@ -80,7 +80,7 @@ initLoomPort(int fd)
     ::cfmakeraw(&term);
     ::cfsetispeed(&term, B9600);          // set 9600 baud
     ::cfsetospeed(&term, B9600);
-    term.c_cflag &= (tcflag_t)(~PARENB);            // set 8N1
+    term.c_cflag &= (tcflag_t)(~PARENB);  // set 8N1
     term.c_cflag &= (tcflag_t)(~CSTOPB);
     term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
     term.c_cflag |= CLOCAL;
@@ -128,6 +128,8 @@ Options::parsePicks(const std::string& str, int maxPick)
                 if (check != multToken || mult < 1)
                     throw std::runtime_error("Syntax error in treadling multiplier.");
                 range.erase(0, multToken + 1);
+                if (range.empty())
+                    throw std::runtime_error("Syntax error in treadling multiplier.");
             }
             if (std::strchr("ABab", range.front())) {
                 for (int count = 0; count < mult; ++count) {
