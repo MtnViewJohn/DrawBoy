@@ -296,6 +296,8 @@ View::handlePickEvent(const Term::Event &ev)
             case 'q':
             case 'Q':
                 mode = Mode::Quit;
+                std::putchar('q');
+                std::fflush(stdout);
                 return true;
             case 'r':
             case 'R':
@@ -465,7 +467,7 @@ View::sendToLoom(std::string_view msg)
                 fd_set rdfds = {};
                 int selectresult;
                 
-                tv.tv_sec = 1;
+                tv.tv_sec = term.pendingEvent() ? 0 : 1;
                 FD_ZERO(&wrfds);
                 FD_ZERO(&rdfds);
                 std::putchar('>');
@@ -539,7 +541,7 @@ View::run()
                 handleEvent(ev);
         }
         
-        if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
+        if (FD_ISSET(opts.loomDeviceFD, &rdset) && mode != Mode::Quit) {
             char c;
             int count = 0;
             while (true) {
