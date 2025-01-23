@@ -127,6 +127,21 @@ int my_stoi(std::string_view str, size_t* pos = nullptr)
     return v;
 }
 
+size_t
+findMatch(std::string_view str)
+{
+    int level = 0;
+    for (size_t i = 0; i < str.length(); ++i) {
+        if (str[i] == '(') ++level;
+        if (str[i] == ')') --level;
+        if (level == 0)
+            return i;
+        if (level < 0)
+            return 0;
+    }
+    return 0;
+}
+
 std::vector<int>
 ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
 {
@@ -165,6 +180,13 @@ ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
                             break;
                     }
                     str.remove_prefix(1);
+                }
+            } else if (str.front() == '(') {
+                if (size_t match = findMatch(str)) {
+                    pickRange = ParsePicks(str.substr(1, match - 1), maxPick, patternBeforeTabby);
+                    str.remove_prefix(match + 1);
+                } else {
+                    throw std::runtime_error("Unbalanced parentheses in pick list.");
                 }
             } else {
                 size_t rangeToken = std::string::npos;

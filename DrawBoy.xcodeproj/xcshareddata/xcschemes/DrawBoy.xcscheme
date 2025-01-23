@@ -88,7 +88,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--picks=7x1~8,14x9-36,93-100,7x101-108,AB,~90"
+            argument = "--picks=7x1~8,14x(9-36,ab,~90),93-100,7x101-108,AB,~90"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

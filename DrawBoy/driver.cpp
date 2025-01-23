@@ -57,6 +57,7 @@ struct View
     int pick;
     TabbyPick tabbyPick = TabbyPick::A;
     std::string pickValue;
+    int parenLevel = 0;
     
     std::string loomOutput;
     Shed loomState = Shed::Unknown;
@@ -317,6 +318,7 @@ View::handlePickEvent(const Term::Event &ev)
                 oldMode = mode;
                 mode = Mode::PickListEntry;
                 pickValue.clear();
+                parenLevel = 0;
                 displayPrompt();
                 return true;
             default:
@@ -391,7 +393,14 @@ bool
 View::handlePickListEntryEvent(const Term::Event &ev)
 {
     if (ev.type == Term::EventType::Char) {
-        if (std::strchr("0123456789ABab-~,", ev.character)) {
+        if (std::strchr("0123456789ABabx-~(),", ev.character)) {
+            if (ev.character == ')' && parenLevel == 0) {
+                std::putchar('\a');
+                std::fflush(stdout);
+                return true;
+            }
+            if (ev.character == '(') ++parenLevel;
+            if (ev.character == ')') --parenLevel;
             pickValue.push_back(ev.character);
             std::putchar(ev.character);
             std::fflush(stdout);
@@ -407,6 +416,11 @@ View::handlePickListEntryEvent(const Term::Event &ev)
             return true;
         }
         if (ev.character == '\r') {
+            if (parenLevel != 0) {
+                std::putchar('\a');
+                std::fflush(stdout);
+                return true;
+            }
             try {
                 opts.parsePicks(pickValue, wifContents.picks);
                 pick = 0;
