@@ -18,6 +18,7 @@
 #include "ipc.h"
 #include <set>
 #include <memory>
+#include <charconv>
 
 namespace {
 int
@@ -97,15 +98,123 @@ struct file_deleter {
 
 using unique_file = std::unique_ptr<std::FILE, file_deleter>;
 
+void
+addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool patternBeforeTabby)
+{
+    if (isTabby) {
+        if (patternBeforeTabby) {
+            newpicks.push_back(_pick);
+            newpicks.push_back(-3);
+        } else {
+            newpicks.push_back(-3);
+            newpicks.push_back(_pick);
+        }
+    } else {
+        newpicks.push_back(_pick);
+    }
+}
+
+int my_stoi(std::string_view str, size_t* pos = nullptr)
+{
+    int v = 0;
+    auto r = std::from_chars(str.begin(), str.end(), v);
+    if (pos)
+        *pos = (size_t)(r.ptr - str.begin());
+    if (r.ec == std::errc::invalid_argument)
+        throw std::invalid_argument(std::string(str));
+    if (r.ec == std::errc::result_out_of_range)
+        throw std::out_of_range(std::string(str));
+    return v;
+}
+
+std::vector<int>
+ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
+{
+    std::vector<int> newpicks;
+    
+    while (!str.empty()) {
+        try {
+            int mult = 1;
+            std::vector<int> pickRange;
+            size_t multToken = str.find("x");
+            if (multToken != std::string::npos && std::isdigit(str.front())) {
+                size_t check;
+                mult = my_stoi(str, &check);
+                if (check == multToken) {   // multiplier was for this term
+                    if (mult < 1)
+                        throw std::runtime_error("Syntax error in treadling multiplier.");
+                    str.remove_prefix(multToken + 1);
+                    if (str.empty() || str.front() == ',')
+                        throw std::runtime_error("Syntax error in treadling multiplier.");
+                } else {                    // multiplier was for another term
+                    mult = 1;
+                }
+            }
+            if (std::strchr("ABab", str.front())) {
+                while (!str.empty() && std::strchr("ABab", str.front())) {
+                    switch (str.front()) {
+                        case 'a':
+                        case 'A':
+                            addpick(-1, pickRange, false, false);
+                            break;
+                        case 'b':
+                        case 'B':
+                            addpick(-2, pickRange, false, false);
+                            break;
+                        default:
+                            break;
+                    }
+                    str.remove_prefix(1);
+                }
+            } else {
+                size_t rangeToken = std::string::npos;
+                bool tabbyRange = str.front() == '~';     // single pick w/tabby
+                if (tabbyRange)
+                    str.remove_prefix(1);
+                int start = my_stoi(str, &rangeToken);
+                int end = start;
+                if (rangeToken < str.length() && (str[rangeToken] == '~' || str[rangeToken] == '-')) {
+                    if (tabbyRange)
+                        throw std::runtime_error("Spurious ~ in treadling range.");
+                    tabbyRange = str[rangeToken] == '~';  // pick range w/tabby
+                    str.remove_prefix(rangeToken + 1);
+                    end = my_stoi(str, &rangeToken);
+                    str.remove_prefix(rangeToken);
+                } else {
+                    str.remove_prefix(rangeToken);
+                }
+                if (start < 1 || end < 1)
+                    throw std::runtime_error("Bad treadling range.");
+                if (start > maxPick || end > maxPick)
+                    throw std::runtime_error("Pick list includes picks that are not in the wif file.");
+                if (start <= end) {
+                    for (int p = start; p <= end; ++p)
+                        addpick(p, pickRange, tabbyRange, patternBeforeTabby);
+                } else {
+                    for (int p = end; p >= start; --p)
+                        addpick(p, pickRange, tabbyRange, patternBeforeTabby);
+                }
+            }
+            if (!str.empty() && str.front() != ',')
+                throw std::runtime_error("Unparsed text in treadling range.");
+            if (!str.empty())
+                str.remove_prefix(1);
+            for (auto i = 0; i < mult; ++i)
+                newpicks.insert(newpicks.end(), pickRange.begin(), pickRange.end());
+        } catch (std::runtime_error& rte) {
+            throw;
+        } catch (...) {
+            throw std::runtime_error("Syntax error in treadling range.");
+        }
+    }
+    return newpicks;
+}
+
 }
 
 void
-Options::parsePicks(const std::string& str, int maxPick)
+Options::parsePicks(const std::string &str, int maxPick)
 {
-    std::stringstream ss(str);
-    std::string range;
-    std::vector<int> newpicks;
-    
     // If no treadle list provided then treadle the whole liftplan
     if (str.empty()) {
         picks.resize((size_t)maxPick);
@@ -114,94 +223,24 @@ Options::parsePicks(const std::string& str, int maxPick)
         return;
     }
     
-    bool tabbyIsA = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
+    bool patternBeforeTabby = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::xByA;
+    bool tabbyAFirst = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
     
-    while (std::getline(ss, range, ',')) {
-        try {
-            if (range.empty())
-                throw std::runtime_error("Empty treadling range.");
-            int mult = 1;
-            size_t multToken = range.find("x");
-            if (multToken != std::string::npos) {
-                size_t check;
-                mult = std::stoi(range, &check);
-                if (check != multToken || mult < 1)
-                    throw std::runtime_error("Syntax error in treadling multiplier.");
-                range.erase(0, multToken + 1);
-                if (range.empty())
-                    throw std::runtime_error("Syntax error in treadling multiplier.");
-            }
-            if (std::strchr("ABab", range.front())) {
-                for (int count = 0; count < mult; ++count) {
-                    for (char p: range) {
-                        switch (p) {
-                            case 'a':
-                            case 'A':
-                                addpick(-1, newpicks, false, tabbyIsA);
-                                break;
-                            case 'b':
-                            case 'B':
-                                addpick(-2, newpicks, false, tabbyIsA);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-            } else {
-                size_t rangeToken = std::string::npos;
-                bool tabbyRange = range.front() == '~';     // single pick w/tabby
-                if (tabbyRange)
-                    range.erase(0, 1);
-                int start = std::stoi(range, &rangeToken);
-                int end = start;
-                if (rangeToken < range.length() && (range[rangeToken] == '~' || range[rangeToken] == '-')) {
-                    if (tabbyRange)
-                        throw std::runtime_error("Spurious ~ in treadling range.");
-                    tabbyRange = range[rangeToken] == '~';  // pick range w/tabby
-                    range.erase(0, rangeToken + 1);
-                    end = std::stoi(range, &rangeToken);
-                }
-                if (rangeToken < range.length())
-                    throw std::runtime_error("Unparsed text in treadling range.");
-                if (start < 1 || end < 1)
-                    throw std::runtime_error("Bad treadling range.");
-                if (start > maxPick || end > maxPick)
-                    throw std::runtime_error("Pick list includes picks that are not in the wif file.");
-                for (int count = 0; count < mult; ++count) {
-                    if (start < end) {
-                        for (int p = start; p <= end; ++p)
-                            addpick(p, newpicks, tabbyRange, tabbyIsA);
-                    } else {
-                        for (int p = end; p >= start; --p)
-                            addpick(p, newpicks, tabbyRange, tabbyIsA);
-                    }
-                }
-            }
-        } catch (std::runtime_error& rte) {
-            throw;
-        } catch (...) {
-            throw std::runtime_error("Syntax error in treadling range.");
-        }
-    }
-    std::swap(newpicks, picks);
-}
+    picks = ParsePicks(str, maxPick, patternBeforeTabby);
 
-void
-Options::addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool &isTabbyA)
-{
-    if (isTabby) {
-        if (tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::xByA) {
-            newpicks.push_back(_pick);
-            newpicks.push_back(isTabbyA ? -1 : -2);
+    // Replace auto-tabby picks with actual tabby A or tabby B
+    bool tabbyIsA = tabbyAFirst;
+    int picksSinceTabby = 10;       // anything > 1
+    for (auto& _pick: picks) {
+        if (_pick == -3) {
+            if (picksSinceTabby > 1)
+                tabbyIsA = tabbyAFirst;
+            _pick = tabbyIsA ? -1 : -2;
+            tabbyIsA = !tabbyIsA;
+            picksSinceTabby = 0;
         } else {
-            newpicks.push_back(isTabbyA ? -1 : -2);
-            newpicks.push_back(_pick);
+            ++picksSinceTabby;
         }
-        isTabbyA = !isTabbyA;
-    } else {
-        newpicks.push_back(_pick);
-        isTabbyA = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
     }
 }
 

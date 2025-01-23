@@ -77,7 +77,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabby AABBBBBB"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--shafts 12"
@@ -88,8 +88,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--picks=7x1-8,14x9-36,93-100,7x101-108,AB,~"
-            isEnabled = "NO">
+            argument = "--picks=7x1~8,14x9-36,93-100,7x101-108,AB,~90"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1~8"
@@ -105,7 +105,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel4.wif&apos;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.wif&quot;"
@@ -121,7 +121,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;simple test8.wif&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
@@ -143,7 +143,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"
