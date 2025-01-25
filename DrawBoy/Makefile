@@ -26,7 +26,7 @@ SRCS_TEST := fakemain.cpp fakeargs.cpp fakedriver.cpp
 SRCS_TEST += $(SRCS_COMMON)
 
 SRCS_USER := main.cpp args.cpp driver.cpp
-SRCS_USER += wif.cpp
+SRCS_USER += wif.cpp dtx.cpp
 SRCS_USER += $(SRCS_COMMON)
 
 
