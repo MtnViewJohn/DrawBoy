@@ -22,7 +22,7 @@ The terminal should support xterm/ANSI style control sequences and
 Unicode, which pretty much all do these days. If the terminal does not
 display the Unicode characters used by **drawboy** then the **&#8209;&#8209;ascii**
 option will force **drawboy** to restrict itself to ASCII characters. If
-ANSI styling (bold, color, etc.) do not display properly then the
+ANSI styling (bold, color, etc.) does not display properly then the
 **&#8209;&#8209;ansi=no** option will force plain-text output. Some terminals
 support 24-bit color, which **drawboy** can take advantage of (macOS
 Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
