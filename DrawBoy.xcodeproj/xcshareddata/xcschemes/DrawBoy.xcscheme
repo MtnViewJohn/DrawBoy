@@ -60,6 +60,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "&quot;persimmon profile.dtx&quot;"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--pick=322"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -77,7 +81,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabby AABBBBBB"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--shafts 12"
@@ -89,7 +93,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=7x1~8,14x(9-36,ab,~90),93-100,7x101-108,AB,~90"
-            isEnabled = "YES">
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;gudruns towel4.dtx&quot;"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1~8"
@@ -108,7 +116,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "&quot;Penny-wise table runner.wif&quot;"
+            argument = "&quot;Penny-wise table runner.dtx&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

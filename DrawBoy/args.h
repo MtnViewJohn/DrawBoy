@@ -15,6 +15,9 @@
 #include "color.h"
 #include "wif.h"
 #include <string_view>
+#include <memory>
+
+class draft;
 
 struct Options {
     Options(int argc, const char * argv[]);
@@ -24,8 +27,7 @@ struct Options {
     bool driveLoom = true;
     std::string loomDevice;
     int loomDeviceFD = 0;
-    std::string wifFile;
-    wif wifContents;
+    std::unique_ptr<draft> draftContents;
     int maxShafts;
     DobbyType dobbyType = DobbyType::Positive;
     int pick;

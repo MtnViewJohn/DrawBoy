@@ -2,17 +2,20 @@
 .SH NAME
 drawboy \- CompuDobby III loom driver
 .SH SYNOPSIS
-\fBdrawboy\fP [\fIOptions\fP] <\fIwif\~file\~path\fP>
+\fBdrawboy\fP [\fIOptions\fP] <\fIdraft\~file\~path\fP>
 
 .SH DESCRIPTION
 .B drawboy
 is a tool for driving an AVL CompuDobby III loom from a terminal interface. The
-picks in the specified WIF file are sent to the loom over a serial interface
+picks in the specified draft file are sent to the loom over a serial interface
 as the user treadles the draft. In addition to responding to treadle events
 from the loom, \fBdrawboy\fP is interactive and responds to a number of commands:
 reversing weaving direction, tabby mode vs. lift\-plan mode, changing the current
 pick, and changing the set of picks to be woven. The up and down arrow keys can
 also be used to quickly change to adjacent picks.
+.PP
+The draft file can either be in the standard WIF format or in the Fiberworks
+DTX format.
 .PP
 The terminal should support xterm/ANSI style control sequences and Unicode,
 which pretty much all do these days. If the terminal does not display the
@@ -44,20 +47,20 @@ the pick list then a modulo calculation is performed to determine where to
 start weaving in the pick list.
 .TP
 \fB\-P\fP\fIpicklist\fP, \fB\-\-picks\fP=\fIpicklist\fP
-Sets the list of picks from the WIF file to weave. This is a comma\-separated
+Sets the list of picks from the draft file to weave. This is a comma\-separated
 list of pick ranges with an optional multiplier in front. The optional multiplier
 is a number followed by the letter \fIx\fP. The pick range can a single number,
 a pair of numbers separated by a hyphen, or an arbitrary list of tabby picks
 (ab).
 
 .IP
-Pick ranges can also insert a tabby pick with each pattern pick from the WIF file.
+Pick ranges can also insert a tabby pick with each pattern pick from the draft file.
 A single pick preceeded by a tilde (~) will insert the appropriate tabby pick
-along with the specified WIF pick. A range of picks separated by a tilde instead
-of a hyphen will insert a tabby pick with each WIF pick.
+along with the specified draft pick. A range of picks separated by a tilde instead
+of a hyphen will insert a tabby pick with each draft pick.
 
 .IP
-The default pick list is the entire WIF file.
+The default pick list is the entire draft file.
 
 .TP
 \fB\-\-tabby\fP=\fItabby\~spec\fP
@@ -121,7 +124,7 @@ the weft color for the pick.
 .PP
 Under the pick line will be the input prompt for the current pick. It will
 display the current weaving mode (lift\-plan or tabby) and the current line
-in the WIF file. Treadling the loom will advance to the next pick. At any time,
+in the draft file. Treadling the loom will advance to the next pick. At any time,
 the user can type commands to change the behavior of \fBdrawboy\fP:
 
 .TP

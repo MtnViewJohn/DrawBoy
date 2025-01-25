@@ -7,7 +7,7 @@
 #include "driver.h"
 #include "args.h"
 #include "term.h"
-#include "wif.h"
+#include "draft.h"
 #include <exception>
 #include <sys/select.h>
 #include <unistd.h>
@@ -53,7 +53,7 @@ struct View
     Term& term;
     Options& opts;
     
-    wif& wifContents;
+    draft& draftContent;
     int pick;
     TabbyPick tabbyPick = TabbyPick::A;
     std::string pickValue;
@@ -69,7 +69,7 @@ struct View
     bool weaveForward = true;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), wifContents(o.wifContents), pick(o.pick - 1)
+    : term(t), opts(o), draftContent(*o.draftContents), pick(o.pick - 1)
     {}
     
     void handleEvent(const Term::Event& ev);
@@ -100,7 +100,7 @@ View::displayPick(PickAction _sendToLoom)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
-    uint64_t liftMask = (1 << wifContents.maxShafts) - 1;
+    uint64_t liftMask = (1 << draftContent.maxShafts) - 1;
     color weftColor;
 
     if (mode == Mode::Tabby) {
@@ -114,11 +114,11 @@ View::displayPick(PickAction _sendToLoom)
             lift = wifPick == -1 ? opts.tabbyA : opts.tabbyB;
             weftColor = opts.tabbyColor;
         } else {
-            lift = wifContents.liftplan[(size_t)wifPick];
-            weftColor = wifContents.weftColor[(size_t)(wifPick)];
+            lift = draftContent.liftplan[(size_t)wifPick];
+            weftColor = draftContent.weftColor[(size_t)(wifPick)];
             
-            if ((opts.dobbyType == DobbyType::Negative &&  wifContents.risingShed) ||
-                (opts.dobbyType == DobbyType::Positive && !wifContents.risingShed))
+            if ((opts.dobbyType == DobbyType::Negative &&  draftContent.risingShed) ||
+                (opts.dobbyType == DobbyType::Positive && !draftContent.risingShed))
             {
                 lift ^= liftMask;
             }
@@ -130,15 +130,15 @@ View::displayPick(PickAction _sendToLoom)
     
     // Output drawdown
     std::putchar('\r');
-    int drawdownWidth = term.cols() - (wifContents.maxShafts + 24);
-    if (drawdownWidth > wifContents.ends) drawdownWidth = wifContents.ends;
+    int drawdownWidth = term.cols() - (draftContent.maxShafts + 24);
+    if (drawdownWidth > draftContent.ends) drawdownWidth = draftContent.ends;
     if (drawdownWidth < 10) drawdownWidth = 10;
     for (size_t i = (size_t)drawdownWidth; i > 0 ; --i) {
-        bool activated = wifContents.threading[i] & lift;
+        bool activated = draftContent.threading[i] & lift;
         bool raised = ( activated && opts.dobbyType == DobbyType::Positive) ||
                       (!activated && opts.dobbyType == DobbyType::Negative);
         
-        color& c = raised ? wifContents.warpColor[i] : weftColor;
+        color& c = raised ? draftContent.warpColor[i] : weftColor;
         std::fputs(toColor(c), stdout);
         if (opts.ascii)
             std::putchar(raised ? '|' : '-');
@@ -159,7 +159,7 @@ View::displayPick(PickAction _sendToLoom)
         std::printf(" %s%4d%s |", leftArrow, pick + 1, rightArrow);
     
     // Output liftplan
-    for (uint64_t shaftMask = 1; shaftMask != (1ull << wifContents.maxShafts); shaftMask <<= 1)
+    for (uint64_t shaftMask = 1; shaftMask != (1ull << draftContent.maxShafts); shaftMask <<= 1)
         if (shaftMask & lift)
             std::fputs(opts.ascii ? "*" : "\xE2\x96\xA0", stdout);
         else
@@ -422,7 +422,7 @@ View::handlePickListEntryEvent(const Term::Event &ev)
                 return true;
             }
             try {
-                opts.parsePicks(pickValue, wifContents.picks);
+                opts.parsePicks(pickValue, draftContent.picks);
                 pick = 0;
                 mode = Mode::Weave;
                 displayPick(PickAction::Send);
@@ -516,7 +516,7 @@ View::sendPick(uint64_t lift)
     
     char shaftCmd = '\x10';
     std::string command;
-    for (int shaft = 0; shaft < wifContents.maxShafts; shaft += 4) {
+    for (int shaft = 0; shaft < draftContent.maxShafts; shaft += 4) {
         command.push_back(shaftCmd | (char)(lift & 0xf));
         shaftCmd += '\x10';
         lift >>= 4;

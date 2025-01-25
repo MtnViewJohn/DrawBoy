@@ -2,3 +2,4 @@
 DrawBoy.xcodeproj/xcuserdata
 DrawBoy.xcodeproj/project.xcworkspace/xcuserdata
 DrawBoy/build
+*.dtx

@@ -19,6 +19,8 @@
 #include <set>
 #include <memory>
 #include <charconv>
+#include "wif.h"
+#include "dtx.h"
 
 namespace {
 int
@@ -309,7 +311,7 @@ Options::Options(int argc, const char * argv[])
     args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI SUPPORT",
         "Does the terminal support ANSI style codes and possibly true-color", {"ansi"},
         ANSImap, defANSI, args::Options::Single);
-    args::Positional<std::string> _wifFile(parser, "WIF PATH", "The path of the WIF file",
+    args::Positional<std::string> _draftFile(parser, "DRAFT PATH", "The path of the WIF or DTX file",
         args::Options::Required);
 
     try {
@@ -355,25 +357,29 @@ Options::Options(int argc, const char * argv[])
     }
     
     loomDevice = args::get(_loomDevice);
-    wifFile = args::get(_wifFile);
     maxShafts = args::get(_maxShafts);
     pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
     ascii = args::get(_ascii) || envASCII != nullptr;
     ansi = args::get(_ansi);
     tabbyPattern = args::get(_tabbyPattern);
+    std::string draftFile = args::get(_draftFile);
 
-    wifFile = args::get(_wifFile);
+    if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {
+        if (draftFile.ends_with(".wif"))
+            draftContents = std::make_unique<wif>(draftfileowner.get());
+        else if (draftFile.ends_with(".dtx"))
+            draftContents = std::make_unique<dtx>(draftfileowner.get());
+        else
+            throw std::runtime_error("Unknown draft file type (not wif or dtx).");
+    } else {
+        throw make_system_error("Cannot open draft file");
+    }
     
-    if (auto wiffileowner = unique_file(std::fopen(wifFile.c_str(), "r")))
-        wifContents.readWif(wiffileowner.get());
-    else
-        throw make_system_error("Cannot open wif file");
+    parsePicks(args::get(_picks), draftContents->picks);
     
-    parsePicks(args::get(_picks), wifContents.picks);
-    
-    if (wifContents.maxShafts > maxShafts)
-        throw std::runtime_error("Wif file requires more shafts than the loom possesses.");
+    if (draftContents->maxShafts > maxShafts)
+        throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
     
     if (envSocket) {
         IPC::Client fakeLoom(envSocket);

@@ -91,23 +91,12 @@ namespace  {
         return std::runtime_error(line);
     }
 
-    struct malloc_holder {
-        malloc_holder(size_t _cap)
-        : buffer(_cap ? (char*)std::malloc(_cap) : nullptr),
-          capacity(_cap) {}
-        ~malloc_holder() { std::free((void*)buffer);}
-        char* buffer = nullptr;
-        size_t capacity = 0;
-    };
-
 
 }
 
-void
-wif::readWif(FILE* _wifstream)
+wif::wif(FILE* _wifstream)
+: wifstream(_wifstream)
 {
-    wifstream = _wifstream;
-    
     if (!seekSection("WIF"))
         throw std::runtime_error("Error in wif file: no WIF section");
     if (!readSection("CONTENTS", 0, ""))
@@ -116,6 +105,10 @@ wif::readWif(FILE* _wifstream)
     auto f = nameKeys.begin();
     auto nkEnd = nameKeys.end();
 
+    bool hasTieUp = false;
+    bool hasTreadling = false;
+    bool hasLiftplan = false;
+    
     if ((f = nameKeys.find("tieup")) !=     nkEnd) hasTieUp = valueToBool(f->second);
     if ((f = nameKeys.find("treadling")) != nkEnd) hasTreadling = valueToBool(f->second);
     if ((f = nameKeys.find("liftplan")) !=  nkEnd) hasLiftplan = valueToBool(f->second);
@@ -191,8 +184,8 @@ wif::readWif(FILE* _wifstream)
     palette.push_back({0.0,0.0,0.0});   // color 0 is unused
     if (!readSection("COLOR PALETTE", 0, "")) {
         std::cerr << "Wif file does not specify color palette. Using default." << std::endl;
-        palette.push_back({1.0,1.0,1.0});
-        palette.push_back({0.0,0.0,0.0});
+        palette.push_back(color({255, 255, 255}, {0, 255}));
+        palette.push_back(color({0, 0, 255}, {0, 255}));
     } else {
         nkEnd = nameKeys.end();
         std::pair<int,int> range;
@@ -291,7 +284,7 @@ wif::seekSection(const char* name)
     
     while (::getline(&mh.buffer, &mh.capacity, wifstream) >= 0)
     {
-        if (mh.buffer[0] == '[' &&
+        if (std::strlen(mh.buffer) >= nameLen + 2 && mh.buffer[0] == '[' &&
             ::strncasecmp(mh.buffer + 1, name, nameLen) == 0
             && mh.buffer[nameLen + 1] == ']')
         {
