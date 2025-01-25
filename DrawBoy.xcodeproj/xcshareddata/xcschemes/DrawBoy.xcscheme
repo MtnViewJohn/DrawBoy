@@ -60,6 +60,14 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--check"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;wz_2009wk30_LillianWhipple_TheTree_SummerAndWinter.wif&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "&quot;persimmon profile.dtx&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -84,8 +92,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--shafts 12"
-            isEnabled = "NO">
+            argument = "--shafts 24"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--findloom"
@@ -113,7 +121,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel4.wif&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.dtx&quot;"

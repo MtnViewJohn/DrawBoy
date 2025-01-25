@@ -287,6 +287,7 @@ Options::Options(int argc, const char * argv[])
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::CompletionFlag completion(parser, {"complete"});
     args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut);
+    args::Flag check(parser, "check draft parsing", "Tests whether the draft file parses.", {"check"}, args::Options::Hidden);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
     args::ValueFlag<std::string> _picks(parser, "PICK LIST",
@@ -365,6 +366,9 @@ Options::Options(int argc, const char * argv[])
     tabbyPattern = args::get(_tabbyPattern);
     std::string draftFile = args::get(_draftFile);
 
+    if (check)
+        std::cout << "Checking: " << draftFile << std::endl;
+
     if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {
         if (draftFile.ends_with(".wif"))
             draftContents = std::make_unique<wif>(draftfileowner.get());
@@ -374,6 +378,11 @@ Options::Options(int argc, const char * argv[])
             throw std::runtime_error("Unknown draft file type (not wif or dtx).");
     } else {
         throw make_system_error("Cannot open draft file");
+    }
+    
+    if (check) {
+        driveLoom = false;
+        return;
     }
     
     parsePicks(args::get(_picks), draftContents->picks);
