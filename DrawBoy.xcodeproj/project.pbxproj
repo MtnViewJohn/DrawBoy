@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		52A877002D56DD4C0061193F /* README.md in CopyFiles */ = {isa = PBXBuildFile; fileRef = 522754BC2D2A5C4C00EA754F /* README.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		523179282D0B98540085FB15 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -16,10 +20,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		52A876FF2D56DD280061193F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/local/share/doc/drawboy;
+			dstSubfolderSpec = 0;
+			files = (
+				52A877002D56DD4C0061193F /* README.md in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		52DE6CAF2CBE3015008EB99F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
+			dstPath = /usr/local/share/man/man1;
 			dstSubfolderSpec = 0;
 			files = (
 			);
@@ -57,6 +71,16 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		52A876FD2D569EED0061193F /* Exceptions for "DrawBoy" folder in "Copy Files" phase from "DrawBoy" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 52DE6CAF2CBE3015008EB99F /* CopyFiles */;
+			membershipExceptions = (
+				man/drawboy.1,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5231792B2D0B98540085FB15 /* FakeLoom */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -67,6 +91,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				5231793D2D0CD7FA0085FB15 /* Exceptions for "DrawBoy" folder in "DrawBoy" target */,
+				52A876FD2D569EED0061193F /* Exceptions for "DrawBoy" folder in "Copy Files" phase from "DrawBoy" target */,
 				523179322D0B98CE0085FB15 /* Exceptions for "DrawBoy" folder in "FakeLoom" target */,
 			);
 			path = DrawBoy;
@@ -143,6 +168,7 @@
 				52DE6CAD2CBE3015008EB99F /* Sources */,
 				52DE6CAE2CBE3015008EB99F /* Frameworks */,
 				52DE6CAF2CBE3015008EB99F /* CopyFiles */,
+				52A876FF2D56DD280061193F /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -375,6 +401,8 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = TQF8PPHU3U;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ozonehouse.drawboy;
 				PRODUCT_NAME = drawboy;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -387,6 +415,8 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = TQF8PPHU3U;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ozonehouse.drawboy;
 				PRODUCT_NAME = drawboy;
 				SWIFT_VERSION = 6.0;
 			};
