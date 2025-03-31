@@ -60,12 +60,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--check"
+            argument = "--colorAlert=Alternating"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--check"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "&quot;wz_2009wk30_LillianWhipple_TheTree_SummerAndWinter.wif&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;persimmon profile.dtx&quot;"
@@ -125,6 +129,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.dtx&quot;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;log cabin 17end.dtx&quot;"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -144,7 +152,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_LOOMDEVICE"
             value = "/dev/cu.usbserial-FTDNEU8T"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_DOBBY"

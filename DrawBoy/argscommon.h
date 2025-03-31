@@ -35,6 +35,13 @@ enum class TabbyPattern {
     BxAy,
 };
 
+enum class ColorAlert {
+    None,
+    Simple,
+    Pulse,
+    Alternating
+};
+
 inline const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
 inline const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
 inline const char* envDobby = std::getenv("DRAWBOY_DOBBY");
@@ -66,6 +73,12 @@ inline std::unordered_map<std::string, TabbyPattern> tabbyMap {
     {"axby", TabbyPattern::AxBy},
     {"xbya", TabbyPattern::xByA},
     {"bxay", TabbyPattern::BxAy},
+};
+inline std::unordered_map<std::string, ColorAlert> alertMap {
+    {"none", ColorAlert::None},
+    {"simple", ColorAlert::Simple},
+    {"pulse", ColorAlert::Pulse},
+    {"alternating", ColorAlert::Alternating},
 };
 
 inline std::system_error

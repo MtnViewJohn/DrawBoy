@@ -308,6 +308,8 @@ Options::Options(int argc, const char * argv[])
     args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE",
         "Is the loom a positive or negative dobby (+ and - are also accepted)", {"dobbyType"},
         dobbyMap, defDobby, args::Options::Single);
+    args::MapFlag<std::string, ColorAlert, ToLowerReader> _bell(parser, "COLOR ALERT", "Ring bell on color changes",
+        {"colorAlert"}, alertMap, ColorAlert::None);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"}, args::Options::Single);
     args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI SUPPORT",
         "Does the terminal support ANSI style codes and possibly true-color", {"ansi"},
@@ -363,6 +365,7 @@ Options::Options(int argc, const char * argv[])
     dobbyType = args::get(_dobbyType);
     ascii = args::get(_ascii) || envASCII != nullptr;
     ansi = args::get(_ansi);
+    colorAlert = args::get(_bell);
     tabbyPattern = args::get(_tabbyPattern);
     std::string draftFile = args::get(_draftFile);
 

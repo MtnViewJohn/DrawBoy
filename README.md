@@ -62,6 +62,10 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 > Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy. Default is xAyB.
 
+**\-\-alertColor**=*alert color*
+
+> Sounds the console bell when the weft color is changing. There are four alert modes: None, Simple, Pulse, and Alternating. The default is None: do not sound the bell. In Simple mode the bell sounds for each weft color change. Pulse mode is like Simple mode except that if there are two or more consecutive picks with color changes, the bell only sounds for the first one. Alternating mode is for patterns that alternate between two weft colors. The bell sounds when one of the two weft colors changes.
+
 **\-\-loomDevice**=*loom path*
 
 > The path to the serial port in the /dev directory. The loom path is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
@@ -238,7 +242,7 @@ weaving is still visible in your terminal window and the last pick was
 
 The following environment variables affect the behavior of **drawboy**. They
 provide information that will likely be common to all **drawboy** runs. It may
-be useful to set them in the users account profile.
+be useful to set them in the user's account profile.
 
 **DRAWBOY_LOOMDEVICE**
 

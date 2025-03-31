@@ -34,6 +34,7 @@ struct Options {
     std::vector<int> picks;
     color tabbyColor;
     bool ascii;
+    ColorAlert colorAlert;
     ANSIsupport ansi;
     uint64_t tabbyA = 0, tabbyB = 0;
     TabbyPattern tabbyPattern = TabbyPattern::xAyB;

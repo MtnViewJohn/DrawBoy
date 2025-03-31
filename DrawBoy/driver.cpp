@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <map>
 #include <string_view>
+#include <array>
 
 enum class Mode {
     Weave,
@@ -58,6 +59,10 @@ struct View
     TabbyPick tabbyPick = TabbyPick::A;
     std::string pickValue;
     int parenLevel = 0;
+    
+    std::array<color, 4> weftColors;
+    size_t weftIndex = 0;
+    bool lastBell = false;
     
     std::string loomOutput;
     Shed loomState = Shed::Unknown;
@@ -172,6 +177,29 @@ View::displayPick(PickAction _sendToLoom)
     if (loomState == Shed::Closed && _sendToLoom == PickAction::SendFinally) endMessage = "SENT";
     if (endMessage)
         std::printf(" %s%s%s", bold(), endMessage, reset());
+    
+    if (loomState == Shed::Closed && _sendToLoom != PickAction::DontSend) {
+        weftColors[weftIndex & 3] = weftColor;
+        bool bell = false;
+        switch (opts.colorAlert) {
+            case ColorAlert::None:
+                break;
+            case ColorAlert::Simple:
+                bell = weftColors[(weftIndex + 3) & 3] != weftColor;
+                break;
+            case ColorAlert::Pulse:
+                bell = weftColors[(weftIndex + 3) & 3] != weftColor && !lastBell;
+                break;
+            case ColorAlert::Alternating:
+                bell = weftColors[(weftIndex + 2) & 3] != weftColor;
+                break;
+        }
+        bell = bell && weftIndex > (opts.colorAlert == ColorAlert::Alternating ? 1 : 0);
+        if (bell)
+            std::putchar('\a');
+        lastBell = bell;
+        ++weftIndex;
+    }
     
     if (_sendToLoom != PickAction::DontSend)
         sendPick(lift);
