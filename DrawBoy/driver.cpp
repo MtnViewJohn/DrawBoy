@@ -180,22 +180,21 @@ View::displayPick(PickAction _sendToLoom)
     
     if (loomState == Shed::Closed && _sendToLoom != PickAction::DontSend) {
         weftColors[weftIndex & 3] = weftColor;
-        bool bell = false;
+        bool bell;
         switch (opts.colorAlert) {
             case ColorAlert::None:
+                bell = false;
                 break;
             case ColorAlert::Simple:
-                bell = weftColors[(weftIndex + 3) & 3] != weftColor;
-                break;
             case ColorAlert::Pulse:
-                bell = weftColors[(weftIndex + 3) & 3] != weftColor && !lastBell;
+                bell = weftColors[(weftIndex + 3) & 3] != weftColor;
                 break;
             case ColorAlert::Alternating:
                 bell = weftColors[(weftIndex + 2) & 3] != weftColor;
                 break;
         }
         bell = bell && weftIndex > (opts.colorAlert == ColorAlert::Alternating ? 1 : 0);
-        if (bell)
+        if (bell && !(lastBell && opts.colorAlert == ColorAlert::Pulse))
             std::putchar('\a');
         lastBell = bell;
         ++weftIndex;
