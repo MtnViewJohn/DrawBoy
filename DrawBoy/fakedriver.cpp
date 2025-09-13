@@ -16,8 +16,8 @@
 #include <chrono>
 
 enum class Shed {
-    Open,
-    Closed,
+    Up,
+    Down,
     Unknown,
 };
 
@@ -104,23 +104,23 @@ View::handleEvent(const Term::Event &ev)
         case Term::EventType::Key: {
             switch (ev.key) {
                 case Term::Key::Up:
-                    if (loomState == Shed::Open)
+                    if (loomState == Shed::Up)
                         std::fputs("\r\nArms were already raised.\r\n", stdout);
                     else
                         std::fputs(opts.ascii ? "^" : "\xE2\x86\x91", stdout);
                     std::fflush(stdout);
-                    sendToDrawBoy("\x62\x03");
-                    loomState = Shed::Open;
+                    sendToDrawBoy("\x61\x03");
+                    loomState = Shed::Up;
                     break;
                     
                 case Term::Key::Down:
-                    if (loomState == Shed::Closed)
+                    if (loomState == Shed::Down)
                         std::fputs("\r\nArms were already lowered.\r\n", stdout);
                     else
                         std::fputs(opts.ascii ? "v" : "\xE2\x86\x93", stdout);
                     std::fflush(stdout);
-                    sendToDrawBoy("\x61\x03");
-                    loomState = Shed::Closed;
+                    sendToDrawBoy("\x62\x03");
+                    loomState = Shed::Down;
                     break;
                     
                 default:
@@ -268,7 +268,7 @@ View::connect()
                         solenoidState = Solenoid::Reset;
                     }
                 } else {
-                    std::fputs(loomState == Shed::Closed ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
+                    std::fputs(loomState == Shed::Down ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
                     uint64_t lift = 0;
                     bool unexpected = false;
                     uint64_t shafts = 0;

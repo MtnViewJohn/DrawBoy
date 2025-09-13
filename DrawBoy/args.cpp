@@ -259,7 +259,7 @@ Options::parsePicks(const std::string &str, int maxPick)
         if (_pick == -3) {
             if (picksSinceTabby > 1)
                 tabbyIsA = tabbyAFirst;
-            _pick = tabbyIsA ? -1 : -2;
+            _pick = tabbyIsA ? TabbyA : TabbyB;
             tabbyIsA = !tabbyIsA;
             picksSinceTabby = 0;
         } else {

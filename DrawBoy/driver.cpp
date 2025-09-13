@@ -15,6 +15,23 @@
 #include <map>
 #include <string_view>
 #include <array>
+#include <cassert>
+#include <charconv>
+#include <print>
+
+namespace {
+std::string pickString(int pick, bool padded)
+{
+    if (pick == TabbyA) return padded ? "   A" : "A";
+    if (pick == TabbyB) return padded ? "   B" : "B";
+    if (pick < 0) return padded ? "   X" : "X";
+    
+    if (padded)
+        return std::format("{:4}", pick);
+    else
+        return std::format("{}", pick);
+}
+}
 
 enum class Mode {
     Weave,
@@ -24,9 +41,9 @@ enum class Mode {
     Quit,
 };
 
-enum class Shed {
-    Open,
-    Closed,
+enum class Arms {
+    Up,
+    Down,
     Unknown,
 };
 
@@ -38,25 +55,13 @@ std::map<Mode, const char*> ModePrompt{
     {Mode::Quit, "Quitting"},
 };
 
-enum class TabbyPick {
-    A,
-    B,
-};
-
-enum class PickAction {
-    DontSend,
-    Send,
-    SendFinally,
-};
-
 struct View
 {
     Term& term;
     Options& opts;
     
     draft& draftContent;
-    int pick;
-    TabbyPick tabbyPick = TabbyPick::A;
+    int currentPick = 0, nextPick = 1;
     std::string pickValue;
     int parenLevel = 0;
     
@@ -65,16 +70,15 @@ struct View
     bool lastBell = false;
     
     std::string loomOutput;
-    Shed loomState = Shed::Unknown;
-    bool pendingPick = false;
-    bool waitingForSolenoids = false;
+    Arms loomState = Arms::Unknown;
 
     Mode mode = Mode::Weave;
     Mode oldMode = Mode::Weave;
+    int oldPick = -1;
     bool weaveForward = true;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), draftContent(*o.draftContents), pick(o.pick - 1)
+    : term(t), opts(o), draftContent(*o.draftContents), nextPick(o.pick - 1)
     {}
     
     void handleEvent(const Term::Event& ev);
@@ -83,12 +87,13 @@ struct View
     bool handlePickEntryEvent(const Term::Event& ev);
     bool handlePickListEntryEvent(const Term::Event& ev);
 
-    void sendPick(uint64_t _pick);
+    void sendPick();
     void sendToLoom(std::string_view msg);
-    
-    void nextPick(bool forward);
+    std::pair<uint64_t, color> calculateLift(int pick);
+    void advancePick(bool forward);
     void setPick(int newPick);
-    void displayPick(PickAction sendToLoom);
+    color displayPick(const char* message = "");
+    void colorCheck(color currentColor);
     void displayPrompt();
     void run();
     
@@ -100,16 +105,17 @@ struct View
     { return opts.ansi == ANSIsupport::no ? "" : Term::Style::reset; }
 };
 
-void
-View::displayPick(PickAction _sendToLoom)
+std::pair<uint64_t, color>
+View::calculateLift(int pick)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
     uint64_t liftMask = (1 << draftContent.maxShafts) - 1;
     color weftColor;
 
-    if (mode == Mode::Tabby) {
-        lift = tabbyPick == TabbyPick::A ? opts.tabbyA : opts.tabbyB;
+    if (pick < 0) {
+        assert(pick == TabbyA || pick == TabbyB);
+        lift = pick == TabbyA ? opts.tabbyA : opts.tabbyB;
         weftColor = opts.tabbyColor;
     } else {
         size_t zpick = (size_t)(pick) % opts.picks.size();
@@ -130,9 +136,18 @@ View::displayPick(PickAction _sendToLoom)
         }
     }
 
+
     bool emptyLift =  (lift & liftMask) == 0 || (lift & liftMask) == liftMask;
     if (emptyLift) weftColor = color();
-    
+
+    return {lift, weftColor};
+}
+
+color
+View::displayPick(const char* message)
+{
+    auto [lift, weftColor] = calculateLift(currentPick);
+
     // Output drawdown
     std::putchar('\r');
     int drawdownWidth = term.cols() - (draftContent.maxShafts + 24);
@@ -158,10 +173,9 @@ View::displayPick(PickAction _sendToLoom)
         rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
     else
         leftArrow = opts.ascii ? " <-- " : " \xE2\xAC\x85  ";
-    if (mode == Mode::Tabby)
-        std::printf(" %s   %c%s |", leftArrow, tabbyPick == TabbyPick::A ? 'A' : 'B', rightArrow);
-    else
-        std::printf(" %s%4d%s |", leftArrow, pick + 1, rightArrow);
+    
+    int cpick = currentPick < 0 ? currentPick : currentPick + 1;
+    std::print(" {}{}{} |", leftArrow, pickString(cpick, true), rightArrow);
     
     // Output liftplan
     for (uint64_t shaftMask = 1; shaftMask != (1ull << draftContent.maxShafts); shaftMask <<= 1)
@@ -171,40 +185,35 @@ View::displayPick(PickAction _sendToLoom)
             std::putchar(' ');
     std::putchar('|');
     std::fputs(reset(), stdout);
-    if (emptyLift) std::fputs(" EMPTY", stdout);
-    const char* endMessage = nullptr;
-    if (loomState != Shed::Closed && _sendToLoom == PickAction::Send) endMessage = "PENDING";
-    if (loomState == Shed::Closed && _sendToLoom == PickAction::SendFinally) endMessage = "SENT";
-    if (endMessage)
-        std::printf(" %s%s%s", bold(), endMessage, reset());
-    
-    if (loomState == Shed::Closed && _sendToLoom != PickAction::DontSend) {
-        weftColors[weftIndex & 3] = weftColor;
-        bool bell;
-        switch (opts.colorAlert) {
-            case ColorAlert::None:
-                bell = false;
-                break;
-            case ColorAlert::Simple:
-            case ColorAlert::Pulse:
-                bell = weftColors[(weftIndex + 3) & 3] != weftColor;
-                break;
-            case ColorAlert::Alternating:
-                bell = weftColors[(weftIndex + 2) & 3] != weftColor;
-                break;
-        }
-        bell = bell && weftIndex > (opts.colorAlert == ColorAlert::Alternating ? 1 : 0);
-        if (bell && !(lastBell && opts.colorAlert == ColorAlert::Pulse))
-            std::putchar('\a');
-        lastBell = bell;
-        ++weftIndex;
-    }
-    
-    if (_sendToLoom != PickAction::DontSend)
-        sendPick(lift);
+    std::fputs(message, stdout);
 
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
+    return weftColor;
+}
+
+void
+View::colorCheck(color currentColor)
+{
+    weftColors[weftIndex & 3] = currentColor;
+    bool bell;
+    switch (opts.colorAlert) {
+        case ColorAlert::None:
+            bell = false;
+            break;
+        case ColorAlert::Simple:
+        case ColorAlert::Pulse:
+            bell = weftColors[(weftIndex + 3) & 3] != currentColor;
+            break;
+        case ColorAlert::Alternating:
+            bell = weftColors[(weftIndex + 2) & 3] != currentColor;
+            break;
+    }
+    bell = bell && weftIndex > (opts.colorAlert == ColorAlert::Alternating ? 1 : 0);
+    if (bell && !(lastBell && opts.colorAlert == ColorAlert::Pulse))
+        std::putchar('\a');
+    lastBell = bell;
+    ++weftIndex;
 }
 
 void
@@ -214,24 +223,22 @@ View::displayPrompt()
     std::putchar('\r');
     switch (mode) {
         case Mode::PickEntry:
-            std::printf("Enter the new pick number: %s", pickValue.c_str());
+            std::print("Enter the new pick number: {}", pickValue);
             break;
         case Mode::PickListEntry:
-            std::printf("Enter the new pick list: %s", pickValue.c_str());
+            std::print("Enter the new pick list: {}", pickValue);
             break;
+        case Mode::Tabby:
         case Mode::Weave: {
-            int wifPick = opts.picks[(size_t)(pick) % opts.picks.size()];
-            if (wifPick < 0)
-                std::printf("[%s:%c] %s", ModePrompt[mode], wifPick == -1 ? 'A' : 'B', menu);
-            else
-                std::printf("[%s:%d] %s", ModePrompt[mode], wifPick, menu);
+            int cpick = currentPick < 0 ? currentPick : opts.picks[(size_t)(currentPick) % opts.picks.size()];
+            int npick = nextPick < 0 ? nextPick : opts.picks[(size_t)(nextPick) % opts.picks.size()];
+            const char* rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
+            std::print("[{}:{}{}{}] {}", ModePrompt[mode], pickString(cpick, false),
+                       rightArrow, pickString(npick, false), menu);
             break;
         }
-        case Mode::Tabby:
-            std::printf("[%s:%c] %s", ModePrompt[mode], tabbyPick == TabbyPick::A ? 'A' : 'B', menu);
-            break;
         default:
-            std::printf("[%s] %s", ModePrompt[mode], menu);
+            std::print("[{}] {}", ModePrompt[mode], menu);
             break;
     }
     Term::clearToEOL();
@@ -273,8 +280,9 @@ View::handleGlobalEvent(const Term::Event& ev)
                     return true;
                     
                 case '\x0c':      // control-l  - like in vi!
-                    displayPick(PickAction::DontSend);
-                    displayPrompt();
+                    displayPick();
+                    if (loomState == Arms::Down)
+                        displayPrompt();
                     return true;
                     
                 case '\x1b':      // escape
@@ -290,7 +298,7 @@ View::handleGlobalEvent(const Term::Event& ev)
             
         case Term::EventType::Resize: {
             Term::moveCursorRel(-1, 0);
-            displayPick(PickAction::DontSend);
+            displayPick();
             displayPrompt();
             return true;
         }
@@ -305,43 +313,47 @@ bool
 View::handlePickEvent(const Term::Event &ev)
 {
     if (ev.type == Term::EventType::Char) {
-        switch (ev.character) {
+        char evChar = (char)std::tolower((int)ev.character);
+        if (loomState != Arms::Down && evChar != 'q') {
+            std::putchar('\a');
+            std::fflush(stdout);
+            return true;
+        }
+        switch (evChar) {
             case 't':
-            case 'T':
                 if (mode == Mode::Tabby) return true;
                 mode = Mode::Tabby;
-                tabbyPick = weaveForward ? TabbyPick::A : TabbyPick::B;
-                displayPick(PickAction::Send);
+                oldPick = nextPick;
+                nextPick = weaveForward ? TabbyA : TabbyB;
+                sendPick();
                 displayPrompt();
                 return true;
             case 'l':
-            case 'L':
                 if (mode == Mode::Weave) return true;
                 mode = Mode::Weave;
-                displayPick(PickAction::Send);
+                nextPick = oldPick;
+                sendPick();
                 displayPrompt();
                 return true;
             case 'q':
-            case 'Q':
                 mode = Mode::Quit;
                 std::putchar('q');
                 std::fflush(stdout);
                 return true;
             case 'r':
-            case 'R':
                 weaveForward = !weaveForward;
-                displayPick(PickAction::DontSend);
+                nextPick = currentPick;
+                advancePick(true);
+                sendPick();
                 displayPrompt();
                 return true;
             case 's':
-            case 'S':
                 oldMode = mode;
                 mode = Mode::PickEntry;
                 pickValue.clear();
                 displayPrompt();
                 return true;
             case 'p':
-            case 'P':
                 oldMode = mode;
                 mode = Mode::PickListEntry;
                 pickValue.clear();
@@ -354,19 +366,24 @@ View::handlePickEvent(const Term::Event &ev)
     }
     
     if (ev.type == Term::EventType::Key) {
+        if (loomState != Arms::Down) {
+            std::putchar('\a');
+            std::fflush(stdout);
+            return true;
+        }
         switch (ev.key) {
             case Term::Key::Up:
             case Term::Key::Left:
-                nextPick(false);
+                advancePick(false);
                 break;
             case Term::Key::Down:
             case Term::Key::Right:
-                nextPick(true);
+                advancePick(true);
                 break;
             default:
                 return false;
         }
-        displayPick(PickAction::Send);
+        sendPick();
         displayPrompt();
         return true;
     }
@@ -401,9 +418,9 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 if (errno || p > 9999 || p < 1) {
                     std::putchar('\a');
                 } else {
-                    pick = (int)p - 1;
+                    nextPick = (int)p - 1;
                     mode = Mode::Weave;
-                    displayPick(PickAction::Send);
+                    sendPick();
                 }
             } else {
                 mode = oldMode;
@@ -450,11 +467,12 @@ View::handlePickListEntryEvent(const Term::Event &ev)
             }
             try {
                 opts.parsePicks(pickValue, draftContent.picks);
-                pick = 0;
+                nextPick = 0;       // Current pick is from old pick list
+                currentPick = -10;  // it is meaningless in new pick list
                 mode = Mode::Weave;
-                displayPick(PickAction::Send);
+                sendPick();
             } catch (std::exception& e) {
-                std::printf("\r\n\a%s%s%s\r\n", bold(), e.what(), reset());
+                std::print("\r\n\a{}{}{}\r\n", bold(), e.what(), reset());
             }
             displayPrompt();
             return true;
@@ -467,24 +485,24 @@ View::handlePickListEntryEvent(const Term::Event &ev)
 void
 View::setPick(int newPick)
 {
-    pick = newPick;
+    nextPick = newPick;
     int psize = (int)opts.picks.size();
-    if (pick >= 9999)
-        pick -= (pick / psize) * psize;
-    while (pick < 0)
-        pick += psize;
+    if (nextPick >= 9999)
+        nextPick -= (nextPick / psize) * psize;
+    while (nextPick < 0)
+        nextPick += psize;
 }
 
 void
-View::nextPick(bool forward)
+View::advancePick(bool forward)
 {
     switch (mode) {
         case Mode::Weave:
-                                //   VV     logical XNOR
-            setPick(pick + ((forward == weaveForward) ? 1 : -1));
+                                    //   VV     logical XNOR
+            setPick(nextPick + ((forward == weaveForward) ? 1 : -1));
             break;
         case Mode::Tabby:
-            tabbyPick = tabbyPick == TabbyPick::A ? TabbyPick::B : TabbyPick::A;
+            nextPick = nextPick == TabbyA ? TabbyB : TabbyA;
             break;
         default:
             break;
@@ -494,7 +512,7 @@ View::nextPick(bool forward)
 void
 View::sendToLoom(std::string_view msg)
 {
-    while (!msg.empty() && mode != Mode::Quit)
+    while (!msg.empty())
     {
         auto result = ::write(opts.loomDeviceFD, msg.data(), msg.length());
         if (result >= 0) {
@@ -532,15 +550,10 @@ View::sendToLoom(std::string_view msg)
 }
 
 void
-View::sendPick(uint64_t lift)
+View::sendPick()
 {
-    if (loomState != Shed::Closed) {
-        pendingPick = true;
-        return;
-    }
-    
-    pendingPick = false;
-    
+    auto [lift, weftColor] = calculateLift(nextPick);
+
     char shaftCmd = '\x10';
     std::string command;
     for (int shaft = 0; shaft < draftContent.maxShafts; shaft += 4) {
@@ -555,10 +568,23 @@ View::sendPick(uint64_t lift)
 void
 View::run()
 {
+    // Drain input queue
+    char c;
+    while (true) {
+        auto n = ::read(opts.loomDeviceFD, &c, 1);
+        if (n < 0) {
+            if (errno == EINTR)
+                continue;
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else
+                throw make_system_error("error in read");
+        }
+        if (n == 0)
+            break;
+    }
     sendToLoom("\x0f\x07");
-    waitingForSolenoids = true;
-    displayPick(PickAction::Send);    // initialize pending pick
-    displayPrompt();
+    int AVLstate = 1;
 
     while (mode != Mode::Quit) {
         fd_set rdset;
@@ -571,7 +597,7 @@ View::run()
         if (nfds == -1 && errno != EINTR)
             throw make_system_error("select failed");
 
-        if (nfds == 0 && waitingForSolenoids) {
+        if (nfds == 0 && AVLstate == 1) {
             sendToLoom("\x0f\x07");
             std::putchar('.');
         }
@@ -583,7 +609,6 @@ View::run()
         }
         
         if (FD_ISSET(opts.loomDeviceFD, &rdset) && mode != Mode::Quit) {
-            char c;
             int count = 0;
             while (true) {
                 auto n = ::read(opts.loomDeviceFD, &c, 1);
@@ -603,33 +628,48 @@ View::run()
             };
             
             if (!loomOutput.empty() && loomOutput.back() == '\x03') {
-                if (loomOutput == "\x7f\x03") {
-                    waitingForSolenoids = false;
-                    std::fputs(" solenoid reset received", stdout);
-                }
-                if (loomOutput == "\x62\x03" && loomState == Shed::Closed) {
-                    loomState = Shed::Open;
-                    std::fputs(" open", stdout);
-                }
-                if (loomOutput == "\x61\x03") {
-                    loomState = Shed::Closed;
-                    if (pendingPick) {
-                        // Redraw the last pending pick to erase the 'PENDING'
-                        if (opts.ansi != ANSIsupport::no)
-                            Term::moveCursorRel(-1, 0);
-                        displayPick(PickAction::SendFinally);
-                        displayPrompt();
-                    } else {
-                        nextPick(true);
-                        displayPick(PickAction::Send);
-                        displayPrompt();
-                    }
+                switch (AVLstate) {
+                    case 1:
+                        // waiting for reset, sending first pick
+                        if (loomOutput == "\x7f\x03") {
+                            sendPick();     // initialize pending pick
+                            displayPick(" reset");
+                            AVLstate = 3;
+                        } else {
+                            std::fputs(" ?", stdout);
+                        }
+                        break;
+                    case 3:
+                        // process switch (5 or nothing), arm up (4) or arm down (7)
+                        if (loomOutput == "\x62\x03" && loomState != Arms::Down) {
+                            // Shed is open, OK to send to solenoids
+                            loomState = Arms::Down;
+                            advancePick(true);
+                            sendPick();
+                            displayPrompt();
+                        }
+                        if (loomOutput == "\x61\x03" && loomState != Arms::Up) {
+                            // Shed is closed, next shed is fixed
+                            loomState = Arms::Up;
+                            const char* msg = "";
+                            if (mode == Mode::PickEntry || mode == Mode::PickListEntry) {
+                                msg = " \aCancelled";
+                                mode = oldMode;
+                            }
+                            currentPick = nextPick;
+                            colorCheck(displayPick(msg));
+                        }
+                        break;
+                    default:
+                        
                 }
                 loomOutput.clear();
                 std::fflush(stdout);
             }
         }
     }
+    sendToLoom("\x0f\x07");
+    sleep(1);
 }
 
 void driver(Options& opts)

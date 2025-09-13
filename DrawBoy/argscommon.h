@@ -42,6 +42,11 @@ enum class ColorAlert {
     Alternating
 };
 
+enum TabbyPick {
+    TabbyA = -1,
+    TabbyB = -2
+};
+
 inline const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
 inline const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
 inline const char* envDobby = std::getenv("DRAWBOY_DOBBY");
