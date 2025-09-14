@@ -73,7 +73,7 @@ enumSerial(const std::set<std::string>& exclude)
 
 
 void
-initLoomPort(int fd)
+initLoomPort(int fd, int cdgen)
 {
     struct termios term;
 
@@ -81,11 +81,21 @@ initLoomPort(int fd)
         throw make_system_error("Cannot communicate with loom device");
     
     ::cfmakeraw(&term);
-    ::cfsetispeed(&term, B9600);          // set 9600 baud
-    ::cfsetospeed(&term, B9600);
-    term.c_cflag &= (tcflag_t)(~PARENB);  // set 8N1
-    term.c_cflag &= (tcflag_t)(~CSTOPB);
-    term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
+    
+    if (cdgen == 1) {
+        ::cfsetispeed(&term, B1200);            // set 1200 baud
+        ::cfsetospeed(&term, B1200);
+        term.c_cflag |= PARENB;                 // set 7E2
+        term.c_cflag &= (tcflag_t)(~PARODD);
+        term.c_cflag |= CSTOPB;
+        term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS7;
+    } else {
+        ::cfsetispeed(&term, B9600);            // set 9600 baud
+        ::cfsetospeed(&term, B9600);
+        term.c_cflag &= (tcflag_t)(~PARENB);    // set 8N1
+        term.c_cflag &= (tcflag_t)(~CSTOPB);
+        term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
+    }
     term.c_cflag |= CLOCAL;
     term.c_cc[VMIN] = 0;
     term.c_cc[VTIME] = 1;
@@ -283,43 +293,49 @@ Options::Options(int argc, const char * argv[])
     auto f3 = envANSI ? ANSImap.find(tlr(envANSI)) : ANSImap.end();
     ANSIsupport defANSI = f3 != ANSImap.end() ? f3->second : ANSIsupport::yes;
     
-    args::ArgumentParser parser("AVL CompuDobby III loom driver.", "Report errors to John Horigan <john@glyphic.com>.");
+    args::ArgumentParser parser("AVL Compu-Dobby loom driver.", "Report errors to John Horigan <john@glyphic.com>.");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::CompletionFlag completion(parser, {"complete"});
     args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut);
     args::Flag check(parser, "check draft parsing", "Tests whether the draft file parses.", {"check"}, args::Options::Hidden);
     args::ValueFlag<int> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
-    args::ValueFlag<std::string> _picks(parser, "PICK LIST",
+    args::Flag _cd1(parser, "Compu-Dobby I", "Loom has a Compu-Dobby I", {"cd1"}, args::Options::Single);
+    args::Flag _cd2(parser, "Compu-Dobby II", "Loom has a Compu-Dobby II", {"cd2"}, args::Options::Single);
+    args::Flag _cd3(parser, "Compu-Dobby III", "Loom has a Compu-Dobby III", {"cd3"}, args::Options::Single);
+    args::Flag _cd4(parser, "Compu-Dobby IV", "Loom has a Compu-Dobby IV", {"cd4"}, args::Options::Single);
+    args::ValueFlag<std::string> _picks(parser, "PICK_LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
-    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY SPEC",
+    args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY_SPEC",
         "Which shafts are activated for tabby A and tabby B", {"tabby"}, args::Options::Single);
-    args::MapFlag<std::string, TabbyPattern, ToLowerReader> _tabbyPattern(parser, "TABBY PATTERN",
+    args::MapFlag<std::string, TabbyPattern, ToLowerReader> _tabbyPattern(parser, "TABBY_PATTERN",
         "Which pattern is used for inserted tabby picks",
         {"tabbyPattern"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
-    args::ValueFlag<std::string> _tabbyColor(parser, "TABBY COLOR", "Color displayed for tabby picks",
+    args::ValueFlag<std::string> _tabbyColor(parser, "TABBY_COLOR", "Color displayed for tabby picks",
         {"tabbycolor"}, "00FF00", args::Options::Single);
-    args::ValueFlag<std::string> _loomDevice(parser, "LOOM PATH",
+    args::ValueFlag<std::string> _loomDevice(parser, "LOOM_PATH",
         "The path of the loom device in the /dev directory", {"loomDevice"},
         envLoom, (*envLoom || envSocket) ? args::Options::Single : args::Options::Required | args::Options::Single);
-    args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",
+    args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT_COUNT",
         "Number of shafts on the loom", {"shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
-    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY TYPE",
+    args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY_TYPE",
         "Is the loom a positive or negative dobby (+ and - are also accepted)", {"dobbyType"},
         dobbyMap, defDobby, args::Options::Single);
-    args::MapFlag<std::string, ColorAlert, ToLowerReader> _bell(parser, "COLOR ALERT", "Ring bell on color changes",
+    args::MapFlag<std::string, ColorAlert, ToLowerReader> _bell(parser, "COLOR_ALERT", "Ring bell on color changes",
         {"colorAlert"}, alertMap, ColorAlert::None);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"}, args::Options::Single);
-    args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI SUPPORT",
+    args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI_SUPPORT",
         "Does the terminal support ANSI style codes and possibly true-color", {"ansi"},
         ANSImap, defANSI, args::Options::Single);
-    args::Positional<std::string> _draftFile(parser, "DRAFT PATH", "The path of the WIF or DTX file",
+    args::Positional<std::string> _draftFile(parser, "DRAFT_PATH", "The path of the WIF or DTX file",
         args::Options::Required);
 
     try {
-        parser.Prog("DrawBoy");
+        parser.Prog("drawboy");
         parser.ParseCLI(argc, argv);
+        if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1)
+            throw args::ParseError("Option Compu-dobby generation is required: --cd1, --cd2, --cd3, or --cd4.");
     } catch (const args::Completion& e) {
         std::cout << e.what();
         driveLoom = false;
@@ -329,11 +345,11 @@ Options::Options(int argc, const char * argv[])
         driveLoom = false;
         return;
     } catch (const args::ParseError& e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << "\n\n";
         std::cerr << parser;
         throw std::runtime_error("");   // rethrow, but erase error message
     } catch (const args::RequiredError& e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << "\n\n";
         std::cerr << parser;
         throw std::runtime_error("");   // rethrow, but erase error message
     }
@@ -371,6 +387,15 @@ Options::Options(int argc, const char * argv[])
 
     if (check)
         std::cout << "Checking: " << draftFile << std::endl;
+    
+    if (_cd1)
+        compuDobbyGen = 1;
+    else if (_cd2)
+        compuDobbyGen = 2;
+    else if (_cd3)
+        compuDobbyGen = 3;
+    else
+        compuDobbyGen = 4;
 
     if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {
         if (draftFile.ends_with(".wif"))
@@ -390,7 +415,7 @@ Options::Options(int argc, const char * argv[])
     
     parsePicks(args::get(_picks), draftContents->picks);
     
-    if (draftContents->maxShafts > maxShafts)
+    if (draftContents->maxShafts > maxShafts && compuDobbyGen < 4)
         throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
     
     if (envSocket) {
@@ -404,7 +429,7 @@ Options::Options(int argc, const char * argv[])
         if (loomDeviceFD == -2)
             throw std::runtime_error("Loom device is not a serial port.");
         
-        initLoomPort(loomDeviceFD);
+        initLoomPort(loomDeviceFD, compuDobbyGen);
     }
     
     std::string tabby = args::get(_tabby);

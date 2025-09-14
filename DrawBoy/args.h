@@ -25,6 +25,7 @@ struct Options {
     void parsePicks(const std::string& str, int maxPick);
     
     bool driveLoom = true;
+    int compuDobbyGen;
     std::string loomDevice;
     int loomDeviceFD = 0;
     std::unique_ptr<draft> draftContents;
