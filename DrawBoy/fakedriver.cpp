@@ -14,6 +14,7 @@
 #include "ipc.h"
 #include <cstring>
 #include <chrono>
+#include <charconv>
 
 enum class Shed {
     Up,
@@ -71,6 +72,10 @@ struct View
 void
 View::handleEvent(const Term::Event &ev)
 {
+    const char* armsDown = opts.cd4 ? "<down>\r" : "\x62\x03";
+    const char* armsUp = opts.cd4 ? "<up>\r" : "\x61\x03";
+    const char* armsNeutral = "<arm null>\r";    // CD IV only
+
     switch (ev.type) {
         case Term::EventType::Char: {
             switch (ev.character) {
@@ -84,6 +89,13 @@ View::handleEvent(const Term::Event &ev)
                     displayPrompt();
                     return;
                     
+                case ' ':
+                    sendToDrawBoy(armsNeutral);
+                    loomState = Shed::Unknown;
+                    std::fputs("0", stdout);
+                    std::fflush(stdout);
+                    return;
+
                 case 's':
                 case 'S':
                     if (solenoidState != Solenoid::Reset)
@@ -109,7 +121,7 @@ View::handleEvent(const Term::Event &ev)
                     else
                         std::fputs(opts.ascii ? "^" : "\xE2\x86\x91", stdout);
                     std::fflush(stdout);
-                    sendToDrawBoy("\x61\x03");
+                    sendToDrawBoy(armsUp);
                     loomState = Shed::Up;
                     break;
                     
@@ -119,7 +131,7 @@ View::handleEvent(const Term::Event &ev)
                     else
                         std::fputs(opts.ascii ? "v" : "\xE2\x86\x93", stdout);
                     std::fflush(stdout);
-                    sendToDrawBoy("\x62\x03");
+                    sendToDrawBoy(armsDown);
                     loomState = Shed::Down;
                     break;
                     
@@ -187,7 +199,9 @@ LoopingState
 View::connect()
 {
     const char* shaftChar = opts.ascii ? "*" : "\xE2\x96\xA0";
-    
+    char termChar = opts.cd4 ? '\r' : '\x07';
+    const char* loomReset = opts.cd4 ? "\r" : "\x0f\x03";
+
     while (mode == Mode::Run) {
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
@@ -257,40 +271,71 @@ View::connect()
             if (n == 0) return LoopingState::ShouldWait;
             DrawBoyOutput.push_back(c);
             
-            if (!DrawBoyOutput.empty() && DrawBoyOutput.back() == '\x07') {
-                if (DrawBoyOutput == "\x0f\x07") {
-                    if (autoReset) {
+            if (!DrawBoyOutput.empty() && DrawBoyOutput.back() == termChar) {
+                if (DrawBoyOutput == loomReset) {
+                    if (autoReset && !opts.cd4) {
                         std::fputs("\r\nResponding to solenoid reset command.\r\n", stdout);
                         sendToDrawBoy("\x7f\03");
                         autoReset = false;
+                    } else if (autoReset && opts.cd4) {
+                        std::fputs("\r\nSending loom greeting.\r\n", stdout);
+                        std::string greeting = std::format("<Compu-Dobby IV, {}H, {} Dobby, HW A.1, FW 0.1.0>\r<Password:>\r",
+                                                           opts.maxShafts, opts.dobbyType == DobbyType::Positive ? "Pos" : "Neg");
+                        sendToDrawBoy(greeting.c_str());
                     } else {
                         std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
                         solenoidState = Solenoid::Reset;
                     }
-                } else {
+                } else if (DrawBoyOutput == "chico\r") {
+                    std::fputs("\r\nPassword received.\r\n", stdout);
+                } else if (!opts.cd4 || DrawBoyOutput.starts_with("pick ")) {
                     std::fputs(loomState == Shed::Down ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
                     uint64_t lift = 0;
                     bool unexpected = false;
                     uint64_t shafts = 0;
                     std::fputs("\r\n", stdout);
-                    for (size_t i = 0; i < DrawBoyOutput.length(); ++i) {
-                        uint64_t uc = (unsigned char)DrawBoyOutput[i];
-                        std::printf("0x%02x ", (int)uc);
-                        if (uc >= 0x10 && uc <= 0xaf) {
-                            lift |= (uc & 0xf) << (((uc >> 4) - 1) << 2);
-                            uint64_t shaft = (uc & 0xf0) >> 2;
-                            if (shaft > shafts) shafts = shaft;
-                        } else if (uc != 0x07)
-                            unexpected = true;
+                    if (opts.cd4) {
+                        auto str = DrawBoyOutput.c_str() + 5;
+                        uint64_t shaft;
+                        while (*str != '\r') {
+                            auto res = std::from_chars(str, DrawBoyOutput.c_str() + DrawBoyOutput.size(), shaft, 10);
+                            if (res.ec != std::errc()) {
+                                unexpected = true;
+                                str = "\r";
+                            } else {
+                                str = *(res.ptr) == ',' ? res.ptr + 1 : res.ptr;
+                                lift |= 1 << (shaft - 1);
+                                if (shaft > shafts) shafts = shaft;
+                            }
+                        }
+                    } else {
+                        for (size_t i = 0; i < DrawBoyOutput.length(); ++i) {
+                            uint64_t uc = (unsigned char)DrawBoyOutput[i];
+                            std::printf("0x%02x ", (int)uc);
+                            if (uc >= 0x10 && uc <= 0xaf) {
+                                lift |= (uc & 0xf) << (((uc >> 4) - 1) << 2);
+                                uint64_t shaft = (uc & 0xf0) >> 2;
+                                if (shaft > shafts) shafts = shaft;
+                            } else if (uc != 0x07) {
+                                unexpected = true;
+                            }
+                        }
                     }
                     std::putchar('|');
                     bool tooMany = shafts > (uint64_t)opts.maxShafts;
+                    shafts = (uint64_t)opts.maxShafts;
                     for (uint64_t shaft = 0; shaft < shafts; ++shaft)
                         std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
                     std::putchar('|');
                     std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
                                 tooMany ? "too many shafts!" : "",
                                 unexpected ? "unexpected character!" : "",
+                                opts.ascii ? "" : Term::Style::reset);
+                } else {
+                    DrawBoyOutput.pop_back();
+                    std::printf("\r\n%s%sUnexpected input from driver: %s%s",
+                                Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
+                                DrawBoyOutput.c_str(),
                                 opts.ascii ? "" : Term::Style::reset);
                 }
                 DrawBoyOutput.clear();

@@ -20,6 +20,7 @@ struct Options {
     DobbyType dobbyType = DobbyType::Positive;
     bool ascii;
     bool fakeLoom = false;
+    bool cd4 = false;
 };
 
 #endif /* fakeargs_h */

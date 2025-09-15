@@ -60,6 +60,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--cd4"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--colorAlert=Pulse"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -124,6 +128,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "43608.wif"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "&apos;gudruns towel4.wif&apos;"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -145,7 +153,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;simple test8.wif&apos;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <EnvironmentVariables>
@@ -157,17 +165,17 @@
          <EnvironmentVariable
             key = "DRAWBOY_DOBBY"
             value = "Negative"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_SHAFTS"
             value = "8"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"

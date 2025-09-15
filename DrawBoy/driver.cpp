@@ -18,6 +18,7 @@
 #include <cassert>
 #include <charconv>
 #include <print>
+#include <set>
 
 namespace {
 std::string pickString(int pick, bool padded)
@@ -553,15 +554,29 @@ void
 View::sendPick()
 {
     auto [lift, weftColor] = calculateLift(nextPick);
-
-    char shaftCmd = '\x10';
     std::string command;
-    for (int shaft = 0; shaft < draftContent.maxShafts; shaft += 4) {
-        command.push_back(shaftCmd | (char)(lift & 0xf));
-        shaftCmd += '\x10';
-        lift >>= 4;
+
+    if (opts.compuDobbyGen < 4) {
+        char shaftCmd = '\x10';
+        for (int shaft = 0; shaft < draftContent.maxShafts; shaft += 4) {
+            command.push_back(shaftCmd | (char)(lift & 0xf));
+            shaftCmd += '\x10';
+            lift >>= 4;
+        }
+        command.push_back('\x07');
+    } else {
+        bool first = true;
+        if (lift == 0)
+            return;
+        command = "pick ";
+        for (int shaft = 1; lift; lift >>= 1, ++shaft)
+            if (lift & 1) {
+                if (!first) command.push_back(',');
+                command.append(std::to_string(shaft));
+                first = false;
+            }
+        command.push_back('\r');
     }
-    command.push_back('\x07');
     sendToLoom(command);
 }
 
@@ -570,6 +585,12 @@ View::run()
 {
     // Drain input queue
     char c;
+    char termChar = opts.compuDobbyGen < 4 ? '\x03' : '\r';
+    const char* armsDown = opts.compuDobbyGen < 4 ? "\x62\x03" : "<down>\r";
+    const char* armsUp = opts.compuDobbyGen < 4 ? "\x61\x03" : "<up>\r";
+    const char* armsNeutral = "<arm null>\r";    // CD IV only
+    const char* loomReset = opts.compuDobbyGen < 4 ? "\x0f\x03" : "\r";
+
     while (true) {
         auto n = ::read(opts.loomDeviceFD, &c, 1);
         if (n < 0) {
@@ -583,7 +604,9 @@ View::run()
         if (n == 0)
             break;
     }
-    sendToLoom("\x0f\x07");
+    
+    sendToLoom(loomReset);
+    
     int AVLstate = 1;
 
     while (mode != Mode::Quit) {
@@ -598,7 +621,7 @@ View::run()
             throw make_system_error("select failed");
 
         if (nfds == 0 && AVLstate == 1) {
-            sendToLoom("\x0f\x07");
+            sendToLoom(loomReset);
             std::putchar('.');
         }
         
@@ -625,15 +648,37 @@ View::run()
                 }
                 loomOutput.push_back(c);
                 ++count;
+                if (c == termChar)
+                    break;
             };
             
-            if (!loomOutput.empty() && loomOutput.back() == '\x03') {
+            if (!loomOutput.empty() && loomOutput.back() == termChar) {
                 switch (AVLstate) {
                     case 1:
                         // waiting for reset, sending first pick
-                        if (loomOutput == "\x7f\x03") {
+                        if (opts.compuDobbyGen < 4 && loomOutput == "\x7f\x03") {
                             sendPick();     // initialize pending pick
                             displayPick(" reset");
+                            AVLstate = 3;
+                        } else if (opts.compuDobbyGen == 4 && loomOutput.starts_with("<Compu-Dobby IV,")) {
+                            static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
+                            if (loomOutput.contains("Neg Dobby"))
+                                opts.dobbyType = DobbyType::Negative;
+                            if (loomOutput.contains("Pos Dobby"))
+                                opts.dobbyType = DobbyType::Positive;
+                            auto fcres = std::from_chars(loomOutput.c_str() + 17, loomOutput.c_str() + 19, opts.maxShafts, 10);
+                            if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
+                                throw std::runtime_error("Illegal shaft count in loom greeting.");
+                            if (opts.draftContents->maxShafts > opts.maxShafts)
+                                throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
+                            AVLstate = 2;
+                        } else {
+                            std::fputs(" ?", stdout);
+                        }
+                        break;
+                    case 2:
+                        if (loomOutput == "<Password:>\r") {
+                            sendToLoom("chico\r");
                             AVLstate = 3;
                         } else {
                             std::fputs(" ?", stdout);
@@ -641,14 +686,14 @@ View::run()
                         break;
                     case 3:
                         // process switch (5 or nothing), arm up (4) or arm down (7)
-                        if (loomOutput == "\x62\x03" && loomState != Arms::Down) {
+                        if (loomOutput == armsDown && loomState != Arms::Down) {
                             // Shed is open, OK to send to solenoids
                             loomState = Arms::Down;
                             advancePick(true);
                             sendPick();
                             displayPrompt();
                         }
-                        if (loomOutput == "\x61\x03" && loomState != Arms::Up) {
+                        if (loomOutput == armsUp && loomState != Arms::Up) {
                             // Shed is closed, next shed is fixed
                             loomState = Arms::Up;
                             const char* msg = "";
@@ -659,6 +704,9 @@ View::run()
                             currentPick = nextPick;
                             colorCheck(displayPick(msg));
                         }
+                        if (loomOutput == armsNeutral) {
+                            loomState = Arms::Unknown;
+                        }
                         break;
                     default:
                         
@@ -668,7 +716,11 @@ View::run()
             }
         }
     }
-    sendToLoom("\x0f\x07");
+    if (opts.compuDobbyGen < 4) {
+        sendToLoom("\x0f\x07");
+    } else {
+        sendToLoom("close\r");
+    }
     sleep(1);
 }
 

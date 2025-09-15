@@ -396,6 +396,11 @@ Options::Options(int argc, const char * argv[])
         compuDobbyGen = 3;
     else
         compuDobbyGen = 4;
+    
+    if (_cd4 && _dobbyType)
+        std::cout << "Dobby type will be provided by the loom.\n";
+    if (_cd4 && _maxShafts)
+        std::cout << "Dobby shaft count will be provided by the loom.\n";
 
     if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {
         if (draftFile.ends_with(".wif"))

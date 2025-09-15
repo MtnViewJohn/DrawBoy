@@ -61,11 +61,15 @@ inline std::unordered_map<std::string, DobbyType> dobbyMap{
     {"-", DobbyType::Negative},
 };
 inline std::unordered_map<std::string, int> shaftMap{
+    {"4", 4},
     {"8", 8},
     {"12", 12},
     {"16", 16},
+    {"20", 20},
     {"24", 24},
+    {"28", 28},
     {"32", 32},
+    {"36", 36},
     {"40", 40},
 };
 inline std::unordered_map<std::string, ANSIsupport> ANSImap{
