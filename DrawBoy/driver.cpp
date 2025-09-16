@@ -586,9 +586,9 @@ View::run()
     // Drain input queue
     char c;
     char termChar = opts.compuDobbyGen < 4 ? '\x03' : '\r';
-    const char* armsDown = opts.compuDobbyGen < 4 ? "\x62\x03" : "<down>\r";
-    const char* armsUp = opts.compuDobbyGen < 4 ? "\x61\x03" : "<up>\r";
-    const char* armsNeutral = "<arm null>\r";    // CD IV only
+    const char* armsDown = opts.compuDobbyGen < 4 ? "\x62\x03" : "<down>\n\r";
+    const char* armsUp = opts.compuDobbyGen < 4 ? "\x61\x03" : "<up>\n\r";
+    const char* armsNeutral = "<arm null>\n\r";    // CD IV only
     const char* loomReset = opts.compuDobbyGen < 4 ? "\x0f\x03" : "\r";
 
     while (true) {
@@ -613,7 +613,7 @@ View::run()
         fd_set rdset;
         FD_SET(STDIN_FILENO, &rdset);
         FD_SET(opts.loomDeviceFD, &rdset);
-        timeval threesec{term.pendingEvent() ? 0 : 3, 0};
+        timeval threesec{term.pendingEvent() || !loomOutput.empty() ? 0 : 3, 0};
         
         int nfds = ::select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
         
@@ -631,7 +631,7 @@ View::run()
                 handleEvent(ev);
         }
         
-        if (FD_ISSET(opts.loomDeviceFD, &rdset) && mode != Mode::Quit) {
+        if ((!loomOutput.empty() || FD_ISSET(opts.loomDeviceFD, &rdset)) && mode != Mode::Quit) {
             int count = 0;
             while (true) {
                 auto n = ::read(opts.loomDeviceFD, &c, 1);
@@ -642,42 +642,45 @@ View::run()
                         throw make_system_error("error in read");
                 }
                 if (n == 0) {
-                    if (count == 0)
-                        throw std::runtime_error("\r\nLoom connection was closed.");
+                    //if (count == 0)
+                    //    throw std::runtime_error("\r\nLoom connection was closed.");
                     break;
                 }
-                loomOutput.push_back(c);
+                loomOutput.push_back(opts.compuDobbyGen < 4 ? c : (char)std::tolower((int)c));
                 ++count;
-                if (c == termChar)
-                    break;
             };
             
-            if (!loomOutput.empty() && loomOutput.back() == termChar) {
+            if (loomOutput.empty() || loomOutput.back() != termChar)
+                continue;
+           
+            if (auto pos = loomOutput.find(termChar); pos != std::string::npos) {
+                std::string_view loomLine(loomOutput.begin(), loomOutput.begin() + (ssize_t)pos + 1);
                 switch (AVLstate) {
                     case 1:
                         // waiting for reset, sending first pick
-                        if (opts.compuDobbyGen < 4 && loomOutput == "\x7f\x03") {
+                        if (opts.compuDobbyGen < 4 && loomLine == "\x7f\x03") {
                             sendPick();     // initialize pending pick
                             displayPick(" reset");
                             AVLstate = 3;
-                        } else if (opts.compuDobbyGen == 4 && loomOutput.starts_with("<Compu-Dobby IV,")) {
+                        } else if (opts.compuDobbyGen == 4 && loomLine.starts_with("<compu-dobby iv,")) {
                             static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
-                            if (loomOutput.contains("Neg Dobby"))
+                            if (loomLine.contains("neg dobby"))
                                 opts.dobbyType = DobbyType::Negative;
-                            if (loomOutput.contains("Pos Dobby"))
+                            if (loomLine.contains("pos dobby"))
                                 opts.dobbyType = DobbyType::Positive;
-                            auto fcres = std::from_chars(loomOutput.c_str() + 17, loomOutput.c_str() + 19, opts.maxShafts, 10);
+                            auto fcres = std::from_chars(loomLine.begin() + 17, loomLine.begin() + 19, opts.maxShafts, 10);
                             if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
                                 throw std::runtime_error("Illegal shaft count in loom greeting.");
                             if (opts.draftContents->maxShafts > opts.maxShafts)
                                 throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
                             AVLstate = 2;
                         } else {
-                            std::fputs(" ?", stdout);
+                            //std::fputs(" ?", stdout);
+                            std::printf("??%s\n", loomLine.begin());
                         }
                         break;
                     case 2:
-                        if (loomOutput == "<Password:>\r") {
+                        if (loomLine == "<password:>\n\r") {
                             sendToLoom("chico\r");
                             AVLstate = 3;
                         } else {
@@ -686,14 +689,14 @@ View::run()
                         break;
                     case 3:
                         // process switch (5 or nothing), arm up (4) or arm down (7)
-                        if (loomOutput == armsDown && loomState != Arms::Down) {
+                        if (loomLine == armsDown && loomState != Arms::Down) {
                             // Shed is open, OK to send to solenoids
                             loomState = Arms::Down;
                             advancePick(true);
                             sendPick();
                             displayPrompt();
                         }
-                        if (loomOutput == armsUp && loomState != Arms::Up) {
+                        if (loomLine == armsUp && loomState != Arms::Up) {
                             // Shed is closed, next shed is fixed
                             loomState = Arms::Up;
                             const char* msg = "";
@@ -704,14 +707,14 @@ View::run()
                             currentPick = nextPick;
                             colorCheck(displayPick(msg));
                         }
-                        if (loomOutput == armsNeutral) {
+                        if (loomLine == armsNeutral) {
                             loomState = Arms::Unknown;
                         }
                         break;
                     default:
                         
                 }
-                loomOutput.clear();
+                loomOutput.erase(0, pos + 1);
                 std::fflush(stdout);
             }
         }

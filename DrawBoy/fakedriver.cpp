@@ -72,9 +72,9 @@ struct View
 void
 View::handleEvent(const Term::Event &ev)
 {
-    const char* armsDown = opts.cd4 ? "<down>\r" : "\x62\x03";
-    const char* armsUp = opts.cd4 ? "<up>\r" : "\x61\x03";
-    const char* armsNeutral = "<arm null>\r";    // CD IV only
+    const char* armsDown = opts.cd4 ? "<down>\n\r" : "\x62\x03";
+    const char* armsUp = opts.cd4 ? "<up>\n\r" : "\x61\x03";
+    const char* armsNeutral = "<arm null>\n\r";    // CD IV only
 
     switch (ev.type) {
         case Term::EventType::Char: {
@@ -279,7 +279,7 @@ View::connect()
                         autoReset = false;
                     } else if (autoReset && opts.cd4) {
                         std::fputs("\r\nSending loom greeting.\r\n", stdout);
-                        std::string greeting = std::format("<Compu-Dobby IV, {}H, {} Dobby, HW A.1, FW 0.1.0>\r<Password:>\r",
+                        std::string greeting = std::format("<Compu-Dobby IV, {}H, {} Dobby, HW A.1, FW 0.1.0>\n\r<Password:>\n\r",
                                                            opts.maxShafts, opts.dobbyType == DobbyType::Positive ? "Pos" : "Neg");
                         sendToDrawBoy(greeting.c_str());
                     } else {

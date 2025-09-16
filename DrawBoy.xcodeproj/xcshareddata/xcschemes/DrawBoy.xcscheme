@@ -129,6 +129,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "43608.wif"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "loomtest_24shaft.wif"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -160,7 +164,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_LOOMDEVICE"
             value = "/dev/cu.usbserial-FTDNEU8T"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_DOBBY"
@@ -175,12 +179,17 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"
             value = "TrueColor"
             isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "DRAWBOY_LOOMDEVICE"
+            value = "/dev/tty.usbserial-A4008SKB"
+            isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
