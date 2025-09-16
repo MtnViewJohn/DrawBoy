@@ -68,5 +68,6 @@ Options::Options(int argc, const char * argv[])
     autoInput = args::get(_autoInput);
     autoReset = args::get(_autoReset);
     maxShafts = args::get(_maxShafts);
+    dobbyType = args::get(_dobbyType);
     fakeLoom = true;
 }
