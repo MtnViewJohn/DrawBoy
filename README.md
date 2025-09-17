@@ -263,7 +263,8 @@ Indicates the path to the serial device for talking to the loom.
 **DRAWBOY_LOOMADDRESS**
 
 Indicates the network address for talking to the loom. Can be a DNS name or
-an IP address. If the variable exists but is empty, then the address is 169.254.128.3
+an IP address. If the variable exists but is empty, then the IP address 169.254.128.3
+is used.
 
 **DRAWBOY_SHAFTS**
 
