@@ -22,13 +22,13 @@ Options::Options(int argc, const char * argv[])
     
     ToLowerReader tlr;
     
-    auto f1 = envDobby ? dobbyMap.find(tlr(envDobby)) : dobbyMap.end();
+    auto f1 = envDobbyType ? dobbyMap.find(tlr(envDobbyType)) : dobbyMap.end();
     DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Positive;
     
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
     int defShaft = f2 != shaftMap.end() ? f2->second : 0;
 
-    args::ArgumentParser parser("AVL CompuDobby III loom simulator.", "Report errors to John Horigan <john@glyphic.com>.");
+    args::ArgumentParser parser("AVL CompuDobby loom simulator.", "Report errors to John Horigan <john@glyphic.com>.");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::ValueFlag<std::string> _socketPath(parser, "SOCKET PATH", "Path for the socket", {"socket"}, envSocket, *envSocket ? args::Options::None : args::Options::Required);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT COUNT",

@@ -65,7 +65,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--cd4"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--colorAlert=Pulse"
@@ -171,7 +171,7 @@
             isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
-            key = "DRAWBOY_DOBBY"
+            key = "DRAWBOY_DOBBYTYPE"
             value = "Negative"
             isEnabled = "NO">
          </EnvironmentVariable>
@@ -183,7 +183,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"
@@ -198,6 +198,11 @@
          <EnvironmentVariable
             key = "DRAWBOY_LOOMADDRESS"
             value = ""
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "DRAWBOY_DOBBYGENERATION"
+            value = "4"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

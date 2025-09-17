@@ -319,9 +319,16 @@ Options::Options(int argc, const char * argv[])
     if (!envLoom) envLoom = "";
     if (!envAddress || *envAddress == '\0') envAddress = "169.254.128.3";
     
+    int defGen = 0;
+    if (envDobbyGen && *envDobbyGen) {
+        auto res = std::from_chars(envDobbyGen, envDobbyGen + std::strlen(envDobbyGen), defGen, 10);
+        if (res.ec != std::errc() || defGen < 1 || defGen > 4)
+            defGen = 0;
+    }
+    
     ToLowerReader tlr;
     
-    auto f1 = envDobby ? dobbyMap.find(tlr(envDobby)) : dobbyMap.end();
+    auto f1 = envDobbyType ? dobbyMap.find(tlr(envDobbyType)) : dobbyMap.end();
     DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Positive;
     
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
@@ -375,7 +382,7 @@ Options::Options(int argc, const char * argv[])
     try {
         parser.Prog("drawboy");
         parser.ParseCLI(argc, argv);
-        if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1)
+        if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1 && defGen == 0)
             throw args::ParseError("Option Compu-dobby generation is required: --cd1, --cd2, --cd3, or --cd4.");
         if (_loomDevice.Get().empty() && _loomAddress.Get().empty() && !envSocket)
             throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
@@ -431,6 +438,7 @@ Options::Options(int argc, const char * argv[])
     colorAlert = args::get(_bell);
     tabbyPattern = args::get(_tabbyPattern);
     std::string draftFile = args::get(_draftFile);
+    compuDobbyGen = defGen;
 
     if (check)
         std::cout << "Checking: " << draftFile << std::endl;
@@ -441,7 +449,7 @@ Options::Options(int argc, const char * argv[])
         compuDobbyGen = 2;
     else if (_cd3)
         compuDobbyGen = 3;
-    else
+    else if (_cd4)
         compuDobbyGen = 4;
     
     if (_cd4 && _dobbyType)
