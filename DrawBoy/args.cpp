@@ -342,13 +342,13 @@ Options::Options(int argc, const char * argv[])
     args::CompletionFlag completion(parser, {"complete"});
     args::Flag findloom(parser, "find loom", "Finds device files that might be the loom.", {"findloom"}, args::Options::KickOut);
     args::Flag check(parser, "check draft parsing", "Tests whether the draft file parses.", {"check"}, args::Options::Hidden);
-    args::ValueFlag<int> _pick(parser, "PICK",
-        "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
     args::Flag _cd1(parser, "Compu-Dobby I", "Loom has a Compu-Dobby I", {"cd1"}, args::Options::Single);
     args::Flag _cd2(parser, "Compu-Dobby II", "Loom has a Compu-Dobby II", {"cd2"}, args::Options::Single);
     args::Flag _cd3(parser, "Compu-Dobby III", "Loom has a Compu-Dobby III", {"cd3"}, args::Options::Single);
     args::Flag _cd4(parser, "Compu-Dobby IV", "Loom has a Compu-Dobby IV", {"cd4"}, args::Options::Single);
     args::Flag _net(parser, "use ethernet", "Connect to the loom over ethernet", {'n', "net"}, args::Options::Single);
+    args::ValueFlag<int> _pick(parser, "PICK",
+        "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
     args::ValueFlag<std::string> _picks(parser, "PICK_LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY_SPEC",
