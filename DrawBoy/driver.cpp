@@ -694,7 +694,6 @@ View::run()
                     if (loomLine == "<password:>") {
                         sendToLoom("chico\r");
                         std::putchar('\n');
-                        displayPick(" reset");
                         AVLstate = 3;
                     } else {
                         std::fputs(" ?", stdout);
