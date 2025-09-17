@@ -568,7 +568,7 @@ View::sendPick()
         bool first = true;
         if (lift == 0)
             return;
-        command = "pick ";
+        command = "clear\rpick ";
         for (int shaft = 1; lift; lift >>= 1, ++shaft)
             if (lift & 1) {
                 if (!first) command.push_back(',');
@@ -585,10 +585,10 @@ View::run()
 {
     // Drain input queue
     char c;
-    char termChar = opts.compuDobbyGen < 4 ? '\x03' : '\r';
-    const char* armsDown = opts.compuDobbyGen < 4 ? "\x62\x03" : "<down>\n\r";
-    const char* armsUp = opts.compuDobbyGen < 4 ? "\x61\x03" : "<up>\n\r";
-    const char* armsNeutral = "<arm null>\n\r";    // CD IV only
+    char termChar = opts.compuDobbyGen < 4 ? '\x03' : '>';
+    const char* armsDown = opts.compuDobbyGen < 4 ? "\x62\x03" : "<down>";
+    const char* armsUp = opts.compuDobbyGen < 4 ? "\x61\x03" : "<up>";
+    const char* armsNeutral = "<arm null>";    // CD IV only
     const char* loomReset = opts.compuDobbyGen < 4 ? "\x0f\x03" : "\r";
 
     while (true) {
@@ -608,6 +608,7 @@ View::run()
     sendToLoom(loomReset);
     
     int AVLstate = 1;
+    bool doAdvancePick = opts.compuDobbyGen < 4;
 
     while (mode != Mode::Quit) {
         fd_set rdset;
@@ -629,9 +630,11 @@ View::run()
             Term::Event ev = term.getEvent();
             if (ev.type != Term::EventType::None)
                 handleEvent(ev);
+            if (mode == Mode::Quit)
+                break;
         }
         
-        if ((!loomOutput.empty() || FD_ISSET(opts.loomDeviceFD, &rdset)) && mode != Mode::Quit) {
+        if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
             int count = 0;
             while (true) {
                 auto n = ::read(opts.loomDeviceFD, &c, 1);
@@ -642,81 +645,92 @@ View::run()
                         throw make_system_error("error in read");
                 }
                 if (n == 0) {
-                    //if (count == 0)
-                    //    throw std::runtime_error("\r\nLoom connection was closed.");
+                    if (count == 0)
+                        throw std::runtime_error("\r\nLoom connection was closed.");
                     break;
                 }
-                loomOutput.push_back(opts.compuDobbyGen < 4 ? c : (char)std::tolower((int)c));
+                if (opts.compuDobbyGen == 4) {
+                    if (c == '\r' || c == '\n')
+                        continue;
+                    c = (char)std::tolower((int)c);
+                }
+                loomOutput.push_back(c);
                 ++count;
             };
-            
-            if (loomOutput.empty() || loomOutput.back() != termChar)
-                continue;
-           
-            if (auto pos = loomOutput.find(termChar); pos != std::string::npos) {
-                std::string_view loomLine(loomOutput.begin(), loomOutput.begin() + (ssize_t)pos + 1);
-                switch (AVLstate) {
-                    case 1:
-                        // waiting for reset, sending first pick
-                        if (opts.compuDobbyGen < 4 && loomLine == "\x7f\x03") {
-                            sendPick();     // initialize pending pick
-                            displayPick(" reset");
-                            AVLstate = 3;
-                        } else if (opts.compuDobbyGen == 4 && loomLine.starts_with("<compu-dobby iv,")) {
-                            static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
-                            if (loomLine.contains("neg dobby"))
-                                opts.dobbyType = DobbyType::Negative;
-                            if (loomLine.contains("pos dobby"))
-                                opts.dobbyType = DobbyType::Positive;
-                            auto fcres = std::from_chars(loomLine.begin() + 17, loomLine.begin() + 19, opts.maxShafts, 10);
-                            if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
-                                throw std::runtime_error("Illegal shaft count in loom greeting.");
-                            if (opts.draftContents->maxShafts > opts.maxShafts)
-                                throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
-                            AVLstate = 2;
-                        } else {
-                            //std::fputs(" ?", stdout);
-                            std::printf("??%s\n", loomLine.begin());
-                        }
-                        break;
-                    case 2:
-                        if (loomLine == "<password:>\n\r") {
-                            sendToLoom("chico\r");
-                            AVLstate = 3;
-                        } else {
-                            std::fputs(" ?", stdout);
-                        }
-                        break;
-                    case 3:
-                        // process switch (5 or nothing), arm up (4) or arm down (7)
-                        if (loomLine == armsDown && loomState != Arms::Down) {
-                            // Shed is open, OK to send to solenoids
-                            loomState = Arms::Down;
+        }
+
+        if (loomOutput.empty())
+            continue;
+        
+        if (auto termPos = loomOutput.find(termChar); termPos != std::string::npos) {
+            std::string_view loomLine(loomOutput.begin(), loomOutput.begin() + (ssize_t)termPos + 1);
+            switch (AVLstate) {
+                case 1:
+                    // waiting for reset, sending first pick
+                    if (opts.compuDobbyGen < 4 && loomLine == "\x7f\x03") {
+                        sendPick();     // initialize pending pick
+                        displayPick(" reset");
+                        AVLstate = 3;
+                    } else if (opts.compuDobbyGen == 4 && loomLine.starts_with("<compu-dobby iv,")) {
+                        static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
+                        if (loomLine.contains("neg dobby"))
+                            opts.dobbyType = DobbyType::Negative;
+                        if (loomLine.contains("pos dobby"))
+                            opts.dobbyType = DobbyType::Positive;
+                        auto fcres = std::from_chars(loomLine.begin() + 17, loomLine.begin() + 19, opts.maxShafts, 10);
+                        if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
+                            throw std::runtime_error("Illegal shaft count in loom greeting.");
+                        if (opts.draftContents->maxShafts > opts.maxShafts)
+                            throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
+                        std::print("Greeting received: {} shafts, {} dobby\n", opts.maxShafts,
+                                   opts.dobbyType == DobbyType::Positive ? "Positive" : "Negative");
+                        AVLstate = 2;
+                    } else {
+                        //std::fputs(" ?", stdout);
+                        std::print("??{}\n", loomLine.begin());
+                    }
+                    break;
+                case 2:
+                    if (loomLine == "<password:>") {
+                        sendToLoom("chico\r");
+                        std::putchar('\n');
+                        displayPick(" reset");
+                        AVLstate = 3;
+                    } else {
+                        std::fputs(" ?", stdout);
+                    }
+                    break;
+                case 3:
+                    // process switch (5 or nothing), arm up (4) or arm down (7)
+                    if (loomLine == armsDown && loomState != Arms::Down) {
+                        // Shed is open, OK to send to solenoids
+                        loomState = Arms::Down;
+                        if (doAdvancePick)
                             advancePick(true);
-                            sendPick();
-                            displayPrompt();
+                        sendPick();
+                        displayPrompt();
+                        doAdvancePick = true;
+                    }
+                    if (loomLine == armsUp && loomState != Arms::Up) {
+                        // Shed is closed, next shed is fixed
+                        loomState = Arms::Up;
+                        const char* msg = "";
+                        if (mode == Mode::PickEntry || mode == Mode::PickListEntry) {
+                            msg = " \aCancelled";
+                            mode = oldMode;
                         }
-                        if (loomLine == armsUp && loomState != Arms::Up) {
-                            // Shed is closed, next shed is fixed
-                            loomState = Arms::Up;
-                            const char* msg = "";
-                            if (mode == Mode::PickEntry || mode == Mode::PickListEntry) {
-                                msg = " \aCancelled";
-                                mode = oldMode;
-                            }
-                            currentPick = nextPick;
-                            colorCheck(displayPick(msg));
-                        }
-                        if (loomLine == armsNeutral) {
-                            loomState = Arms::Unknown;
-                        }
-                        break;
-                    default:
-                        
-                }
-                loomOutput.erase(0, pos + 1);
-                std::fflush(stdout);
+                        currentPick = nextPick;
+                        colorCheck(displayPick(msg));
+                    }
+                    if (loomLine == armsNeutral) {
+                        loomState = Arms::Unknown;
+                    }
+                    break;
+                default:
+                    
             }
+            loomOutput.erase(0, termPos + 1);
+            std::fflush(stdout);
         }
     }
     if (opts.compuDobbyGen < 4) {
