@@ -1,4 +1,4 @@
-# drawboy - CompuDobby III loom driver
+# drawboy - Compu-Dobby loom driver
 
 # SYNOPSIS
 
@@ -6,12 +6,12 @@
 
 # DESCRIPTION
 
-**drawboy** is a tool for driving an AVL CompuDobby III loom from a
-terminal interface. The picks in the specified draft file are sent to the
-loom over a serial interface as the user treadles the draft. In addition
-to responding to treadle events from the loom, **drawboy** is interactive
-and responds to a number of commands: reversing weaving direction, tabby
-mode vs. lift-plan mode, changing the current pick, and changing the set
+**drawboy** is a tool for driving an AVL Compu-Dobby I, II, III, or IV loom 
+from a terminal interface. The picks in the specified draft file are sent to 
+the loom over a serial or ethernet interface as the user treadles the draft. 
+In addition to responding to treadle events from the loom, **drawboy** is 
+interactive and responds to a number of commands: reversing weaving direction, 
+tabby mode vs. lift-plan mode, changing the current pick, and changing the set
 of picks to be woven. The up and down arrow keys can also be used to
 quickly change to adjacent picks.
 
@@ -30,13 +30,21 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 # OPTIONS
 
-**\-h**, **\--help**
+**\-h**, **\-\-help**
 
 > Outputs a help message and exits.
 
 **\-\-findloom**
 
 > Engages the loom finder wizard to help the user determine which device file is the USB serial port interface. Fixed (non-USB) serial ports cannot be found using the loom finder wizard, consult your system documentation. The wizard can output the possible device paths for fixed serial ports.
+
+**\-\-cd1**, **\-\-cd2**, **\-\-cd3**, **\-\-cd4**
+
+> Indicates whether the loom has a Compu-Dobby I, II, III, or IV interface.
+
+**\-n**, **\-\-net**
+
+> Connect to a Compu-Dobby IV loom over a network connection instead of a serial connection. If no loom device path is provided for a serial connection, then a network connection is implicitly enabled.
 
 **\-p**_pick_, **\-\-pick**=*pick*
 
@@ -60,7 +68,7 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 **\-\-tabbyPattern**=*tabby pattern*
 
-> Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy. Default is xAyB.
+> Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy. The default is xAyB.
 
 **\-\-alertColor**=*alert color*
 
@@ -68,15 +76,19 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 **\-\-loomDevice**=*loom path*
 
-> The path to the serial port in the /dev directory. The loom path is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
+> The path to the serial port in the /dev directory. The loom path is required for **drawboy** to operate in serial mode. It can also be specified with the **DRAWBOY_LOOMDEVICE** environment variable.
+
+**\-\-loomAddress**=*loom address*
+
+> The network name or IP address for the loom, if a network connection is used. If no loom address is provided then the default, 169.254.128.3, is used. It can also be specified with the **DRAWBOY_LOOMADDRESS** environment variable.
 
 **\-\-shafts**=*shaft count*
 
-> Number of shafts supported by the loom. The shaft count is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
+> Number of shafts supported by the loom. The shaft count is required for **drawboy** to operate; except with Compu-Dobby IV looms, which provide it. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 4, 8, 12, 16, 20, 24, 28, 32, 36, or 40.
 
 **\-\-dobbyType**=*dobby type*
 
-> Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or negative). The dobby type is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_DOBBY** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
+> Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or negative). The dobby type is required for **drawboy** to operate; except with Compu-Dobby IV looms, which provide it. It can also be specified with the **DRAWBOY_DOBBYTYPE** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
 
 **\-\-ascii**
 
@@ -88,23 +100,23 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 # OPERATION
 
-When **drawboy** is started it does not know the state of the loom, whether
+When **drawboy** starts it does not know the state of the loom, whether
 the shed is open or closed, whether or not it is OK to send shaft
-commands to the loom. It will display the first pick in your pick list
-with the **PENDING** flag at the end of the pick. Treadle to open and
-close the shed. This will sync **drawboy** with the loom, it will send the
-liftplan for the first pick to the loom and you can now start weaving.
+commands to the loom. You must press the right treadle so that **drawboy**
+can send the first pick. You can enable tabby mode at this time. Treadle left 
+for the loom to pick up the first pick and treadle right to open the shed on 
+the first pick.
 
-From this point on, when you close the shed **drawboy** will send the
-liftplan for the next pick to the loom and it will display the next
-pick. The pick line will begin with a color-coded draw-down for the
-pick, followed by the pick number and lift-plan for the pick. These last
+From this point on, when you open the shed **drawboy** will send the
+liftplan for the next pick to the loom and when you close the shed it will 
+display this next pick. The pick line will begin with a color-coded draw-down 
+for the pick, followed by the pick number and lift-plan for the pick. These last
 two will be color-coded with the weft color for the pick.
 
-Under the pick line will be the input prompt for the current pick. It
-will display the current weaving mode (lift-plan or tabby) and the
-current line in the draft file. Treadling the loom will advance to the
-next pick. At any time, the user can type commands to change the
+When the shed is open, **drawboy** will display a prompt for the current pick 
+under the pick line. It will display the current weaving mode (lift-plan or tabby) and the
+current and next line in the draft file. Treadling the loom will advance to the
+next pick. When the shed is open, the user can type commands to change the
 behavior of **drawboy**:
 
 l - **Lift-plan Mode**
@@ -248,14 +260,24 @@ be useful to set them in the user's account profile.
 
 Indicates the path to the serial device for talking to the loom.
 
+**DRAWBOY_LOOMADDRESS**
+
+Indicates the network address for talking to the loom. Can be a DNS name or
+an IP address. If the variable exists but is empty, then the address is 169.254.128.3
+
 **DRAWBOY_SHAFTS**
 
-Indicates how many shafts the loom supports. Accepted values are 8, 12, 16, 24,
-32, or 40.
+Indicates how many shafts the loom supports. Accepted values are 4, 8, 12, 16, 
+20, 24, 28, 32, 36, or 40.
 
-**DRAWBOY_DOBBY**
+**DRAWBOY_DOBBYTYPE**
 
 Indicates whether the loom has a positive dobby (positive or +) or a negative dobby (negative or -).
+
+**DRAWBOY_DOBBYGENERATION**
+
+Indicates whether the loom has a Compu-Dobby I, II, III, or IV interface. Accepted
+values are 1 to 4.
 
 **DRAWBOY_ASCII**
 

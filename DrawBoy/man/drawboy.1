@@ -1,18 +1,19 @@
 .TH DRAWBOY 1
 .SH NAME
-drawboy \- CompuDobby III loom driver
+drawboy \- CompuDobby loom driver
 .SH SYNOPSIS
 \fBdrawboy\fP [\fIOptions\fP] <\fIdraft\~file\~path\fP>
 
 .SH DESCRIPTION
 .B drawboy
-is a tool for driving an AVL CompuDobby III loom from a terminal interface. The
-picks in the specified draft file are sent to the loom over a serial interface
-as the user treadles the draft. In addition to responding to treadle events
-from the loom, \fBdrawboy\fP is interactive and responds to a number of commands:
-reversing weaving direction, tabby mode vs. lift\-plan mode, changing the current
-pick, and changing the set of picks to be woven. The up and down arrow keys can
-also be used to quickly change to adjacent picks.
+is a tool for driving an AVL Compu-Dobby I, II, III, or IV loom from a terminal
+interface. The picks in the specified draft file are sent to the loom over a
+serial or ethernet interface as the user treadles the draft. In addition to
+responding to treadle events from the loom, \fBdrawboy\fP is interactive and
+responds to a number of commands: reversing weaving direction, tabby mode vs.
+lift\-plan mode, changing the current pick, and changing the set of picks to be
+woven. The up and down arrow keys can also be used to quickly change to adjacent
+picks.
 .PP
 The draft file can either be in the standard WIF format or in the Fiberworks
 DTX format.
@@ -39,6 +40,14 @@ Engages the loom finder wizard to help the user determine which device file is
 the USB serial port interface. Fixed (non\-USB) serial ports cannot be found
 using the loom finder wizard, consult your system documentation. The wizard can
 output the possible device paths for fixed serial ports.
+.TP
+.B \-\-cd1, \-\-cd2, \-\-cd3, \-\-cd4
+Indicates whether the loom has a Compu-Dobby I, II, III, or IV interface.
+.TP
+.B \-n, \-\-net
+Connect to a Compu-Dobby IV loom over a network connection instead of a serial
+connection. If no loom device path is provided for a serial connection, then a
+network connection is implicitly enabled.
 .TP
 \fB\-p\fP\fIpick\fP, \fB\-\-pick\fP=\fIpick\fP
 Sets the initial pick from the pick list to start weaving. The default pick is
@@ -79,7 +88,7 @@ green.
 \fB\-\-tabbyPattern\fP=\fItabby\~pattern\fP
 Specifies whether inserted tabby picks are before or after the pattern pick and
 whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy,
-xByA, and BxAy. Default tabby pattern is xAyB.
+xByA, and BxAy. The default tabby pattern is xAyB.
 .TP
 \fB\-\-colorAlert\fP=\fIcolor\~alert\fP
 Sounds the console bell when the weft color is changing. There are four alert modes:
@@ -92,19 +101,26 @@ colors changes.
 .TP
 \fB\-\-loomDevice\fP=\fIloom\~path\fP
 The path to the serial port in the /dev directory. The loom path is required for
-\fBdrawboy\fP to operate. It can also be specified with the \fBDRAWBOY_LOOMDEVICE\fP
-environment variable.
+\fBdrawboy\fP to operate in serial mode. It can also be specified with the
+\fBDRAWBOY_LOOMDEVICE\fP environment variable.
+.TP
+\fB\-\-loomAddress\fP=\fIloom\~address\fP
+The network name or IP address for the loom, if a network connection is used.
+If no loom address is provided then the default, 169.254.128.3, is used. It can
+also be specified with the \fBDRAWBOY_LOOMADDRESS\fP environment variable.
 .TP
 \fB\-\-shafts\fP=\fIshaft\~count\fP
 Number of shafts supported by the loom. The shaft count is required for
-\fBdrawboy\fP to operate. It can also be specified with the \fBDRAWBOY_SHAFTS\fP
-environment variable. Allowed values are 8, 12, 16, 24, 32, and 40.
+\fBdrawboy\fP to operate; except with Compu-Dobby IV looms, which provide it.
+It can also be specified with the \fBDRAWBOY_SHAFTS\fP environment variable.
+Allowed values are 4, 8, 12, 16, 20, 24, 28, 32, 36, or 40.
 .TP
 \fB\-\-dobbyType\fP=\fIdobby\~type\fP
 Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or
-negative). The dobby type is required for \fBdrawboy\fP to operate. It can also be
-specified with the \fBDRAWBOY_DOBBY\fP environment variable. Most AVL looms
-are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
+negative). The dobby type is required for \fBdrawboy\fP to operate; except with
+Compu-Dobby IV looms, which provide it. It can also be specified with the
+\fBDRAWBOY_DOBBYTYPE\fP environment variable. Most AVL looms are positive
+dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
 .TP
 .B \-\-ascii
 Indicates that the terminal does not support Unicode characters and that only
@@ -118,23 +134,24 @@ support, and \fBtruecolor\fP for ANSI support with 24\-bit color. It can also be
 specified with the \fBDRAWBOY_ANSI\fP environment variable.
 
 .SH OPERATION
-When \fBdrawboy\fP is started it does not know the state of the loom, whether the
-shed is open or closed, whether or not it is OK to send shaft commands to the
-loom. It will display the first pick in your pick list with the \fBPENDING\fP
-flag at the end of the pick. Treadle to open and close the shed. This will
-sync \fBdrawboy\fP with the loom, it will send the liftplan for the first pick to
-the loom and you can now start weaving.
+When \fBdrawboy\fP starts it does not know the state of the loom, whether
+the shed is open or closed, whether or not it is OK to send shaft
+commands to the loom. You must press the right treadle so that \fBdrawboy\fP
+can send the first pick. You can enable tabby mode at this time. Treadle left
+for the loom to pick up the first pick and treadle right to open the shed on the
+first pick.
 .PP
-From this point on, when you close the shed \fBdrawboy\fP will send the liftplan for
-the next pick to the loom and it will display the next pick. The pick line
-will begin with a color\-coded draw\-down for the pick, followed by the pick
-number and lift\-plan for the pick. These last two will be color\-coded with
-the weft color for the pick.
+From this point on, when you open the shed \fBdrawboy\fP will send the liftplan
+for the next pick to the loom and when you close the shed it will display this
+next pick. The pick line will begin with a color\-coded draw\-down for the pick,
+followed by the pick number and lift\-plan for the pick. These last two will be
+color\-coded with the weft color for the pick.
 .PP
-Under the pick line will be the input prompt for the current pick. It will
-display the current weaving mode (lift\-plan or tabby) and the current line
-in the draft file. Treadling the loom will advance to the next pick. At any time,
-the user can type commands to change the behavior of \fBdrawboy\fP:
+When the shed is open, \fBdrawboy\fP will display a prompt for the current pick
+under the pick line. It will display the current weaving mode (lift-plan or
+tabby) and the current and next line in the draft file. Treadling the loom will
+advance to the next pick. When the shed is open, the user can type commands to
+change the behavior of \fBdrawboy\fP:
 
 .TP
 l \- \fBLift\-plan Mode\fP
@@ -291,13 +308,22 @@ be useful to set them in the user's account profile.
 .B DRAWBOY_LOOMDEVICE
 Indicates the path to the serial device for talking to the loom.
 .TP
-.B DRAWBOY_SHAFTS
-Indicates how many shafts the loom supports. Accepted values are 8, 12, 16, 24,
-32, or 40.
+.B DRAWBOY_LOOMADDRESS
+Indicates the network address for talking to the loom. Can be a DNS name or an
+IP address. If the variable exists but is empty, then the address is
+169.254.128.3
 .TP
-.B DRAWBOY_DOBBY
+.B DRAWBOY_SHAFTS
+Indicates how many shafts the loom supports. Accepted values are 4, 8, 12, 16,
+20, 24, 28, 32, 36, or 40.
+.TP
+.B DRAWBOY_DOBBYTYPE
 Indicates whether the loom has a positive dobby (positive or +) or a negative
 dobby (negative or \-).
+.TP
+.B DRAWBOY_DOBBYGENERATION
+Indicates whether the loom has a Compu-Dobby I, II, III, or IV interface.
+Accepted values are 1 to 4.
 .TP
 .B DRAWBOY_ASCII
 If it exists then \fBdrawboy\fP will only output ASCII characters.
