@@ -429,7 +429,7 @@ Options::Options(int argc, const char * argv[])
     
     loomDevice = args::get(_loomDevice);
     loomAddress = args::get(_loomAddress);
-    useNetwork = _net || defNetwork;
+    useNetwork = _net || (defNetwork && _loomDevice.Get().empty());
     maxShafts = args::get(_maxShafts);
     pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
@@ -452,6 +452,10 @@ Options::Options(int argc, const char * argv[])
     else if (_cd4)
         compuDobbyGen = 4;
     
+    useNetwork = (_net || (defNetwork && _loomDevice.Get().empty())) && (compuDobbyGen == 4);
+    if (_net && compuDobbyGen < 4)
+        std::cout << "Network mode is only available with Compu-Dobby IV.\n";
+
     if (_cd4 && _dobbyType)
         std::cout << "Dobby type will be provided by the loom.\n";
     if (_cd4 && _maxShafts)
