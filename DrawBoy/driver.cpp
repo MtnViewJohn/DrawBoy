@@ -96,6 +96,7 @@ struct View
     color displayPick(const char* message = "");
     void colorCheck(color currentColor);
     void displayPrompt();
+    void erasePrompt();
     void run();
     
     const char* toColor(const color& c)
@@ -242,6 +243,13 @@ View::displayPrompt()
             std::print("[{}] {}", ModePrompt[mode], menu);
             break;
     }
+    Term::clearToEOL();
+}
+
+void
+View::erasePrompt()
+{
+    std::putchar('\r');
     Term::clearToEOL();
 }
 
@@ -723,6 +731,7 @@ View::run()
                     }
                     if (loomLine == armsNeutral) {
                         loomState = Arms::Unknown;
+                        erasePrompt();
                     }
                     break;
                 default:
