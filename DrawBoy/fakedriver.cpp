@@ -72,9 +72,9 @@ struct View
 void
 View::handleEvent(const Term::Event &ev)
 {
-    const char* armsDown = opts.cd4 ? "<down>\n\r" : "\x62\x03";
-    const char* armsUp = opts.cd4 ? "<up>\n\r" : "\x61\x03";
-    const char* armsNeutral = "<arm null>\n\r";    // CD IV only
+    const char* armsDown = opts.cd4 ? "<down>" : "\x62\x03";
+    const char* armsUp = opts.cd4 ? "<up>" : "\x61\x03";
+    const char* armsNeutral = "<arm null>";    // CD IV only
 
     switch (ev.type) {
         case Term::EventType::Char: {
@@ -279,7 +279,7 @@ View::connect()
                         autoReset = false;
                     } else if (autoReset && opts.cd4) {
                         std::fputs("\r\nSending loom greeting.\r\n", stdout);
-                        std::string greeting = std::format("<Compu-Dobby IV, {}H, {} Dobby, HW A.1, FW 0.1.0>\n\r<Password:>\n\r",
+                        std::string greeting = std::format("<Compu-Dobby IV, {}H, {} Dobby, HW A.1, FW 0.1.0>\n\r<Password:>",
                                                            opts.maxShafts, opts.dobbyType == DobbyType::Positive ? "Pos" : "Neg");
                         sendToDrawBoy(greeting.c_str());
                     } else {
@@ -287,6 +287,7 @@ View::connect()
                         solenoidState = Solenoid::Reset;
                     }
                 } else if (DrawBoyOutput == "chico\r") {
+                    sendToDrawBoy("<ready>");
                     std::fputs("\r\nPassword received.\r\n", stdout);
                 } else if (!opts.cd4 || DrawBoyOutput.starts_with("pick ")) {
                     std::fputs(loomState == Shed::Down ? "\x1b[42;30m" : "\x1b[41;30m", stdout);
@@ -331,6 +332,7 @@ View::connect()
                                 tooMany ? "too many shafts!" : "",
                                 unexpected ? "unexpected character!" : "",
                                 opts.ascii ? "" : Term::Style::reset);
+                } else if (DrawBoyOutput == "clear\r" || DrawBoyOutput == "close\r") {
                 } else {
                     DrawBoyOutput.pop_back();
                     std::printf("\r\n%s%sUnexpected input from driver: %s%s",
