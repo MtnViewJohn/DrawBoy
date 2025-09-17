@@ -26,7 +26,9 @@ struct Options {
     
     bool driveLoom = true;
     int compuDobbyGen;
+    bool useNetwork;
     std::string loomDevice;
+    std::string loomAddress;
     int loomDeviceFD = 0;
     std::unique_ptr<draft> draftContents;
     int maxShafts;

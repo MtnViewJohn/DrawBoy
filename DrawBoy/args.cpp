@@ -21,8 +21,43 @@
 #include <charconv>
 #include "wif.h"
 #include "dtx.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 namespace {
+struct addr_deleter {
+    void operator()(addrinfo* ap) { ::freeaddrinfo(ap); }
+};
+
+using unique_ai = std::unique_ptr<addrinfo, addr_deleter>;
+
+int
+openTelnet(std::string& address)
+{
+    addrinfo hint{AI_ADDRCONFIG, PF_INET, SOCK_STREAM, IPPROTO_TCP};
+    addrinfo* results;
+
+    if (::getaddrinfo(address.c_str(), "telnet", &hint, &results) < 0)
+        return -2;
+
+    auto aiList = unique_ai(results);
+
+    for (addrinfo* ai = results; ai; ai = ai->ai_next) {
+        int sockFD = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (sockFD < 0)
+            continue;
+
+        if (::connect(sockFD, ai->ai_addr, ai->ai_addrlen) < 0) {
+            ::close(sockFD);
+            continue;
+        }
+
+        return sockFD;
+    }
+    return -1;
+}
+
 int
 checkForSerial(std::string& name)
 {
@@ -280,7 +315,9 @@ Options::parsePicks(const std::string &str, int maxPick)
 
 Options::Options(int argc, const char * argv[])
 {
+    bool defNetwork = envAddress;
     if (!envLoom) envLoom = "";
+    if (!envAddress || *envAddress == '\0') envAddress = "169.254.128.3";
     
     ToLowerReader tlr;
     
@@ -304,6 +341,7 @@ Options::Options(int argc, const char * argv[])
     args::Flag _cd2(parser, "Compu-Dobby II", "Loom has a Compu-Dobby II", {"cd2"}, args::Options::Single);
     args::Flag _cd3(parser, "Compu-Dobby III", "Loom has a Compu-Dobby III", {"cd3"}, args::Options::Single);
     args::Flag _cd4(parser, "Compu-Dobby IV", "Loom has a Compu-Dobby IV", {"cd4"}, args::Options::Single);
+    args::Flag _net(parser, "use ethernet", "Connect to the loom over ethernet", {'n', "net"}, args::Options::Single);
     args::ValueFlag<std::string> _picks(parser, "PICK_LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY_SPEC",
@@ -315,7 +353,10 @@ Options::Options(int argc, const char * argv[])
         {"tabbycolor"}, "00FF00", args::Options::Single);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM_PATH",
         "The path of the loom device in the /dev directory", {"loomDevice"},
-        envLoom, (*envLoom || envSocket) ? args::Options::Single : args::Options::Required | args::Options::Single);
+        envLoom, args::Options::Single);
+    args::ValueFlag<std::string> _loomAddress(parser, "LOOM_ADDRESS",
+        "The network address or IP address of the loom", {"loomAddress"},
+        envAddress, args::Options::Single);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT_COUNT",
         "Number of shafts on the loom", {"shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
@@ -336,6 +377,10 @@ Options::Options(int argc, const char * argv[])
         parser.ParseCLI(argc, argv);
         if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1)
             throw args::ParseError("Option Compu-dobby generation is required: --cd1, --cd2, --cd3, or --cd4.");
+        if (_loomDevice.Get().empty() && _loomAddress.Get().empty() && !envSocket)
+            throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
+        if (_net && args::get(_loomAddress).data()[0] == '\0')
+            throw args::ParseError("Option loom  network address is required for network mode: --loomAddress.");
     } catch (const args::Completion& e) {
         std::cout << e.what();
         driveLoom = false;
@@ -376,6 +421,8 @@ Options::Options(int argc, const char * argv[])
     }
     
     loomDevice = args::get(_loomDevice);
+    loomAddress = args::get(_loomAddress);
+    useNetwork = _net || defNetwork;
     maxShafts = args::get(_maxShafts);
     pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
@@ -426,9 +473,16 @@ Options::Options(int argc, const char * argv[])
     if (envSocket) {
         IPC::Client fakeLoom(envSocket);
         loomDeviceFD = fakeLoom.release();
+    } else if (useNetwork) {
+        loomDeviceFD = openTelnet(loomAddress);
+
+        if (loomDeviceFD == -1)
+            throw std::runtime_error("Cannot open loom on network.");
+        if (loomDeviceFD == -2)
+            throw std::runtime_error("Loom address cannot be found on network.");
     } else {
         loomDeviceFD = checkForSerial(loomDevice);
-        
+
         if (loomDeviceFD == -1)
             throw std::runtime_error("Cannot open loom device.");
         if (loomDeviceFD == -2)

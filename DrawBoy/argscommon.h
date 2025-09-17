@@ -48,6 +48,7 @@ enum TabbyPick {
 };
 
 inline const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");
+inline const char* envAddress = std::getenv("DRAWBOY_LOOMADDRESS");
 inline const char* envShaft = std::getenv("DRAWBOY_SHAFTS");
 inline const char* envDobby = std::getenv("DRAWBOY_DOBBY");
 inline const char* envASCII = std::getenv("DRAWBOY_ASCII");

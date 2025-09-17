@@ -60,6 +60,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--net"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--cd4"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -189,6 +193,11 @@
          <EnvironmentVariable
             key = "DRAWBOY_LOOMDEVICE"
             value = "/dev/tty.usbserial-A4008SKB"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "DRAWBOY_LOOMADDRESS"
+            value = ""
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
