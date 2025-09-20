@@ -70,6 +70,10 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 > Specifies whether inserted tabby picks are before or after the pattern pick and whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy, xByA, and BxAy. The default is xAyB.
 
+**\-\-threading**
+
+> Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the threading to rise, in order from right to left. The appropriate end color is indicated in the pick view. Put **drawboy** in Reverse mode to treadle the threading from left to right.
+
 **\-\-alertColor**=*alert color*
 
 > Sounds the console bell when the weft color is changing. There are four alert modes: None, Simple, Pulse, and Alternating. The default is None: do not sound the bell. In Simple mode the bell sounds for each weft color change. Pulse mode is like Simple mode except that if there are two or more consecutive picks with color changes, the bell only sounds for the first one. Alternating mode is for patterns that alternate between two weft colors. The bell sounds when one of the two weft colors changes.

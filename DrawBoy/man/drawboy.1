@@ -79,16 +79,22 @@ B. For example, \fB\-\-tabby=AABBBBBB\fP indicates that shafts 1 and 2 are tabby
 A and shafts 3 through 8 are tabby B. The default is odd shafts on tabby A and
 even shafts on tabby B.
 .TP
+\fB\-\-tabbyPattern\fP=\fItabby\~pattern\fP
+Specifies whether inserted tabby picks are before or after the pattern pick and
+whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy,
+xByA, and BxAy. The default tabby pattern is xAyB.
+.TP
 \fB\-\-tabbycolor\fP=\fItabby\~color\fP
 Specifies what color to display for tabby picks. The \fItabby\~color\fP is a three
 or six digit hexadecimal number that indicates an RGB color triple, RRGGBB
 for six digits and RGB for three digits. The default tabby color is 00FF00, or
 green.
 .TP
-\fB\-\-tabbyPattern\fP=\fItabby\~pattern\fP
-Specifies whether inserted tabby picks are before or after the pattern pick and
-whether to start with tabby A or tabby B. Permitted pattern values are xAyB, AxBy,
-xByA, and BxAy. The default tabby pattern is xAyB.
+\fB\-\-threading\fP
+Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the
+threading to rise, in order from right to left. The appropriate end color is
+indicated in the pick view. Put \fBdrawboy\fP in Reverse mode to treadle the
+threading from left to right.
 .TP
 \fB\-\-colorAlert\fP=\fIcolor\~alert\fP
 Sounds the console bell when the weft color is changing. There are four alert modes:
