@@ -335,6 +335,11 @@ View::handlePickEvent(const Term::Event &ev)
         }
         switch (evChar) {
             case 't':
+                if (opts.treadleThreading) {
+                    std::putchar('\a');
+                    std::fflush(stdout);
+                    return true;
+                }
                 if (mode == Mode::Tabby) return true;
                 mode = Mode::Tabby;
                 oldPick = nextPick;
@@ -343,6 +348,11 @@ View::handlePickEvent(const Term::Event &ev)
                 displayPrompt();
                 return true;
             case 'l':
+                if (opts.treadleThreading) {
+                    std::putchar('\a');
+                    std::fflush(stdout);
+                    return true;
+                }
                 if (mode == Mode::Weave) return true;
                 mode = Mode::Weave;
                 nextPick = oldPick;
