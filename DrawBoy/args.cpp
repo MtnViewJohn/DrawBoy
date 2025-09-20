@@ -190,7 +190,7 @@ findMatch(std::string_view str)
 }
 
 std::vector<int>
-ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
+ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby, bool threading)
 {
     std::vector<int> newpicks;
     
@@ -213,6 +213,8 @@ ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
                 }
             }
             if (std::strchr("ABab", str.front())) {
+                if (threading)
+                    throw std::runtime_error("Tabby entries make no sense in treadle-the-threading mode.");
                 while (!str.empty() && std::strchr("ABab", str.front())) {
                     switch (str.front()) {
                         case 'a':
@@ -230,7 +232,7 @@ ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
                 }
             } else if (str.front() == '(') {
                 if (size_t match = findMatch(str)) {
-                    pickRange = ParsePicks(str.substr(1, match - 1), maxPick, patternBeforeTabby);
+                    pickRange = ParsePicks(str.substr(1, match - 1), maxPick, patternBeforeTabby, threading);
                     str.remove_prefix(match + 1);
                 } else {
                     throw std::runtime_error("Unbalanced parentheses in pick list.");
@@ -240,12 +242,16 @@ ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby)
                 bool tabbyRange = str.front() == '~';     // single pick w/tabby
                 if (tabbyRange)
                     str.remove_prefix(1);
+                if (tabbyRange && threading)
+                    throw std::runtime_error("Tabby entries make no sense in treadle-the-threading mode.");
                 int start = my_stoi(str, &rangeToken);
                 int end = start;
                 if (rangeToken < str.length() && (str[rangeToken] == '~' || str[rangeToken] == '-')) {
                     if (tabbyRange)
                         throw std::runtime_error("Spurious ~ in treadling range.");
                     tabbyRange = str[rangeToken] == '~';  // pick range w/tabby
+                    if (tabbyRange && threading)
+                        throw std::runtime_error("Tabby entries make no sense in treadle-the-threading mode.");
                     str.remove_prefix(rangeToken + 1);
                     end = my_stoi(str, &rangeToken);
                     str.remove_prefix(rangeToken);
@@ -295,7 +301,7 @@ Options::parsePicks(const std::string &str, int maxPick)
     bool patternBeforeTabby = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::xByA;
     bool tabbyAFirst = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
     
-    picks = ParsePicks(str, maxPick, patternBeforeTabby);
+    picks = ParsePicks(str, maxPick, patternBeforeTabby, treadleThreading);
 
     // Replace auto-tabby picks with actual tabby A or tabby B
     bool tabbyIsA = tabbyAFirst;
