@@ -35,6 +35,7 @@ struct Options {
     DobbyType dobbyType = DobbyType::Positive;
     int pick;
     std::vector<int> picks;
+    bool treadleThreading;
     color tabbyColor;
     bool ascii;
     ColorAlert colorAlert;

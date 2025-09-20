@@ -114,6 +114,11 @@ View::calculateLift(int pick)
     uint64_t lift = 0;
     uint64_t liftMask = (1 << draftContent.maxShafts) - 1;
     color weftColor;
+    
+    if (opts.treadleThreading) {
+        size_t zpick = (size_t)(pick % draftContent.ends + 1);
+        return {draftContent.threading[zpick], draftContent.warpColor[zpick]};
+    }
 
     if (pick < 0) {
         assert(pick == TabbyA || pick == TabbyB);
@@ -495,7 +500,7 @@ void
 View::setPick(int newPick)
 {
     nextPick = newPick;
-    int psize = (int)opts.picks.size();
+    int psize = opts.treadleThreading ? draftContent.ends : (int)opts.picks.size();
     if (nextPick >= 9999)
         nextPick -= (nextPick / psize) * psize;
     while (nextPick < 0)

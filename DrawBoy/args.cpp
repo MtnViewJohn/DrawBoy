@@ -358,6 +358,8 @@ Options::Options(int argc, const char * argv[])
         {"tabbyPattern"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
     args::ValueFlag<std::string> _tabbyColor(parser, "TABBY_COLOR", "Color displayed for tabby picks",
         {"tabbycolor"}, "00FF00", args::Options::Single);
+    args::Flag _threading(parser, "treadle the threading", "Treadle the threading, instead of the picks",
+        {"threading"}, args::Options::Single);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM_PATH",
         "The path of the loom device in the /dev directory", {"loomDevice"},
         envLoom, args::Options::Single);
@@ -437,6 +439,7 @@ Options::Options(int argc, const char * argv[])
     ansi = args::get(_ansi);
     colorAlert = args::get(_bell);
     tabbyPattern = args::get(_tabbyPattern);
+    treadleThreading = _threading;
     std::string draftFile = args::get(_draftFile);
     compuDobbyGen = defGen;
 
