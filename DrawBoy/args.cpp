@@ -352,7 +352,8 @@ Options::Options(int argc, const char * argv[])
     args::ValueFlag<std::string> _picks(parser, "PICK_LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY_SPEC",
-        "Which shafts are activated for tabby A and tabby B", {"tabby"}, args::Options::Single);
+        "Which shafts are activated for tabby A and tabby B", {"tabby"},
+        "abababababababababababababababababababab", args::Options::Single);
     args::MapFlag<std::string, TabbyPattern, ToLowerReader> _tabbyPattern(parser, "TABBY_PATTERN",
         "Which pattern is used for inserted tabby picks",
         {"tabbyPattern"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
@@ -507,11 +508,6 @@ Options::Options(int argc, const char * argv[])
     }
     
     std::string tabby = args::get(_tabby);
-    if (tabby.empty()) {
-        tabby.reserve((size_t)maxShafts);
-        for (size_t shaft = 0; shaft < (size_t)maxShafts; shaft += 2)
-            tabby.append("ab");
-    }
     
     for (size_t shaft = 0; shaft < tabby.length(); ++shaft) {
         if (tabby[shaft] == 'a')

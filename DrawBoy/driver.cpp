@@ -693,6 +693,8 @@ View::run()
                     if (opts.compuDobbyGen < 4 && loomLine == "\x7f\x03") {
                         sendPick();     // initialize pending pick
                         displayPick(" reset");
+                        opts.tabbyA &= ((1 << opts.maxShafts) - 1);
+                        opts.tabbyB &= ((1 << opts.maxShafts) - 1);
                         AVLstate = 3;
                     } else if (opts.compuDobbyGen == 4 && loomLine.starts_with("<compu-dobby iv,")) {
                         static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
@@ -705,6 +707,8 @@ View::run()
                             throw std::runtime_error("Illegal shaft count in loom greeting.");
                         if (opts.draftContents->maxShafts > opts.maxShafts)
                             throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
+                        opts.tabbyA &= ((1 << opts.maxShafts) - 1);
+                        opts.tabbyB &= ((1 << opts.maxShafts) - 1);
                         std::print("Greeting received: {} shafts, {} dobby\n", opts.maxShafts,
                                    opts.dobbyType == DobbyType::Positive ? "Positive" : "Negative");
                         AVLstate = 2;
