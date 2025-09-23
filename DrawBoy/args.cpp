@@ -393,7 +393,7 @@ Options::Options(int argc, const char * argv[])
         parser.ParseCLI(argc, argv);
         if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1 && defGen == 0)
             throw args::ParseError("Option Compu-dobby generation is required: --cd1, --cd2, --cd3, or --cd4.");
-        if (_loomDevice.Get().empty() && _loomAddress.Get().empty() && !envSocket)
+        if (_loomDevice.Get().empty() && !defNetwork && !_loomAddress && !envSocket)
             throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
         if (_net && args::get(_loomAddress).data()[0] == '\0')
             throw args::ParseError("Option loom  network address is required for network mode: --loomAddress.");
@@ -463,12 +463,18 @@ Options::Options(int argc, const char * argv[])
         compuDobbyGen = 4;
     
     useNetwork = (_net || (defNetwork && _loomDevice.Get().empty())) && (compuDobbyGen == 4);
-    if (_net && compuDobbyGen < 4)
-        std::cout << "Network mode is only available with Compu-Dobby IV.\n";
+    if (_net && compuDobbyGen < 4) {
+        if (envSocket || !loomDevice.empty()) {
+            std::cout << "Network mode is only available with Compu-Dobby IV.\n";
+            useNetwork = false;
+        } else {
+            throw std::runtime_error("Network mode is only available with Compu-Dobby IV.");
+        }
+    }
 
-    if (_cd4 && _dobbyType)
+    if (compuDobbyGen == 4 && (_dobbyType || envDobbyType))
         std::cout << "Dobby type will be provided by the loom.\n";
-    if (_cd4 && _maxShafts)
+    if (compuDobbyGen == 4 && (_maxShafts || envShaft))
         std::cout << "Dobby shaft count will be provided by the loom.\n";
 
     if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {

@@ -109,7 +109,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--shafts 24"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--findloom"
@@ -133,6 +133,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--loomDevice=/dev/ttyu8"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--loomAddress="
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -187,7 +191,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_SOCKET"
             value = "/tmp/drawboy.socket"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_ANSI"
@@ -206,7 +210,12 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_DOBBYGENERATION"
-            value = "4"
+            value = "3"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "DRAWBOY_LOOMDEVICE"
+            value = ""
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
