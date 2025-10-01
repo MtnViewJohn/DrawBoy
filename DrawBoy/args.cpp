@@ -391,12 +391,14 @@ Options::Options(int argc, const char * argv[])
     try {
         parser.Prog("drawboy");
         parser.ParseCLI(argc, argv);
-        if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1 && defGen == 0)
-            throw args::ParseError("Option Compu-dobby generation is required: --cd1, --cd2, --cd3, or --cd4.");
-        if (_loomDevice.Get().empty() && !defNetwork && !_loomAddress && !envSocket)
-            throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
-        if (_net && args::get(_loomAddress).data()[0] == '\0')
-            throw args::ParseError("Option loom  network address is required for network mode: --loomAddress.");
+        if (!findloom) {
+            if (_cd1.Get() + _cd2.Get() + _cd3.Get() + _cd4.Get() != 1 && defGen == 0)
+                throw args::ParseError("Option Compu-dobby generation is required: --cd1, --cd2, --cd3, or --cd4.");
+            if (_loomDevice.Get().empty() && !defNetwork && !_loomAddress && !envSocket)
+                throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
+            if (_net && args::get(_loomAddress).data()[0] == '\0')
+                throw args::ParseError("Option loom  network address is required for network mode: --loomAddress.");
+        }
     } catch (const args::Completion& e) {
         std::cout << e.what();
         driveLoom = false;
