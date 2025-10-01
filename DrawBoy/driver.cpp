@@ -226,7 +226,10 @@ View::colorCheck(color currentColor)
 void
 View::displayPrompt()
 {
-    static const char* menu = "T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit   ";
+    static const char* menu = opts.ascii ?
+        "T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit   " :
+        "\x1b[7mT\x1b[0mabby  \x1b[7mL\x1b[0miftplan  \x1b[7mR\x1b[0meverse  "
+        "\x1b[7mS\x1b[0melect pick  \x1b[7mP\x1b[0mick list  \x1b[7mQ\x1b[0muit   ";
     std::putchar('\r');
     switch (mode) {
         case Mode::PickEntry:
@@ -237,11 +240,19 @@ View::displayPrompt()
             break;
         case Mode::Tabby:
         case Mode::Weave: {
-            int cpick = currentPick < 0 ? currentPick : opts.picks[(size_t)(currentPick) % opts.picks.size()];
-            int npick = nextPick < 0 ? nextPick : opts.picks[(size_t)(nextPick) % opts.picks.size()];
+            int cwifpick = currentPick < 0 ? currentPick : opts.picks[(size_t)(currentPick) % opts.picks.size()];
+            int nwifpick = nextPick < 0 ? nextPick : opts.picks[(size_t)(nextPick) % opts.picks.size()];
+            int cpick = currentPick < 0 ? currentPick : currentPick + 1;
+            int npick = nextPick < 0 ? nextPick : nextPick + 1;
             const char* rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
-            std::print("[{}:{}{}{}] {}", ModePrompt[mode], pickString(cpick, false),
-                       rightArrow, pickString(npick, false), menu);
+            if (cwifpick == cpick && nwifpick == npick)
+                std::print("[{}:{}{}{}] {}", ModePrompt[mode], pickString(cwifpick, false),
+                           rightArrow, pickString(nwifpick, false), menu);
+            else
+                std::print("[{}:{}({}){}{}({})] {}", ModePrompt[mode],
+                           pickString(cwifpick, false), pickString(cpick, false),
+                           rightArrow, pickString(nwifpick, false),
+                           pickString(npick, false), menu);
             break;
         }
         default:
