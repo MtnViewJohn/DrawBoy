@@ -331,7 +331,10 @@ Options::Options(int argc, const char * argv[])
         if (res.ec != std::errc() || defGen < 1 || defGen > 4)
             defGen = 0;
     }
-    
+
+    pickFile = getenv("HOME");
+    pickFile.append("/.drawboypick");
+
     ToLowerReader tlr;
     
     auto f1 = envDobbyType ? dobbyMap.find(tlr(envDobbyType)) : dobbyMap.end();
@@ -353,8 +356,8 @@ Options::Options(int argc, const char * argv[])
     args::Flag _cd3(parser, "Compu-Dobby III", "Loom has a Compu-Dobby III", {"cd3"}, args::Options::Single);
     args::Flag _cd4(parser, "Compu-Dobby IV", "Loom has a Compu-Dobby IV", {"cd4"}, args::Options::Single);
     args::Flag _net(parser, "use ethernet", "Connect to the loom over ethernet", {'n', "net"}, args::Options::Single);
-    args::ValueFlag<int> _pick(parser, "PICK",
-        "The pick to start weaving at (defaults to 1).", {'p', "pick"}, 1, args::Options::Single);
+    args::ValueFlag<std::string> _pick(parser, "PICK",
+        "The pick to start weaving at (defaults to 1).", {'p', "pick"}, "1", args::Options::Single);
     args::ValueFlag<std::string> _picks(parser, "PICK_LIST",
         "List of pick ranges in the treadling or liftplan to weave.", {'P', "picks"}, "");
     args::ValueFlag<std::string, ToLowerReader> _tabby(parser, "TABBY_SPEC",
@@ -398,6 +401,41 @@ Options::Options(int argc, const char * argv[])
                 throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
             if (_net && args::get(_loomAddress).data()[0] == '\0')
                 throw args::ParseError("Option loom  network address is required for network mode: --loomAddress.");
+            if (_pick) {
+                bool autoPick = _pick.Get().starts_with("last");
+                int pickNum = 0;
+                if (_pick.Get() != "last") {
+                    auto pickRes = std::from_chars(_pick.Get().data() + (autoPick ? 4 : 0),
+                        _pick.Get().data() + _pick.Get().length() - (autoPick ? 4 : 0),
+                        pickNum, 10);
+                    if (pickRes.ec != std::errc())
+                        throw args::ParseError("Argument 'PICK' received invalid value type '" +
+                            _pick.Get() + "'");
+                }
+                if (autoPick) {
+                    bool success = false;
+                    if (std::FILE* pickf{std::fopen(pickFile.c_str(), "r")}) {
+                        char buf[12];
+                        if (std::fgets(buf, 12, pickf)) {
+                            int pickBase = 1;
+                            auto baseRes = std::from_chars(buf, buf + 12, pickBase, 10);
+                            if (baseRes.ec == std::errc()) {
+                                pick = pickBase + pickNum;
+                                success = true;
+                            }
+                        }
+                        std::fclose(pickf);
+                    }
+                    if (success) {
+                        std::print("Continuing at pick {}.\n\n", pick);
+                    } else {
+                        std::print("Failed to fetch previous pick. Starting at pick 1.\n\n");
+                        pick = 1;
+                    }
+                } else {
+                    pick = pickNum;
+                }
+            }
         }
     } catch (const args::Completion& e) {
         std::cout << e.what();
@@ -442,7 +480,6 @@ Options::Options(int argc, const char * argv[])
     loomAddress = args::get(_loomAddress);
     useNetwork = _net || (defNetwork && _loomDevice.Get().empty());
     maxShafts = args::get(_maxShafts);
-    pick = args::get(_pick);
     dobbyType = args::get(_dobbyType);
     ascii = args::get(_ascii) || envASCII != nullptr;
     ansi = args::get(_ansi);

@@ -771,6 +771,21 @@ View::run()
             std::fflush(stdout);
         }
     }
+    if (AVLstate == 3) {
+        int cpick = currentPick >= 0 ? currentPick + 1 : currentPick;
+        bool success = false;
+        if (std::FILE* pickf{std::fopen(opts.pickFile.c_str(), "w")}) {
+            try {
+                std::print(pickf, "{}\n", cpick);
+                success = true;
+            } catch (...) {}
+            std::fclose(pickf);
+        }
+        if (success)
+            std::print("\nNext pick saved: {}\n", cpick);
+        else
+            std::print("\nFailed to save next pick.\n");
+    }
     if (opts.compuDobbyGen < 4) {
         sendToLoom("\x0f\x07");
     } else {

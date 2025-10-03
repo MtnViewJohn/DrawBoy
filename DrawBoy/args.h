@@ -33,7 +33,7 @@ struct Options {
     std::unique_ptr<draft> draftContents;
     int maxShafts;
     DobbyType dobbyType = DobbyType::Positive;
-    int pick;
+    int pick = 1;
     std::vector<int> picks;
     bool treadleThreading;
     color tabbyColor;
@@ -42,5 +42,6 @@ struct Options {
     ANSIsupport ansi;
     uint64_t tabbyA = 0, tabbyB = 0;
     TabbyPattern tabbyPattern = TabbyPattern::xAyB;
+    std::string pickFile;
 };
 
