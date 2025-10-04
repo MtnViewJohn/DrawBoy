@@ -89,7 +89,7 @@ struct View
     bool handlePickListEntryEvent(const Term::Event& ev);
 
     void sendPick();
-    void sendToLoom(std::string_view msg);
+    void sendToLoom(std::string_view msg, bool waitReady);
     std::pair<uint64_t, color> calculateLift(int pick);
     void advancePick(bool forward);
     void setPick(int newPick);
@@ -97,6 +97,7 @@ struct View
     void colorCheck(color currentColor);
     void displayPrompt();
     void erasePrompt();
+    int listenToLoom();
     void run();
     
     const char* toColor(const color& c)
@@ -545,7 +546,7 @@ View::advancePick(bool forward)
 }
 
 void
-View::sendToLoom(std::string_view msg)
+View::sendToLoom(std::string_view msg, bool waitReady)
 {
     while (!msg.empty())
     {
@@ -582,6 +583,20 @@ View::sendToLoom(std::string_view msg)
             }
         }
     }
+    if (opts.compuDobbyGen == 4 && waitReady) {
+        while (mode != Mode::Quit) {
+            listenToLoom();
+            if (loomOutput.starts_with("<ready>")) {
+                loomOutput.erase(0, 7);
+                return;
+            }
+            if (loomOutput.starts_with("<what>")) {
+                std::print("\nloom protocol confusion\n");
+                loomOutput.erase(0, 6);
+                return;
+            }
+        }
+    }
 }
 
 void
@@ -599,10 +614,11 @@ View::sendPick()
         }
         command.push_back('\x07');
     } else {
+        sendToLoom("clear\r", true);
         bool first = true;
         if (lift == 0)
             return;
-        command = "clear\rpick ";
+        command = "pick ";
         for (int shaft = 1; lift; lift >>= 1, ++shaft)
             if (lift & 1) {
                 if (!first) command.push_back(',');
@@ -611,7 +627,59 @@ View::sendPick()
             }
         command.push_back('\r');
     }
-    sendToLoom(command);
+    sendToLoom(command, true);
+}
+
+int
+View::listenToLoom()
+{
+    fd_set rdset;
+    char c;
+    FD_SET(STDIN_FILENO, &rdset);
+    FD_SET(opts.loomDeviceFD, &rdset);
+    timeval threesec{term.pendingEvent() || !loomOutput.empty() ? 0 : 3, 0};
+    
+    int nfds = ::select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
+    
+    if (nfds == -1 && errno != EINTR)
+        throw make_system_error("select failed");
+
+    if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
+        Term::Event ev = term.getEvent();
+        if (ev.type != Term::EventType::None)
+            handleEvent(ev);
+        if (mode == Mode::Quit)
+            return nfds;
+    }
+    
+    if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
+        int count = 0;
+        while (true) {
+            auto n = ::read(opts.loomDeviceFD, &c, 1);
+            if (n < 0) {
+                if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
+                    break;
+                else
+                    throw make_system_error("error in read");
+            }
+            if (n == 0) {
+                if (count == 0)
+                    throw std::runtime_error("\r\nLoom connection was closed.");
+                break;
+            }
+            if (opts.compuDobbyGen == 4) {
+                if (c == '\r' || c == '\n')
+                    continue;
+                c = (char)std::tolower((int)c);
+            }
+            loomOutput.push_back(c);
+            ++count;
+        };
+    }
+    
+    if (opts.compuDobbyGen == 4 && loomOutput.starts_with("<error"))
+        make_system_error({loomOutput});
+    return nfds;
 }
 
 void
@@ -639,65 +707,25 @@ View::run()
             break;
     }
     
-    sendToLoom(loomReset);
+    sendToLoom(loomReset, false);
     
     int AVLstate = 1;
     bool doAdvancePick = opts.compuDobbyGen < 4;
 
     while (mode != Mode::Quit) {
-        fd_set rdset;
-        FD_SET(STDIN_FILENO, &rdset);
-        FD_SET(opts.loomDeviceFD, &rdset);
-        timeval threesec{term.pendingEvent() || !loomOutput.empty() ? 0 : 3, 0};
-        
-        int nfds = ::select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
-        
-        if (nfds == -1 && errno != EINTR)
-            throw make_system_error("select failed");
+        int nfds = listenToLoom();
 
         if (nfds == 0 && AVLstate == 1) {
-            sendToLoom(loomReset);
+            sendToLoom(loomReset, false);
             std::putchar('.');
-        }
-        
-        if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
-            Term::Event ev = term.getEvent();
-            if (ev.type != Term::EventType::None)
-                handleEvent(ev);
-            if (mode == Mode::Quit)
-                break;
-        }
-        
-        if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
-            int count = 0;
-            while (true) {
-                auto n = ::read(opts.loomDeviceFD, &c, 1);
-                if (n < 0) {
-                    if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
-                        break;
-                    else
-                        throw make_system_error("error in read");
-                }
-                if (n == 0) {
-                    if (count == 0)
-                        throw std::runtime_error("\r\nLoom connection was closed.");
-                    break;
-                }
-                if (opts.compuDobbyGen == 4) {
-                    if (c == '\r' || c == '\n')
-                        continue;
-                    c = (char)std::tolower((int)c);
-                }
-                loomOutput.push_back(c);
-                ++count;
-            };
         }
 
         if (loomOutput.empty())
             continue;
         
         if (auto termPos = loomOutput.find(termChar); termPos != std::string::npos) {
-            std::string_view loomLine(loomOutput.begin(), loomOutput.begin() + (ssize_t)termPos + 1);
+            std::string loomLine(loomOutput.begin(), loomOutput.begin() + (ssize_t)termPos + 1);
+            loomOutput.erase(0, termPos + 1);
             switch (AVLstate) {
                 case 1:
                     // waiting for reset, sending first pick
@@ -713,7 +741,7 @@ View::run()
                             opts.dobbyType = DobbyType::Negative;
                         if (loomLine.contains("pos dobby"))
                             opts.dobbyType = DobbyType::Positive;
-                        auto fcres = std::from_chars(loomLine.begin() + 17, loomLine.begin() + 19, opts.maxShafts, 10);
+                        auto fcres = std::from_chars(loomLine.data() + 17, loomLine.data() + 19, opts.maxShafts, 10);
                         if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
                             throw std::runtime_error("Illegal shaft count in loom greeting.");
                         if (opts.draftContents->maxShafts > opts.maxShafts)
@@ -725,12 +753,12 @@ View::run()
                         AVLstate = 2;
                     } else {
                         //std::fputs(" ?", stdout);
-                        std::print("??{}\n", loomLine.begin());
+                        std::print("??{}\n", loomLine);
                     }
                     break;
                 case 2:
                     if (loomLine == "<password:>") {
-                        sendToLoom("chico\r");
+                        sendToLoom("chico\r", true);
                         std::putchar('\n');
                         AVLstate = 3;
                     } else {
@@ -767,7 +795,6 @@ View::run()
                 default:
                     
             }
-            loomOutput.erase(0, termPos + 1);
             std::fflush(stdout);
         }
     }
@@ -787,9 +814,10 @@ View::run()
             std::print("\nFailed to save next pick.\n");
     }
     if (opts.compuDobbyGen < 4) {
-        sendToLoom("\x0f\x07");
+        sendToLoom("\x0f\x07", false);
     } else {
-        sendToLoom("close\r");
+        sendToLoom("clear\r", true);
+        sendToLoom("close\r", false);
     }
     sleep(1);
 }

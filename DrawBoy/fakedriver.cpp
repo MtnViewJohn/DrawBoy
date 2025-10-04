@@ -332,7 +332,10 @@ View::connect()
                                 tooMany ? "too many shafts!" : "",
                                 unexpected ? "unexpected character!" : "",
                                 opts.ascii ? "" : Term::Style::reset);
+                    if (opts.cd4)
+                        sendToDrawBoy("<ready>");
                 } else if (DrawBoyOutput == "clear\r" || DrawBoyOutput == "close\r") {
+                    sendToDrawBoy("<ready>");
                 } else {
                     DrawBoyOutput.pop_back();
                     std::printf("\r\n%s%sUnexpected input from driver: %s%s",
