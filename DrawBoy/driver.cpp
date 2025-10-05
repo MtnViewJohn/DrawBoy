@@ -710,6 +710,7 @@ View::run()
     sendToLoom(loomReset, false);
     
     int AVLstate = 1;
+    bool atLeastOnce = false;
     bool doAdvancePick = opts.compuDobbyGen < 4;
 
     while (mode != Mode::Quit) {
@@ -775,6 +776,7 @@ View::run()
                         sendPick();
                         displayPrompt();
                         doAdvancePick = true;
+                        atLeastOnce = true;
                     }
                     if (loomLine == armsUp && loomState != Arms::Up) {
                         // Shed is closed, next shed is fixed
@@ -798,7 +800,7 @@ View::run()
             std::fflush(stdout);
         }
     }
-    if (AVLstate == 3) {
+    if (atLeastOnce) {
         int cpick = currentPick >= 0 ? currentPick + 1 : currentPick;
         bool success = false;
         if (std::FILE* pickf{std::fopen(opts.pickFile.c_str(), "w")}) {
