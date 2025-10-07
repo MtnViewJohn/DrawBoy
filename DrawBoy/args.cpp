@@ -24,6 +24,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <chrono>
+#include <filesystem>
 
 namespace {
 struct addr_deleter {
@@ -385,6 +387,7 @@ Options::Options(int argc, const char * argv[])
     args::MapFlag<std::string, ColorAlert, ToLowerReader> _bell(parser, "COLOR_ALERT", "Ring bell on color changes",
         {"colorAlert"}, alertMap, ColorAlert::None);
     args::Flag _ascii(parser, "ASCII only", "Restricts output to ASCII", {"ascii"}, args::Options::Single);
+    args::Flag _log(parser, "Enable logging", "Logs loom I/O to /tmp", {"log"}, args::Options::Hidden);
     args::MapFlag<std::string, ANSIsupport, ToLowerReader> _ansi(parser, "ANSI_SUPPORT",
         "Does the terminal support ANSI style codes and possibly true-color", {"ansi"},
         ANSImap, defANSI, args::Options::Single);
@@ -575,6 +578,21 @@ Options::Options(int argc, const char * argv[])
         std::cerr << "Tabby B has no shafts set." << std::endl;
     
     tabbyColor = color(args::get(_tabbyColor).c_str());
+    
+    if (_log) {
+        auto now = std::chrono::system_clock::now();
+        auto date = std::chrono::floor<std::chrono::days>(now);
+        auto clocktime = std::chrono::floor<std::chrono::seconds>(now - date);
+        std::chrono::hh_mm_ss time_of_day{clocktime};
+        
+        std::string fname = std::format("drawboy_{}-{}.log",
+                                        date,
+                                        time_of_day);
+        auto tmpdir = std::filesystem::temp_directory_path();
+        auto tempfile = tmpdir / fname;
+        std::cout << "Logging to " << tempfile << "\n";
+        logFile = fopen(tempfile.c_str(), "w");
+    }
 }
 
 Options::~Options()
@@ -582,5 +600,9 @@ Options::~Options()
     if (loomDeviceFD >= 0) {
         ::close(loomDeviceFD);
         loomDeviceFD = -1;
+    }
+    if (logFile) {
+        std::fclose(logFile);
+        logFile = nullptr;
     }
 }

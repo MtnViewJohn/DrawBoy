@@ -16,6 +16,7 @@
 #include "wif.h"
 #include <string_view>
 #include <memory>
+#include <cstdio>
 
 class draft;
 
@@ -43,5 +44,6 @@ struct Options {
     uint64_t tabbyA = 0, tabbyB = 0;
     TabbyPattern tabbyPattern = TabbyPattern::xAyB;
     std::string pickFile;
+    FILE* logFile = nullptr;
 };
 

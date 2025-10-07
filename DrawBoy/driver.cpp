@@ -42,6 +42,12 @@ enum class Mode {
     Quit,
 };
 
+enum class LogDirection {
+    Unknown,
+    Reading,
+    Writing
+};
+
 enum class Arms {
     Up,
     Down,
@@ -78,6 +84,8 @@ struct View
     int oldPick = -1;
     bool weaveForward = true;
     
+    LogDirection logdirn = LogDirection::Unknown;
+    
     View(Term& t, Options& o)
     : term(t), opts(o), draftContent(*o.draftContents), nextPick(o.pick - 1)
     {}
@@ -99,6 +107,10 @@ struct View
     void erasePrompt();
     int listenToLoom();
     void run();
+    
+    ssize_t readLoom(char &c);
+    ssize_t writeLoom(std::string_view msg);
+    void prettyPrint(char c);
     
     const char* toColor(const color& c)
     { return opts.ansi == ANSIsupport::no ? "" : Term::colorToStyle(c, opts.ansi == ANSIsupport::truecolor); }
@@ -550,7 +562,7 @@ View::sendToLoom(std::string_view msg, bool waitReady)
 {
     while (!msg.empty())
     {
-        auto result = ::write(opts.loomDeviceFD, msg.data(), msg.length());
+        auto result = writeLoom(msg);
         if (result >= 0) {
             if (result == 0) std::putchar('>');
             // sent partial or all the remaining data
@@ -655,7 +667,7 @@ View::listenToLoom()
     if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
         int count = 0;
         while (true) {
-            auto n = ::read(opts.loomDeviceFD, &c, 1);
+            auto n = readLoom(c);
             if (n < 0) {
                 if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
                     break;
@@ -682,6 +694,66 @@ View::listenToLoom()
     return nfds;
 }
 
+ssize_t
+View::readLoom(char &c)
+{
+    ssize_t n = ::read(opts.loomDeviceFD, &c, 1);
+    
+    if (n == 1 && opts.logFile) {
+        if (logdirn != LogDirection::Reading) {
+            std::fputs("\nloom: ", opts.logFile);
+            logdirn = LogDirection::Reading;
+        }
+        prettyPrint(c);
+    }
+
+    return n;
+}
+
+ssize_t
+View::writeLoom(std::string_view msg)
+{
+    ssize_t n = ::write(opts.loomDeviceFD, msg.data(), msg.length());
+    
+    if (n > 0 && opts.logFile) {
+        if (logdirn != LogDirection::Writing) {
+            std::fputs("\ndrawboy: ", opts.logFile);
+            logdirn = LogDirection::Writing;
+        }
+        for (size_t i = 0; i < (size_t)n; ++i)
+            prettyPrint(msg[i]);
+    }
+
+    return n;
+}
+
+void
+View::prettyPrint(char c)
+{
+    if (opts.compuDobbyGen < 4) {
+        std::print(opts.logFile, "{:#04x}", (int)c);
+    } else {
+        if (std::isprint((int)c) && c != '\\') {
+            std::fputc((int)c, opts.logFile);
+        } else {
+            switch (c) {
+                case '\r':
+                    std::fputs("\\r", opts.logFile);
+                    break;
+                case '\n':
+                    std::fputs("\\n", opts.logFile);
+                    break;
+                case '\\':
+                    std::fputs("\\\\", opts.logFile);
+                    break;
+                default:
+                    std::print(opts.logFile, "\\x{:02x}", (int)c);
+                    break;
+            }
+        }
+    }
+}
+
 void
 View::run()
 {
@@ -694,7 +766,7 @@ View::run()
     const char* loomReset = opts.compuDobbyGen < 4 ? "\x0f\x03" : "\r";
 
     while (true) {
-        auto n = ::read(opts.loomDeviceFD, &c, 1);
+        auto n = readLoom(c);
         if (n < 0) {
             if (errno == EINTR)
                 continue;
