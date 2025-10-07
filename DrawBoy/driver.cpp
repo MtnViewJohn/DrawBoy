@@ -598,13 +598,11 @@ View::sendToLoom(std::string_view msg, bool waitReady)
     if (opts.compuDobbyGen == 4 && waitReady) {
         while (mode != Mode::Quit) {
             listenToLoom();
-            if (loomOutput.starts_with("<ready>")) {
-                loomOutput.erase(0, 7);
+            if (loomOutput.contains("<ready>")) {
                 return;
             }
-            if (loomOutput.starts_with("<what>")) {
+            if (loomOutput.contains("<what>")) {
                 std::print("\nloom protocol confusion\n");
-                loomOutput.erase(0, 6);
                 return;
             }
         }
@@ -867,7 +865,7 @@ View::run()
                     }
                     break;
                 default:
-                    
+                    break;
             }
             std::fflush(stdout);
         }
