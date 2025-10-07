@@ -46,9 +46,15 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 > Connect to a Compu-Dobby IV loom over a network connection instead of a serial connection. If no loom device path is provided for a serial connection, then a network connection is implicitly enabled.
 
-**\-p**_pick_, **\-\-pick**=*pick*
+**\-p**_pick_, **\-\-pick**=*pick*\
 
 > Sets the initial pick from the pick list to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list.
+
+**\-plast**, **\-\-pick**=**last**\
+**\-plast\-**_offset_, **\-\-pick=last\-**_offset_\
+**\-plast+**_offset_, **\-\-pick=last+**_offset_
+
+> **Drawboy** stores the last pick thrown when quitting. Using one of the three **last** pick forms causes **drawboy** to pick up where it left off, plus or minus an offset.
 
 **\-P**_picklist_, **\-\-picks**=*picklist*
 

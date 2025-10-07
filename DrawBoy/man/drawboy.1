@@ -54,6 +54,17 @@ Sets the initial pick from the pick list to start weaving. The default pick is
 the first pick in the pick list. If the specified pick is larger than size of
 the pick list then a modulo calculation is performed to determine where to
 start weaving in the pick list.
+
+.TP
+\fB\-plast\fP, \fB\-\-pick=last\fP
+.TP
+\fB\-plast\-\fP\fIoffset\fP, \fB\-\-pick=last\-\fP\fIoffset\fP
+.TP
+\fB\-plast\+\fP\fIoffset\fP, \fB\-\-pick=last\+\fP\fIoffset\fP
+\fBDrawboy\fP stores the last pick thrown when quitting. Using one of the three
+\fBlast\fP pick forms causes \fBdrawboy\fP to pick up where it left off, plus
+or minus an offset.
+
 .TP
 \fB\-P\fP\fIpicklist\fP, \fB\-\-picks\fP=\fIpicklist\fP
 Sets the list of picks from the draft file to weave. This is a comma\-separated
