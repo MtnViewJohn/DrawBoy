@@ -819,12 +819,13 @@ View::run()
                             throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
                         opts.tabbyA &= ((1 << opts.maxShafts) - 1);
                         opts.tabbyB &= ((1 << opts.maxShafts) - 1);
-                        std::print("Greeting received: {} shafts, {} dobby\n", opts.maxShafts,
-                                   opts.dobbyType == DobbyType::Positive ? "Positive" : "Negative");
+                        std::print("\r\nGreeting received: {} shafts, {} dobby\r\n",
+                            opts.maxShafts,
+                            opts.dobbyType == DobbyType::Positive ? "Positive" :"Negative");
                         AVLstate = 2;
                     } else {
                         //std::fputs(" ?", stdout);
-                        std::print("??{}\n", loomLine);
+                        std::print("\r\n??{}\r\n", loomLine);
                     }
                     break;
                 case 2:
@@ -881,9 +882,9 @@ View::run()
             std::fclose(pickf);
         }
         if (success)
-            std::print("\nNext pick saved: {}\n", cpick);
+            std::print("\r\nNext pick saved: {}\r\n", cpick);
         else
-            std::print("\nFailed to save next pick.\n");
+            std::print("\r\nFailed to save next pick.\r\n");
     }
     if (opts.compuDobbyGen < 4) {
         sendToLoom("\x0f\x07", false);
