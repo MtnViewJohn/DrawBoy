@@ -872,7 +872,7 @@ View::run()
         }
     }
     if (atLeastOnce) {
-        int cpick = currentPick >= 0 ? currentPick + 1 : currentPick;
+        int cpick = currentPick >= 0 ? currentPick + 1 : oldPick + 1;
         bool success = false;
         if (std::FILE* pickf{std::fopen(opts.pickFile.c_str(), "w")}) {
             try {
