@@ -19,6 +19,7 @@
 #include <charconv>
 #include <print>
 #include <set>
+#include <deque>
 
 namespace {
 std::string pickString(int pick, bool padded)
@@ -52,6 +53,34 @@ enum class Arms {
     Up,
     Down,
     Unknown,
+};
+
+enum class Commands {
+    Null,
+    Tabby,
+    Liftplan,
+    Reverse,
+    SetPick,
+    AdvancePick,
+    SetPickList,
+    DoSetPick,
+    DoSetPickList,
+    Quit
+};
+
+std::map<Commands, const char*> CommandNames = {
+    {Commands::Tabby, "Tabby"},
+    {Commands::Liftplan, "Liftplan"},
+    {Commands::Reverse, "Reverse"},
+    {Commands::AdvancePick, "Next/Previous pick"},
+    {Commands::DoSetPick, "Pick set"},
+    {Commands::DoSetPickList, "Pick list set"}
+};
+
+struct Command
+{
+    Commands command = Commands::Null;
+    int argument = 0;
 };
 
 std::map<Mode, const char*> ModePrompt{
@@ -95,6 +124,9 @@ struct View
     bool handlePickEvent(const Term::Event& ev);
     bool handlePickEntryEvent(const Term::Event& ev);
     bool handlePickListEntryEvent(const Term::Event& ev);
+    
+    std::deque<Command> pendingCommands;
+    void doCommand(Command cmd, bool deferPick = false);
 
     void sendPick();
     void sendToLoom(std::string_view msg, bool waitReady);
@@ -104,7 +136,6 @@ struct View
     color displayPick(const char* message = "");
     void colorCheck(color currentColor);
     void displayPrompt();
-    void erasePrompt();
     int listenToLoom();
     void run();
     
@@ -239,10 +270,11 @@ View::colorCheck(color currentColor)
 void
 View::displayPrompt()
 {
-    static const char* menu = opts.ascii ?
-        "T)abby  L)iftplan  R)everse  S)elect pick  P)ick list  Q)uit   " :
-        "\x1b[7mT\x1b[0mabby  \x1b[7mL\x1b[0miftplan  \x1b[7mR\x1b[0meverse  "
-        "\x1b[7mS\x1b[0melect pick  \x1b[7mP\x1b[0mick list  \x1b[7mQ\x1b[0muit   ";
+    const char* menuPrefix = (loomState == Arms::Down && !opts.ascii) ?
+                                Term::Style::inverse : "";
+    const char* menuSuffix = loomState == Arms::Down ?
+                                (opts.ascii ? ")" : Term::Style::reset) : "";
+    auto menu = std::format("{0}T{1}abby  {0}L{1}iftplan  {0}R{1}everse  {0}S{1}elect pick  {0}P{1}ick list  {0}Q{1}uit   ", menuPrefix, menuSuffix);
     std::putchar('\r');
     switch (mode) {
         case Mode::PickEntry:
@@ -272,13 +304,6 @@ View::displayPrompt()
             std::print("[{}] {}", ModePrompt[mode], menu);
             break;
     }
-    Term::clearToEOL();
-}
-
-void
-View::erasePrompt()
-{
-    std::putchar('\r');
     Term::clearToEOL();
 }
 
@@ -352,36 +377,12 @@ View::handlePickEvent(const Term::Event &ev)
 {
     if (ev.type == Term::EventType::Char) {
         char evChar = (char)std::tolower((int)ev.character);
-        if (loomState != Arms::Down && evChar != 'q') {
-            std::putchar('\a');
-            std::fflush(stdout);
-            return true;
-        }
         switch (evChar) {
             case 't':
-                if (opts.treadleThreading) {
-                    std::putchar('\a');
-                    std::fflush(stdout);
-                    return true;
-                }
-                if (mode == Mode::Tabby) return true;
-                mode = Mode::Tabby;
-                oldPick = nextPick;
-                nextPick = weaveForward ? TabbyA : TabbyB;
-                sendPick();
-                displayPrompt();
+                doCommand({Commands::Tabby});
                 return true;
             case 'l':
-                if (opts.treadleThreading) {
-                    std::putchar('\a');
-                    std::fflush(stdout);
-                    return true;
-                }
-                if (mode == Mode::Weave) return true;
-                mode = Mode::Weave;
-                nextPick = oldPick;
-                sendPick();
-                displayPrompt();
+                doCommand({Commands::Liftplan});
                 return true;
             case 'q':
                 mode = Mode::Quit;
@@ -389,24 +390,13 @@ View::handlePickEvent(const Term::Event &ev)
                 std::fflush(stdout);
                 return true;
             case 'r':
-                weaveForward = !weaveForward;
-                nextPick = currentPick;
-                advancePick(true);
-                sendPick();
-                displayPrompt();
+                doCommand({Commands::Reverse});
                 return true;
             case 's':
-                oldMode = mode;
-                mode = Mode::PickEntry;
-                pickValue.clear();
-                displayPrompt();
+                doCommand({Commands::SetPick});
                 return true;
             case 'p':
-                oldMode = mode;
-                mode = Mode::PickListEntry;
-                pickValue.clear();
-                parenLevel = 0;
-                displayPrompt();
+                doCommand({Commands::SetPickList});
                 return true;
             default:
                 break;
@@ -414,25 +404,18 @@ View::handlePickEvent(const Term::Event &ev)
     }
     
     if (ev.type == Term::EventType::Key) {
-        if (loomState != Arms::Down) {
-            std::putchar('\a');
-            std::fflush(stdout);
-            return true;
-        }
         switch (ev.key) {
             case Term::Key::Up:
             case Term::Key::Left:
-                advancePick(false);
+                doCommand({Commands::AdvancePick, -1});
                 break;
             case Term::Key::Down:
             case Term::Key::Right:
-                advancePick(true);
+                doCommand({Commands::AdvancePick, 1});
                 break;
             default:
                 return false;
         }
-        sendPick();
-        displayPrompt();
         return true;
     }
     return false;
@@ -466,14 +449,13 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 if (errno || p > 9999 || p < 1) {
                     std::putchar('\a');
                 } else {
-                    nextPick = (int)p - 1;
                     mode = Mode::Weave;
-                    sendPick();
+                    doCommand({Commands::DoSetPick, (int)p});
                 }
             } else {
                 mode = oldMode;
+                doCommand({Commands::DoSetPick, 0});
             }
-            displayPrompt();
             return true;
         }
     }
@@ -508,26 +490,144 @@ View::handlePickListEntryEvent(const Term::Event &ev)
             return true;
         }
         if (ev.character == '\r') {
+            mode = Mode::Weave;
+            doCommand({Commands::DoSetPickList});
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+void
+View::doCommand(Command cmd, bool deferPick)
+{
+    if (cmd.command == Commands::Null)
+        return;
+    
+    if (cmd.command == Commands::Quit) {
+        mode = Mode::Quit;
+        return;
+    }
+    
+    if (auto cmdName = CommandNames.find(cmd.command);
+        loomState != Arms::Down && cmdName != CommandNames.end())
+    {
+        std::print(" {} command queued.\r\n", cmdName->second);
+        displayPrompt();
+        std::fflush(stdout);
+        
+        if (cmd.command == Commands::AdvancePick && !pendingCommands.empty() &&
+            pendingCommands.front().command == Commands::AdvancePick)
+        {   // Merge together AdvancePick commands
+            pendingCommands.front().argument += cmd.argument;
+        } else {
+            pendingCommands.push_front(cmd);
+        }
+        return;
+    }
+    
+    switch (cmd.command) {
+        case Commands::Null:
+        case Commands::Quit:
+            break;      // already handled
+        case Commands::Tabby:
+            if (opts.treadleThreading) {
+                std::putchar('\a');
+                std::fflush(stdout);
+                return;
+            }
+            if (mode == Mode::Tabby) return;
+            mode = Mode::Tabby;
+            oldPick = nextPick;
+            nextPick = weaveForward ? TabbyA : TabbyB;
+            if (!deferPick) {
+                sendPick();
+                displayPrompt();
+            }
+            break;
+        case Commands::Liftplan:
+            if (opts.treadleThreading) {
+                std::putchar('\a');
+                std::fflush(stdout);
+                return;
+            }
+            if (mode == Mode::Weave) return;
+            mode = Mode::Weave;
+            nextPick = oldPick;
+            if (!deferPick) {
+                sendPick();
+                displayPrompt();
+            }
+            break;
+        case Commands::Reverse:
+            weaveForward = !weaveForward;
+            nextPick = currentPick;
+            advancePick(true);
+            if (!deferPick) {
+                sendPick();
+                displayPrompt();
+            }
+            break;
+        case Commands::AdvancePick:
+            if (cmd.argument == 0)
+                return;
+            for (int i = 0; i < std::abs(cmd.argument); ++i)
+                advancePick(cmd.argument > 0);
+            if (!deferPick) {
+                sendPick();
+                displayPrompt();
+            }
+            break;
+        case Commands::SetPick:
+            oldMode = mode;
+            mode = Mode::PickEntry;
+            pickValue.clear();
+            displayPrompt();
+            break;
+        case Commands::SetPickList:
+            oldMode = mode;
+            mode = Mode::PickListEntry;
+            pickValue.clear();
+            parenLevel = 0;
+            displayPrompt();
+            break;
+        case Commands::DoSetPick:
+            if (cmd.argument > 0) {
+                nextPick = cmd.argument - 1;
+                mode = Mode::Weave;
+                if (!deferPick) {
+                    sendPick();
+                    displayPrompt();
+                }
+            } else {
+                if (!deferPick) {
+                    mode = oldMode;
+                    displayPrompt();
+                }
+            }
+            break;
+        case Commands::DoSetPickList:
             if (parenLevel != 0) {
                 std::putchar('\a');
                 std::fflush(stdout);
-                return true;
+                return;
             }
             try {
                 opts.parsePicks(pickValue, draftContent.picks);
                 nextPick = 0;       // Current pick is from old pick list
                 currentPick = -10;  // it is meaningless in new pick list
                 mode = Mode::Weave;
-                sendPick();
+                if (!deferPick)
+                    sendPick();
             } catch (std::exception& e) {
                 std::print("\r\n\a{}{}{}\r\n", bold(), e.what(), reset());
             }
-            displayPrompt();
-            return true;
-        }
+            if (!deferPick)
+                displayPrompt();
+            break;
     }
-
-    return false;
 }
 
 void
@@ -844,6 +944,10 @@ View::run()
                         loomState = Arms::Down;
                         if (doAdvancePick)
                             advancePick(true);
+                        while (!pendingCommands.empty()) {
+                            doCommand(pendingCommands.back(), true);
+                            pendingCommands.pop_back();
+                        }
                         sendPick();
                         displayPrompt();
                         doAdvancePick = true;
@@ -852,17 +956,13 @@ View::run()
                     if (loomLine == armsUp && loomState != Arms::Up) {
                         // Shed is closed, next shed is fixed
                         loomState = Arms::Up;
-                        const char* msg = "";
-                        if (mode == Mode::PickEntry || mode == Mode::PickListEntry) {
-                            msg = " \aCancelled";
-                            mode = oldMode;
-                        }
                         currentPick = nextPick;
-                        colorCheck(displayPick(msg));
+                        colorCheck(displayPick());
+                        displayPrompt();
                     }
                     if (loomLine == armsNeutral) {
                         loomState = Arms::Unknown;
-                        erasePrompt();
+                        displayPrompt();
                     }
                     break;
                 default:
