@@ -153,6 +153,11 @@ q - **Quit**
 
 > Quits **drawboy**.
 
+If the shed is not all the way open then **drawboy** cannot send commands to the 
+loom. The prompt will change to remove emphasis on the command characters. If
+commmands are entered in this state, then they will be queued until the next time
+the shed is open.
+
 # EXAMPLES
 
 ## Setting the pick list:

@@ -193,6 +193,12 @@ the command line option. Changing the pick list resets the pick to 1.
 q \- \fBQuit\fP
 Quits \fBdrawboy\fP.
 
+.PP
+If the shed is not all the way open then \fBdrawboy\fP cannot send commands to the
+loom. The prompt will change to remove emphasis on the command characters. If
+commmands are entered in this state, then they will be queued until the next time
+the shed is open.
+
 .SH EXAMPLES
 
 .SS Setting the pick list:
