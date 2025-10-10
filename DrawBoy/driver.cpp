@@ -942,7 +942,7 @@ View::run()
                     if (loomLine == armsDown && loomState != Arms::Down) {
                         // Shed is open, OK to send to solenoids
                         loomState = Arms::Down;
-                        if (doAdvancePick)
+                        if (pendingCommands.empty() && doAdvancePick)
                             advancePick(true);
                         while (!pendingCommands.empty()) {
                             doCommand(pendingCommands.back(), true);
