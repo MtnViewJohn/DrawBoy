@@ -116,8 +116,12 @@ struct View
     LogDirection logdirn = LogDirection::Unknown;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), draftContent(*o.draftContents), nextPick(o.pick - 1)
-    {}
+    : term(t), opts(o), draftContent(*o.draftContents),
+      currentPick(o.pick - 2), nextPick(o.pick - 1)
+    {
+        if (currentPick < 0)
+            currentPick += (int)opts.picks.size();
+    }
     
     void handleEvent(const Term::Event& ev);
     bool handleGlobalEvent(const Term::Event& ev);

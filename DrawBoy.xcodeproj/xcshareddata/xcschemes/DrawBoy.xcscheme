@@ -92,8 +92,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pick=ddd"
-            isEnabled = "NO">
+            argument = "--pick=last"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabbycolor=FF00FF"
