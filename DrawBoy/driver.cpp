@@ -133,7 +133,7 @@ struct View
     std::pair<uint64_t, color> calculateLift(int pick);
     void advancePick(bool forward);
     void setPick(int newPick);
-    color displayPick(const char* message = "");
+    color displayPick();
     void colorCheck(color currentColor);
     void displayPrompt();
     int listenToLoom();
@@ -195,7 +195,7 @@ View::calculateLift(int pick)
 }
 
 color
-View::displayPick(const char* message)
+View::displayPick()
 {
     auto [lift, weftColor] = calculateLift(currentPick);
 
@@ -236,7 +236,6 @@ View::displayPick(const char* message)
             std::putchar(' ');
     std::putchar('|');
     std::fputs(reset(), stdout);
-    std::fputs(message, stdout);
 
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
@@ -881,7 +880,7 @@ View::run()
     
     int AVLstate = 1;
     bool atLeastOnce = false;
-    bool doAdvancePick = opts.compuDobbyGen < 4;
+    bool doAdvancePick = false;
 
     while (mode != Mode::Quit) {
         int nfds = listenToLoom();
@@ -901,8 +900,6 @@ View::run()
                 case 1:
                     // waiting for reset, sending first pick
                     if (opts.compuDobbyGen < 4 && loomLine == "\x7f\x03") {
-                        sendPick();     // initialize pending pick
-                        displayPick(" reset");
                         opts.tabbyA &= ((1 << opts.maxShafts) - 1);
                         opts.tabbyB &= ((1 << opts.maxShafts) - 1);
                         AVLstate = 3;
