@@ -253,6 +253,7 @@ wif::wif(FILE* _wifstream)
         
         treadling.resize((size_t)picks + 1);
         liftplan.resize((size_t)picks + 1, 0);
+        bool extraTreadle = false;
         for (size_t i = 1; i <= (size_t)picks; ++i) {
             treadling[i] = valueStripWhite(numberKeys[i]);
             if (treadling[i].empty()) continue;
@@ -263,15 +264,18 @@ wif::wif(FILE* _wifstream)
                 long treadle = std::strtol(v, &end, 10);
                 if (errno)
                     throw annotated_runtime_error("Error in wif file, bad treadle number in liftplan: ", treadling[i]);
-                if (treadle < 1 || treadle > maxTreadles)
-                    throw annotated_runtime_error("Error in wif file, treadle number out of range in liftplan: ", treadling[i]);
                 while (*end == ' ') ++end;      // consume trailing whitespace
 
-                liftplan[i] |= tieup[(size_t)treadle];
+                if (treadle >= 1 && treadle <= maxTreadles)
+                    liftplan[i] |= tieup[(size_t)treadle];
+                else
+                    extraTreadle = true;
                 if (*end != ',') break;
                 v = end + 1;
             }
         }
+        if (extraTreadle)
+            std::cerr << "Ignoring extra treadles." << std::endl;
     }
 }
 
@@ -378,6 +382,7 @@ wif::readSection(const char* name, int numlines, const std::string& defValue)
 std::vector<uint64_t>
 wif::processKeyLines(bool multi)
 {
+    bool extraShafts = false;
     std::vector<uint64_t> keyLines(numberKeys.size(), 0);
     for (size_t i = 1; i < numberKeys.size(); ++i) {
         std::string shafts = valueStripWhite(numberKeys[i]);
@@ -389,16 +394,20 @@ wif::processKeyLines(bool multi)
             long shaft = std::strtol(v, &end, 10);
             if (errno)
                 throw std::runtime_error("Error in wif file: bad shaft number in liftplan");
-            if (shaft < 1 || shaft > maxShafts)
-                throw std::runtime_error("Error in wif file: shaft number out of range in liftplan");
             while (*end == ' ') ++end;      // consume trailing whitespace
             if (*end == ',' && !multi)
                 throw std::runtime_error("Drawboy doesn't handle ends with multiple shafts");
-            keyLines[i] |= 1 << (shaft - 1);
+            if (shaft >= 1 && shaft <= maxShafts)
+                keyLines[i] |= 1 << (shaft - 1);
+            else
+                extraShafts = true;
             if (*end != ',') break;
             v = end + 1;
         }
     }
+
+    if (extraShafts)
+        std::cerr << "Ignoring extra shafts." << std::endl;
 
     return keyLines;
 }
