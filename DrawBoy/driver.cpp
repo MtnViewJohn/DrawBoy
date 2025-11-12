@@ -33,6 +33,8 @@ std::string pickString(int pick, bool padded)
     else
         return std::format("{}", pick);
 }
+
+static const int ClearPick = -42;
 }
 
 enum class Mode {
@@ -95,7 +97,8 @@ struct View
 {
     Term& term;
     Options& opts;
-    
+    DobbyType HWdobbyType = DobbyType::Positive;
+
     draft& draftContent;
     int currentPick = 0, nextPick = 1;
     bool pickSent = true;
@@ -170,9 +173,11 @@ View::calculateLift(int pick)
     }
 
     if (pick < 0) {
-        assert(pick == TabbyA || pick == TabbyB);
+        assert(pick == TabbyA || pick == TabbyB || pick == ClearPick);
         lift = pick == TabbyA ? opts.tabbyA : opts.tabbyB;
         weftColor = opts.tabbyColor;
+        if (pick == ClearPick)
+            lift = (1 << opts.maxShafts) - 1;   // loom shafts, not draft shafts
     } else {
         size_t zpick = (size_t)(pick) % opts.picks.size();
         int wifPick = opts.picks[zpick];
@@ -913,9 +918,9 @@ View::run()
                     } else if (opts.compuDobbyGen == 4 && loomLine.starts_with("<compu-dobby iv,")) {
                         static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
                         if (loomLine.contains("neg dobby"))
-                            opts.dobbyType = DobbyType::Negative;
+                            HWdobbyType = DobbyType::Negative;
                         if (loomLine.contains("pos dobby"))
-                            opts.dobbyType = DobbyType::Positive;
+                            HWdobbyType = DobbyType::Positive;
                         auto fcres = std::from_chars(loomLine.data() + 17, loomLine.data() + 19, opts.maxShafts, 10);
                         if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
                             throw std::runtime_error("Illegal shaft count in loom greeting.");
@@ -994,7 +999,12 @@ View::run()
     if (opts.compuDobbyGen < 4) {
         sendToLoom("\x0f\x07", false);
     } else {
-        sendToLoom("clear\r", true);
+        if (HWdobbyType == DobbyType::Positive) {
+            sendToLoom("clear\r", true);
+        } else {
+            nextPick = ClearPick;
+            sendPick();
+        }
         sendToLoom("close\r", false);
     }
     sleep(1);
