@@ -335,6 +335,7 @@ View::connect()
                     if (opts.cd4)
                         sendToDrawBoy("<ready>");
                 } else if (DrawBoyOutput == "clear\r" || DrawBoyOutput == "close\r") {
+                    std::printf("\r\n%s\n", DrawBoyOutput.c_str());
                     sendToDrawBoy("<ready>");
                 } else {
                     DrawBoyOutput.pop_back();

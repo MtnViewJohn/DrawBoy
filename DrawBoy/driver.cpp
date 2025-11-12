@@ -98,6 +98,7 @@ struct View
     
     draft& draftContent;
     int currentPick = 0, nextPick = 1;
+    bool pickSent = true;
     std::string pickValue;
     int parenLevel = 0;
     
@@ -727,7 +728,8 @@ View::sendPick()
         }
         command.push_back('\x07');
     } else {
-        sendToLoom("clear\r", true);
+        if (pickSent)
+            sendToLoom("clear\r", true);
         bool first = true;
         if (lift == 0)
             return;
@@ -739,6 +741,7 @@ View::sendPick()
                 first = false;
             }
         command.push_back('\r');
+        pickSent = true;
     }
     sendToLoom(command, true);
 }
@@ -943,6 +946,7 @@ View::run()
                     if (loomLine == armsDown && loomState != Arms::Down) {
                         // Shed is open, OK to send to solenoids
                         loomState = Arms::Down;
+                        pickSent = false;
                         if (pendingCommands.empty() && doAdvancePick)
                             advancePick(true);
                         while (!pendingCommands.empty()) {

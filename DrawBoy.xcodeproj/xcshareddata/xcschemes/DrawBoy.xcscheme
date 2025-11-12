@@ -93,7 +93,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--pick=last"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabbycolor=FF00FF"
