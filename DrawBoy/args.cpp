@@ -340,7 +340,7 @@ Options::Options(int argc, const char * argv[])
     ToLowerReader tlr;
     
     auto f1 = envDobbyType ? dobbyMap.find(tlr(envDobbyType)) : dobbyMap.end();
-    DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Positive;
+    DobbyType defDobby = f1 != dobbyMap.end() ? f1->second : DobbyType::Unspecified;
     
     auto f2 = envShaft ? shaftMap.find(envShaft) : shaftMap.end();
     int defShaft = f2 != shaftMap.end() ? f2->second : 0;
@@ -356,7 +356,7 @@ Options::Options(int argc, const char * argv[])
     args::Flag _cd1(parser, "Compu-Dobby I", "Loom has a Compu-Dobby I", {"cd1"}, args::Options::Single);
     args::Flag _cd2(parser, "Compu-Dobby II", "Loom has a Compu-Dobby II", {"cd2"}, args::Options::Single);
     args::Flag _cd3(parser, "Compu-Dobby III", "Loom has a Compu-Dobby III", {"cd3"}, args::Options::Single);
-    args::Flag _cd4(parser, "Compu-Dobby IV", "Loom has a Compu-Dobby IV", {"cd4"}, args::Options::Single);
+    args::Flag _cd4(parser, "Compu-Dobby IV/4.5", "Loom has a Compu-Dobby IV/4.5", {"cd4"}, args::Options::Single);
     args::Flag _net(parser, "use ethernet", "Connect to the loom over ethernet", {'n', "net"}, args::Options::Single);
     args::ValueFlag<std::string> _pick(parser, "PICK",
         "The pick to start weaving at (defaults to 1).", {'p', "pick"}, "1", args::Options::Single);
@@ -382,7 +382,7 @@ Options::Options(int argc, const char * argv[])
         "Number of shafts on the loom", {"shafts"}, shaftMap, defShaft,
         defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
     args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY_TYPE",
-        "Is the loom a positive or negative dobby (+ and - are also accepted)", {"dobbyType"},
+        "Is the loom a positive, negative, or virtual positive dobby (+ and - are also accepted)", {"dobbyType"},
         dobbyMap, defDobby, args::Options::Single);
     args::MapFlag<std::string, ColorAlert, ToLowerReader> _bell(parser, "COLOR_ALERT", "Ring bell on color changes",
         {"colorAlert"}, alertMap, ColorAlert::None);
@@ -491,6 +491,10 @@ Options::Options(int argc, const char * argv[])
     treadleThreading = _threading;
     std::string draftFile = args::get(_draftFile);
     compuDobbyGen = defGen;
+    if (dobbyType == DobbyType::Virtual) {
+        dobbyType = DobbyType::Positive;
+        virtualPositive = true;
+    }
 
     if (check)
         std::cout << "Checking: " << draftFile << std::endl;
@@ -503,7 +507,14 @@ Options::Options(int argc, const char * argv[])
         compuDobbyGen = 3;
     else if (_cd4)
         compuDobbyGen = 4;
-    
+
+    if (virtualPositive && compuDobbyGen != 4)
+        std::cout << "Virtual positive mode is only available with Compu-Dobby IV.\n";
+    if (dobbyType == DobbyType::Unspecified && compuDobbyGen != 4) {
+        std::cout << "Assuming positive dobby.\n";
+        dobbyType = DobbyType::Positive;
+    }
+
     useNetwork = (_net || (defNetwork && _loomDevice.Get().empty())) && (compuDobbyGen == 4);
     if (_net && compuDobbyGen < 4) {
         if (envSocket || !loomDevice.empty()) {
@@ -514,10 +525,10 @@ Options::Options(int argc, const char * argv[])
         }
     }
 
-    if (compuDobbyGen == 4 && (_dobbyType || envDobbyType))
-        std::cout << "Dobby type will be provided by the loom.\n";
     if (compuDobbyGen == 4 && (_maxShafts || envShaft))
         std::cout << "Dobby shaft count will be provided by the loom.\n";
+    if (compuDobbyGen != 4 && virtualPositive)
+        std::cout << "Only Compu-Dobby IV/4.5 looms can be virtual positive dobbies.\n";
 
     if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {
         if (draftFile.ends_with(".wif"))

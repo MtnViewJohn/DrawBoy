@@ -19,7 +19,7 @@ using std::size_t;
 using std::uint64_t;
 
 enum class DobbyType {
-    Positive, Negative
+    Positive, Negative, Virtual, Unspecified
 };
 
 enum class ANSIsupport {
@@ -61,6 +61,13 @@ inline std::unordered_map<std::string, DobbyType> dobbyMap{
     {"negative", DobbyType::Negative},
     {"+", DobbyType::Positive},
     {"-", DobbyType::Negative},
+    {"virtual", DobbyType::Virtual},
+};
+inline std::unordered_map<DobbyType, const char*> dobbyName{
+    {DobbyType::Positive, "Positive"},
+    {DobbyType::Negative, "Negative"},
+    {DobbyType::Virtual, "Virtual positive"},
+    {DobbyType::Unspecified, "Unspecified"},
 };
 inline std::unordered_map<std::string, int> shaftMap{
     {"4", 4},

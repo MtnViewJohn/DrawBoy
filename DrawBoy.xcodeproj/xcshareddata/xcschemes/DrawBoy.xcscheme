@@ -185,7 +185,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_DOBBYTYPE"
             value = "Negative"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_SHAFTS"
@@ -205,7 +205,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_LOOMDEVICE"
             value = "/dev/tty.usbserial-A4008SKB"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "DRAWBOY_LOOMADDRESS"
@@ -220,7 +220,7 @@
          <EnvironmentVariable
             key = "DRAWBOY_LOOMDEVICE"
             value = ""
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>

@@ -921,6 +921,16 @@ View::run()
                             HWdobbyType = DobbyType::Negative;
                         if (loomLine.contains("pos dobby"))
                             HWdobbyType = DobbyType::Positive;
+                        if (opts.virtualPositive) {
+                            opts.dobbyType = DobbyType::Positive;
+                            if (HWdobbyType == DobbyType::Positive)
+                                std::puts("User specifies virtual positive dobby, but the loom claims to be actually positive dobby.\r\n");
+                        } else {
+                            if (opts.dobbyType != DobbyType::Unspecified && opts.dobbyType != HWdobbyType)
+                                std::print("\r\nUser says this is a {} dobby, but the loom claims to be a {} dobby.\r\n",
+                                           dobbyName[opts.dobbyType], dobbyName[HWdobbyType]);
+                            opts.dobbyType = HWdobbyType;
+                        }
                         auto fcres = std::from_chars(loomLine.data() + 17, loomLine.data() + 19, opts.maxShafts, 10);
                         if (fcres.ec != std::errc() || !legalShafts.contains(opts.maxShafts))
                             throw std::runtime_error("Illegal shaft count in loom greeting.");
@@ -930,7 +940,8 @@ View::run()
                         opts.tabbyB &= ((1 << opts.maxShafts) - 1);
                         std::print("\r\nGreeting received: {} shafts, {} dobby\r\n",
                             opts.maxShafts,
-                            opts.dobbyType == DobbyType::Positive ? "Positive" :"Negative");
+                            opts.virtualPositive ? dobbyName[DobbyType::Virtual] :
+                                   dobbyName[opts.dobbyType]);
                         AVLstate = 2;
                     } else {
                         //std::fputs(" ?", stdout);
@@ -999,7 +1010,7 @@ View::run()
     if (opts.compuDobbyGen < 4) {
         sendToLoom("\x0f\x07", false);
     } else {
-        if (HWdobbyType == DobbyType::Positive) {
+        if (HWdobbyType == DobbyType::Positive || !opts.virtualPositive) {
             sendToLoom("clear\r", true);
         } else {
             nextPick = ClearPick;

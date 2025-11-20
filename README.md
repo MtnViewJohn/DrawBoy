@@ -6,7 +6,7 @@
 
 # DESCRIPTION
 
-**drawboy** is a tool for driving an AVL Compu-Dobby I, II, III, or IV loom 
+**drawboy** is a tool for driving an AVL Compu-Dobby I, II, III, IV, or 4.5 loom 
 from a terminal interface. The picks in the specified draft file are sent to 
 the loom over a serial or ethernet interface as the user treadles the draft. 
 In addition to responding to treadle events from the loom, **drawboy** is 
@@ -28,6 +28,17 @@ support 24-bit color, which **drawboy** can take advantage of (macOS
 Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 24-bit TrueColor output.
 
+**drawboy** needs to know the configuration of the loom in order to drive it. The
+number of shafts and the dobby type (positive or negative) must be provided. 
+Compu-Dobby IV and 4.5 controllers output this information during the initial
+handshake with **drawboy**. Older Compu-Dobbies do not, so this information
+must be provided through command-line options or environment variables. **However,**
+some Compu-Dobby IV and 4.5 looms with negative dobbies will behave as if they
+are positive dobby looms. If your fabric weaves with the front and back reversed
+and the solenoids are all energized when **drawboy** quits, then you have one
+of these *virtual positive* dobby looms (the WDL is one). The **&#8209;&#8209;dobbyType=virtual**
+options tells **drawboy** that the loom is a virtual positive dobby loom.
+
 # OPTIONS
 
 **\-h**, **\-\-help**
@@ -40,11 +51,11 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 **\-\-cd1**, **\-\-cd2**, **\-\-cd3**, **\-\-cd4**
 
-> Indicates whether the loom has a Compu-Dobby I, II, III, or IV interface.
+> Indicates whether the loom has a Compu-Dobby I, II, III, or IV/4.5 interface.
 
 **\-n**, **\-\-net**
 
-> Connect to a Compu-Dobby IV loom over a network connection instead of a serial connection. If no loom device path is provided for a serial connection, then a network connection is implicitly enabled.
+> Connect to a Compu-Dobby IV/4.5 loom over a network connection instead of a serial connection. If no loom device path is provided for a serial connection, then a network connection is implicitly enabled.
 
 **\-p**_pick_, **\-\-pick**=*pick*\
 
@@ -94,11 +105,11 @@ Terminal does not). Use the **&#8209;&#8209;ansi=truecolor** option to enable
 
 **\-\-shafts**=*shaft count*
 
-> Number of shafts supported by the loom. The shaft count is required for **drawboy** to operate; except with Compu-Dobby IV looms, which provide it. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 4, 8, 12, 16, 20, 24, 28, 32, 36, or 40.
+> Number of shafts supported by the loom. The shaft count is required for **drawboy** to operate; except with Compu-Dobby IV/4.5 looms, which provide it. It can also be specified with the **DRAWBOY_SHAFTS** environment variable. Allowed values are 4, 8, 12, 16, 20, 24, 28, 32, 36, or 40.
 
 **\-\-dobbyType**=*dobby type*
 
-> Whether the loom is a positive dobby (+ or positive), or a negative dobby (\- or negative). The dobby type is required for **drawboy** to operate; except with Compu-Dobby IV looms, which provide it. It can also be specified with the **DRAWBOY_DOBBYTYPE** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby.
+> Whether the loom is a positive dobby (+ or positive), a negative dobby (\- or negative), or a virtual positive dobby (virtual). The dobby type is required for **drawboy** to operate. It can also be specified with the **DRAWBOY_DOBBYTYPE** environment variable. Most AVL looms are positive dobbies, but the Workshop Dobby Loom (WDL) is a negative dobby (but a virtual positive dobby if driven by a Compu-Dobby IV/4.5 controller).
 
 **\-\-ascii**
 
@@ -288,11 +299,12 @@ Indicates how many shafts the loom supports. Accepted values are 4, 8, 12, 16,
 
 **DRAWBOY_DOBBYTYPE**
 
-Indicates whether the loom has a positive dobby (positive or +) or a negative dobby (negative or -).
+Indicates whether the loom has a positive dobby (positive or +), a negative dobby (negative or -),
+or a virtual positive dobby (virtual).
 
 **DRAWBOY_DOBBYGENERATION**
 
-Indicates whether the loom has a Compu-Dobby I, II, III, or IV interface. Accepted
+Indicates whether the loom has a Compu-Dobby I, II, III, or IV/4.5 interface. Accepted
 values are 1 to 4.
 
 **DRAWBOY_ASCII**

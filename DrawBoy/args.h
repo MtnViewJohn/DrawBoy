@@ -33,7 +33,8 @@ struct Options {
     int loomDeviceFD = 0;
     std::unique_ptr<draft> draftContents;
     int maxShafts;
-    DobbyType dobbyType = DobbyType::Positive;
+    DobbyType dobbyType = DobbyType::Unspecified;
+    bool virtualPositive = false;
     int pick = 1;
     std::vector<int> picks;
     bool treadleThreading;
