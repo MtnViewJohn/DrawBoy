@@ -576,9 +576,9 @@ Options::Options(int argc, const char * argv[])
     
     for (size_t shaft = 0; shaft < tabby.length(); ++shaft) {
         if (tabby[shaft] == 'a')
-            tabbyA |= 1 << shaft;
+            tabbyA |= 1ull << shaft;
         else if (tabby[shaft] == 'b')
-            tabbyB |= 1 << shaft;
+            tabbyB |= 1ull << shaft;
         else
             throw std::runtime_error("Bad character in tabby specification.");
     }

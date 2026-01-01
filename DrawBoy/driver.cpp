@@ -164,7 +164,7 @@ View::calculateLift(int pick)
 {
     // Compute liftplan for pick, inverting if dobby type does not match wif type
     uint64_t lift = 0;
-    uint64_t liftMask = (1 << draftContent.maxShafts) - 1;
+    uint64_t liftMask = (1ull << draftContent.maxShafts) - 1;
     color weftColor;
     
     if (opts.treadleThreading) {
@@ -177,7 +177,7 @@ View::calculateLift(int pick)
         lift = pick == TabbyA ? opts.tabbyA : opts.tabbyB;
         weftColor = opts.tabbyColor;
         if (pick == ClearPick)
-            lift = (1 << opts.maxShafts) - 1;   // loom shafts, not draft shafts
+            lift = (1ull << opts.maxShafts) - 1;   // loom shafts, not draft shafts
     } else {
         size_t zpick = (size_t)(pick) % opts.picks.size();
         int wifPick = opts.picks[zpick];
@@ -912,8 +912,8 @@ View::run()
                 case 1:
                     // waiting for reset, sending first pick
                     if (opts.compuDobbyGen < 4 && loomLine == "\x7f\x03") {
-                        opts.tabbyA &= ((1 << opts.maxShafts) - 1);
-                        opts.tabbyB &= ((1 << opts.maxShafts) - 1);
+                        opts.tabbyA &= ((1ull << opts.maxShafts) - 1);
+                        opts.tabbyB &= ((1ull << opts.maxShafts) - 1);
                         AVLstate = 3;
                     } else if (opts.compuDobbyGen == 4 && loomLine.starts_with("<compu-dobby iv,")) {
                         static const std::set<int> legalShafts = {4, 8, 12, 16, 20, 24, 28, 32, 36, 40};
@@ -936,8 +936,8 @@ View::run()
                             throw std::runtime_error("Illegal shaft count in loom greeting.");
                         if (opts.draftContents->maxShafts > opts.maxShafts)
                             throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
-                        opts.tabbyA &= ((1 << opts.maxShafts) - 1);
-                        opts.tabbyB &= ((1 << opts.maxShafts) - 1);
+                        opts.tabbyA &= ((1ull << opts.maxShafts) - 1);
+                        opts.tabbyB &= ((1ull << opts.maxShafts) - 1);
                         std::print("\r\nGreeting received: {} shafts, {} dobby\r\n",
                             opts.maxShafts,
                             opts.virtualPositive ? dobbyName[DobbyType::Virtual] :

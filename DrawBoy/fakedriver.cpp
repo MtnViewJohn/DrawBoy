@@ -305,7 +305,7 @@ View::connect()
                                 str = "\r";
                             } else {
                                 str = *(res.ptr) == ',' ? res.ptr + 1 : res.ptr;
-                                lift |= 1 << (shaft - 1);
+                                lift |= 1ull << (shaft - 1);
                                 if (shaft > shafts) shafts = shaft;
                             }
                         }
@@ -326,7 +326,7 @@ View::connect()
                     bool tooMany = shafts > (uint64_t)opts.maxShafts;
                     shafts = (uint64_t)opts.maxShafts;
                     for (uint64_t shaft = 0; shaft < shafts; ++shaft)
-                        std::fputs((lift & (1 << shaft)) ? shaftChar : " ", stdout);
+                        std::fputs((lift & (1ull << shaft)) ? shaftChar : " ", stdout);
                     std::putchar('|');
                     std::printf("%s%s %s %s%s\r\n", Term::Style::reset, opts.ascii ? "" : Term::Style::bold,
                                 tooMany ? "too many shafts!" : "",

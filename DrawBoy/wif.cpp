@@ -398,7 +398,7 @@ wif::processKeyLines(bool multi)
             if (*end == ',' && !multi)
                 throw std::runtime_error("Drawboy doesn't handle ends with multiple shafts");
             if (shaft >= 1 && shaft <= maxShafts)
-                keyLines[i] |= 1 << (shaft - 1);
+                keyLines[i] |= 1ull << (shaft - 1);
             else
                 extraShafts = true;
             if (*end != ',') break;

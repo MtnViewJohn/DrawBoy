@@ -165,7 +165,7 @@ readSectiontoVector(FILE* dtxstream, const char* name)
             uint64_t v = 0;
             std::basic_istringstream shafts(std::string(line.begin(), term_end));
             for (std::string shaft; std::getline(shafts, shaft, ',');)
-                v |= 1 << (std::stoi(shaft) - 1);
+                v |= 1ull << (std::stoi(shaft) - 1);
             ret.push_back(v);
             if (space == std::string_view::npos) {
                 line.remove_prefix(line.length());
@@ -206,7 +206,7 @@ readTieup(FILE* dtxstream, bool& rising)
     for (size_t treadle = 0; treadle < treadles; ++treadle)
         for (size_t shaft = 0; shaft < shafts; ++shaft)
             if (tieupstrings[shaft][treadle] == '1')
-                tieup[treadle] |= 1 << shaft;
+                tieup[treadle] |= 1ull << shaft;
     
     return tieup;
 }
