@@ -165,7 +165,8 @@ readSectiontoVector(FILE* dtxstream, const char* name)
             uint64_t v = 0;
             std::basic_istringstream shafts(std::string(line.begin(), term_end));
             for (std::string shaft; std::getline(shafts, shaft, ',');)
-                v |= 1ull << (std::stoi(shaft) - 1);
+                if (shaft != "0")
+                    v |= 1ull << (std::stoi(shaft) - 1);
             ret.push_back(v);
             if (space == std::string_view::npos) {
                 line.remove_prefix(line.length());
