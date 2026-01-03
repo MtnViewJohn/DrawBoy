@@ -203,11 +203,11 @@ readTieup(FILE* dtxstream, bool& rising)
     
     size_t treadles = tieupstrings.front().length();
     size_t shafts = tieupstrings.size();
-    tieup.assign(treadles, 0);
+    tieup.assign(treadles + 1, 0);
     for (size_t treadle = 0; treadle < treadles; ++treadle)
         for (size_t shaft = 0; shaft < shafts; ++shaft)
             if (tieupstrings[shaft][treadle] == '1')
-                tieup[treadle] |= 1ull << shaft;
+                tieup[treadle + 1] |= 1ull << shaft;
     
     return tieup;
 }
@@ -295,7 +295,7 @@ dtx::dtx(FILE* dtxstream)
             throw std::runtime_error("Dtx file has wrong number of picks in liftplan.");
     } else {
         tieup = readTieup(dtxstream, risingShed);
-        if (tieup.size() != (size_t)maxTreadles)
+        if (tieup.size() != (size_t)maxTreadles + 1)
             throw std::runtime_error("Dtx file has wrong number of treadles in tieup.");
         auto treadling = readSectiontoVector(dtxstream, "Treadling");
         if (treadling.size() != (size_t)picks + 1)
@@ -304,7 +304,7 @@ dtx::dtx(FILE* dtxstream)
         liftplan.reserve((size_t)picks + 1);
         for (auto treadles: treadling) {
             uint64_t lift = 0;
-            size_t treadle = 0;
+            size_t treadle = 1;
             while (treadles) {
                 if (treadles & 1)
                     lift |= tieup[treadle];

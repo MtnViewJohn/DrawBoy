@@ -125,7 +125,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;gudruns towel4.dtx&quot;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1~8"
@@ -149,7 +149,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "loomtest_24shaft_pos.wif"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel4.wif&apos;"
