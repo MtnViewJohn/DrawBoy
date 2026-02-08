@@ -16,11 +16,9 @@
 #include <cctype>
 
 namespace {
-static malloc_holder mh(1024);
-
-std::string_view currentline()
+std::string_view currentline(std::string& line)
 {
-    std::string_view str(mh.buffer);
+    std::string_view str(line);
     while (!str.empty() && std::isspace(str.back()))
         str.remove_suffix(1);
     while (!str.empty() && std::isspace(str.front()))
@@ -29,14 +27,14 @@ std::string_view currentline()
 }
 
 bool
-seekSection(FILE* dtxstream, const char* name)
+seekSection(std::ifstream& dtxstream, const char* name)
 {
-    std::rewind(dtxstream);
+    dtxstream.clear();
+    dtxstream.seekg(0);
     size_t nameLen = std::strlen(name);
     
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0)
-    {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == nameLen + 2 &&
             line.starts_with("@@") &&
             line.ends_with(name))
@@ -48,14 +46,14 @@ seekSection(FILE* dtxstream, const char* name)
 }
 
 std::set<std::string>
-readContentsToSet(FILE* dtxstream)
+readContentsToSet(std::ifstream& dtxstream)
 {
     std::set<std::string> contents;
     if (!seekSection(dtxstream, "Contents"))
         return contents;
     
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
         contents.insert(std::string(line));
@@ -65,14 +63,14 @@ readContentsToSet(FILE* dtxstream)
 }
 
 std::map<std::string, int>
-readInfoToMap(FILE* dtxstream)
+readInfoToMap(std::ifstream& dtxstream)
 {
     std::map<std::string, int> infomap;
     if (!seekSection(dtxstream, "Info"))
         return infomap;
     
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
 
@@ -88,12 +86,12 @@ readInfoToMap(FILE* dtxstream)
 }
 
 std::vector<color>
-ReadColorPalettte(FILE* dtxstream)
+ReadColorPalettte(std::ifstream& dtxstream)
 {
     std::vector<color> palette;
     if (seekSection(dtxstream, "Color Palet")) {
-        while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-            auto line = currentline();
+        for (std::string _line; std::getline(dtxstream, _line);) {
+            auto line = currentline(_line);
             if (line.length() == 0) break;
             if (line.starts_with("@@")) break;
 
@@ -118,15 +116,15 @@ ReadColorPalettte(FILE* dtxstream)
 }
 
 std::vector<color>
-readColorSection(FILE* dtxstream, const char* name, const std::vector<color>& palette)
+readColorSection(std::ifstream& dtxstream, const char* name, const std::vector<color>& palette)
 {
     std::vector<color> colors;
     if (!seekSection(dtxstream, name))
         return colors;
     colors.push_back({});      // 1-based array
     
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
 
@@ -146,7 +144,7 @@ readColorSection(FILE* dtxstream, const char* name, const std::vector<color>& pa
 }
 
 std::vector<uint64_t>
-readSectiontoVector(FILE* dtxstream, const char* name)
+readSectiontoVector(std::ifstream& dtxstream, const char* name)
 {
     std::vector<uint64_t> ret;
     if (!seekSection(dtxstream, name))
@@ -154,8 +152,8 @@ readSectiontoVector(FILE* dtxstream, const char* name)
     
     ret.push_back(0);           // 1-based array
 
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
 
@@ -182,7 +180,7 @@ readSectiontoVector(FILE* dtxstream, const char* name)
 }
 
 std::vector<uint64_t>
-readTieup(FILE* dtxstream, bool& rising)
+readTieup(std::ifstream& dtxstream, bool& rising)
 {
     std::vector<uint64_t> tieup;
     if (!seekSection(dtxstream, "Tieup"))
@@ -190,8 +188,8 @@ readTieup(FILE* dtxstream, bool& rising)
     
     std::vector<std::string> tieupstrings;
 
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
         if (line.compare("%%%%sinking") == 0) {
@@ -213,7 +211,7 @@ readTieup(FILE* dtxstream, bool& rising)
 }
 
 std::vector<uint64_t>
-readLiftplan(FILE* dtxstream, bool& rising)
+readLiftplan(std::ifstream& dtxstream, bool& rising)
 {
     std::vector<uint64_t> liftplan;
     if (!seekSection(dtxstream, "Liftplan"))
@@ -221,8 +219,8 @@ readLiftplan(FILE* dtxstream, bool& rising)
     
     liftplan.push_back(0);           // liftplan is a 1-based array
 
-    while (::getline(&mh.buffer, &mh.capacity, dtxstream) >= 0) {
-        auto line = currentline();
+    for (std::string _line; std::getline(dtxstream, _line);) {
+        auto line = currentline(_line);
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
         if (line.compare("%%%%sinking") == 0) {
@@ -243,7 +241,7 @@ readLiftplan(FILE* dtxstream, bool& rising)
 }
 }
 
-dtx::dtx(FILE* dtxstream)
+dtx::dtx(std::ifstream& dtxstream)
 {
     if (!seekSection(dtxstream, "StartDTX"))
         throw std::runtime_error("Error in dtx file: no StartDTX section.");

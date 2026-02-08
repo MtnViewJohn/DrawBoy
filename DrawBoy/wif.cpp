@@ -94,7 +94,7 @@ namespace  {
 
 }
 
-wif::wif(FILE* _wifstream)
+wif::wif(std::ifstream& _wifstream)
 : wifstream(_wifstream)
 {
     if (!seekSection("WIF"))
@@ -282,15 +282,16 @@ wif::wif(FILE* _wifstream)
 bool
 wif::seekSection(const char* name)
 {
-    std::rewind(wifstream);
+    wifstream.clear();
+    wifstream.seekg(0);
     size_t nameLen = std::strlen(name);
-    malloc_holder mh(1024);
     
-    while (::getline(&mh.buffer, &mh.capacity, wifstream) >= 0)
-    {
-        if (std::strlen(mh.buffer) >= nameLen + 2 && mh.buffer[0] == '[' &&
-            ::strncasecmp(mh.buffer + 1, name, nameLen) == 0
-            && mh.buffer[nameLen + 1] == ']')
+    for (std::string line; std::getline(wifstream, line);) {
+        if (!line.contains(name))
+            continue;
+        if (line.length() >= nameLen + 2 && line[0] == '[' &&
+            ::strncasecmp(line.data() + 1, name, nameLen) == 0
+            && line[nameLen + 1] == ']')
         {
             return true;
         }
@@ -308,76 +309,67 @@ wif::readSection(const char* name, int numlines, const std::string& defValue)
     numberKeys.clear();
     numberKeys.resize((size_t)numlines + 1, defValue);
     
-    malloc_holder mh(1024);
-    
-    std::string line;
-    for (;;) {
-        line.clear();
-        for (;;) {
-            ssize_t len = ::getline(&mh.buffer, &mh.capacity, wifstream);
-            if (len < 0) {
-                if (std::ferror(wifstream))
-                    throw std::system_error(errno, std::generic_category(), "Error reading wif file");
-                break;
-            }
-            line.append(mh.buffer);
-            if (line.ends_with("\\\n")) {   // if continuation then keep going
-                line.pop_back();
-                line.pop_back();
-                continue;
-            }
-            if (line.back() == '\\') {
-                line.pop_back();
-                break;          // if continuation at EOF (!?!?) stop
-            }
-            break;
-        }
-        if (line.starts_with('[')) break;       // hit next section
-        
+    std::string assembled_line;
+    for (std::string line; std::getline(wifstream, line);) {
         line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
         line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
-        if (line.empty()) break;                // hit end of section
-        if (line.front() == ';') continue;           // hit comment
-        
-        size_t eqpos = line.find('=');
-        if (eqpos == std::string::npos || eqpos == 0 || eqpos == line.length() - 1)
-            throw annotated_runtime_error("Error in wif file: ", line);
-        std::string value = line.substr(eqpos + 1);
-        value.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
-        if (!value.empty() && value.front() == ';') value.clear();
-        
-        size_t digpos = 0;
-        while (std::isdigit(+line[digpos])) ++digpos;
-        
-        if (digpos > 0) {
-            if (digpos != eqpos && std::isprint(+line[digpos]))
-                throw annotated_runtime_error("Error in wif file: ", line);
-            try {
-                size_t i = (size_t)std::stoi(line);
-                if (i < 1)
-                    throw annotated_runtime_error("Error in wif file: ", line);
-                if (i < numberKeys.size())
-                    numberKeys[i] = std::move(value);
-                else
-                    std::cerr << "Extra keyline in section " << name << std::endl;
-            } catch (std::logic_error&) {
-                throw annotated_runtime_error("Error in wif file: ", line);
-            }
-        } else {
-            std::string key = line.substr(0, eqpos);
-            key.erase(key.find_last_not_of(" \t\n\r\f\v") + 1);
-            if (key.empty())
-                throw annotated_runtime_error("Error in wif file: ", line);
-            for (char& c: key)
-                c = (char)std::tolower(+c);
-            auto there = nameKeys.try_emplace(std::move(key), std::move(value));
-            if (!there.second) {
-                std::cerr << "Duplicate key in wif section, ignoring: " << line << std::endl;
-            }
+        if (line.starts_with('['))
+            break;
+        assembled_line.append(line);
+        if (assembled_line.ends_with('\\')) {
+            assembled_line.pop_back();
+            continue;
         }
+        processLine(assembled_line, name);
+        assembled_line.clear();
     }
+    processLine(assembled_line, name);
     return true;
 }
+
+void
+wif::processLine(std::string &line, const char* name)
+{
+    if (line.empty() || line.front() == ';') return;
+
+    size_t eqpos = line.find('=');
+    if (eqpos == std::string::npos || eqpos == 0 || eqpos == line.length() - 1)
+        throw annotated_runtime_error("Error in wif file: ", line);
+    std::string value = line.substr(eqpos + 1);
+    value.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
+    if (!value.empty() && value.front() == ';') value.clear();
+    
+    size_t digpos = 0;
+    while (std::isdigit(+line[digpos])) ++digpos;
+    
+    if (digpos > 0) {
+        if (digpos != eqpos && std::isprint(+line[digpos]))
+            throw annotated_runtime_error("Error in wif file: ", line);
+        try {
+            size_t i = (size_t)std::stoi(line);
+            if (i < 1)
+                throw annotated_runtime_error("Error in wif file: ", line);
+            if (i < numberKeys.size())
+                numberKeys[i] = std::move(value);
+            else
+                std::cerr << "Extra keyline in section " << name << std::endl;
+        } catch (std::logic_error&) {
+            throw annotated_runtime_error("Error in wif file: ", line);
+        }
+    } else {
+        std::string key = line.substr(0, eqpos);
+        key.erase(key.find_last_not_of(" \t\n\r\f\v") + 1);
+        if (key.empty())
+            throw annotated_runtime_error("Error in wif file: ", line);
+        for (char& c: key)
+            c = (char)std::tolower(+c);
+        auto there = nameKeys.try_emplace(std::move(key), std::move(value));
+        if (!there.second) {
+            std::cerr << "Duplicate key in wif section, ignoring: " << line << std::endl;
+        }
+    }
+}
+
 
 std::vector<uint64_t>
 wif::processKeyLines(bool multi)

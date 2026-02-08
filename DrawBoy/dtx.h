@@ -6,11 +6,11 @@
 //
 
 #pragma once
-#include <cstdio>
+#include <fstream>
 #include <string>
 #include "draft.h"
 
 class dtx : public draft {
 public:
-    dtx(FILE* _dtxstream);
+    dtx(std::ifstream& _dtxstream);
 };

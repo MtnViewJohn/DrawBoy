@@ -26,6 +26,7 @@
 #include <netdb.h>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 
 namespace {
 struct addr_deleter {
@@ -140,12 +141,6 @@ initLoomPort(int fd, int cdgen)
     if (::tcsetattr(fd, TCSAFLUSH, &term) < 0)
         throw make_system_error("Cannot communicate with loom device");
 }
-
-struct file_deleter {
-    void operator()(std::FILE* fp) { std::fclose(fp); }
-};
-
-using unique_file = std::unique_ptr<std::FILE, file_deleter>;
 
 void
 addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool patternBeforeTabby)
@@ -530,11 +525,11 @@ Options::Options(int argc, const char * argv[])
     if (compuDobbyGen != 4 && virtualPositive)
         std::cout << "Only Compu-Dobby IV/4.5 looms can be virtual positive dobbies.\n";
 
-    if (auto draftfileowner = unique_file(std::fopen(draftFile.c_str(), "r"))) {
+    if (auto draftfileowner = std::ifstream(draftFile)) {
         if (draftFile.ends_with(".wif"))
-            draftContents = std::make_unique<wif>(draftfileowner.get());
+            draftContents = std::make_unique<wif>(draftfileowner);
         else if (draftFile.ends_with(".dtx"))
-            draftContents = std::make_unique<dtx>(draftfileowner.get());
+            draftContents = std::make_unique<dtx>(draftfileowner);
         else
             throw std::runtime_error("Unknown draft file type (not wif or dtx).");
     } else {

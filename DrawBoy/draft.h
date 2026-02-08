@@ -15,15 +15,6 @@
 using std::size_t;
 using std::uint64_t;
 
-struct malloc_holder {
-    malloc_holder(size_t _cap)
-    : buffer(_cap ? (char*)std::malloc(_cap) : nullptr),
-      capacity(_cap) {}
-    ~malloc_holder() { std::free((void*)buffer);}
-    char* buffer = nullptr;
-    size_t capacity = 0;
-};
-
 class draft {
 public:
     virtual ~draft() = default;

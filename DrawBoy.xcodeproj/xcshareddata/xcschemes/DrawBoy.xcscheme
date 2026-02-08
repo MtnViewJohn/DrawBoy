@@ -112,7 +112,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--shafts 24"
+            argument = "--shafts=24"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -126,6 +126,10 @@
          <CommandLineArgument
             argument = "&quot;gudruns towel4.dtx&quot;"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;weaving/shawl Alderman angora.wif&quot;"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=1~8"
