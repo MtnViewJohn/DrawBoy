@@ -116,6 +116,7 @@ struct View
     Mode oldMode = Mode::Weave;
     int oldPick = -1;
     bool weaveForward = true;
+    bool doneTreadling = false;
     
     LogDirection logdirn = LogDirection::Unknown;
     
@@ -644,6 +645,8 @@ View::setPick(int newPick)
 {
     nextPick = newPick;
     int psize = opts.treadleThreading ? draftContent.ends : (int)opts.picks.size();
+    if (opts.treadleThreading && (newPick < 0 || newPick >= draftContent.ends))
+        doneTreadling = true;
     if (nextPick >= 9999)
         nextPick -= (nextPick / psize) * psize;
     while (nextPick < 0)
@@ -979,6 +982,11 @@ View::run()
                     }
                     if (loomLine == armsUp && loomState != Arms::Up) {
                         // Shed is closed, next shed is fixed
+                        if (doneTreadling) {
+                            std::puts("\r\n\r\nAll done treadling the threading!\r\n");
+                            mode = Mode::Quit;
+                            break;
+                        }
                         loomState = Arms::Up;
                         currentPick = nextPick;
                         colorCheck(displayPick());

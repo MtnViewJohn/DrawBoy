@@ -92,7 +92,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pick=-10"
+            argument = "--pick=500"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -121,7 +121,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=7x1~8,14x(9-36,ab,~90),93-100,7x101-108,AB,~90"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;gudruns towel4.dtx&quot;"
