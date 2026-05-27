@@ -525,6 +525,9 @@ Options::Options(int argc, const char * argv[])
     if (compuDobbyGen != 4 && virtualPositive)
         std::cout << "Only Compu-Dobby IV/4.5 looms can be virtual positive dobbies.\n";
 
+    if (_picks && _threading)
+        throw std::runtime_error("Must not specify a pick list when treadling the threading.");
+
     if (auto draftfileowner = std::ifstream(draftFile)) {
         if (draftFile.ends_with(".wif"))
             draftContents = std::make_unique<wif>(draftfileowner);
@@ -565,6 +568,15 @@ Options::Options(int argc, const char * argv[])
             throw std::runtime_error("Loom device is not a serial port.");
         
         initLoomPort(loomDeviceFD, compuDobbyGen);
+    }
+    
+    if (pick < 0) {
+        if (treadleThreading) {
+            pick = -pick;
+            reverseTreadle = true;
+        } else {
+            pick += draftContents->picks + 1;
+        }
     }
     
     std::string tabby = args::get(_tabby);

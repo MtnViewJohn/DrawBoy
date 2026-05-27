@@ -65,7 +65,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--threading"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--net"
@@ -92,8 +92,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pick=last"
-            isEnabled = "NO">
+            argument = "--pick=-10"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabbycolor=FF00FF"
@@ -121,7 +121,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=7x1~8,14x(9-36,ab,~90),93-100,7x101-108,AB,~90"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;gudruns towel4.dtx&quot;"

@@ -888,6 +888,9 @@ View::run()
             break;
     }
     
+    if (opts.reverseTreadle)
+        weaveForward = false;
+    
     sendToLoom(loomReset, false);
     
     int AVLstate = 1;

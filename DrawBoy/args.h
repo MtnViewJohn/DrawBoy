@@ -38,6 +38,7 @@ struct Options {
     int pick = 1;
     std::vector<int> picks;
     bool treadleThreading;
+    bool reverseTreadle = false;
     color tabbyColor;
     bool ascii;
     ColorAlert colorAlert;
