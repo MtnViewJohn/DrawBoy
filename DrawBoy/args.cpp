@@ -544,6 +544,14 @@ Options::Options(int argc, const char * argv[])
         return;
     }
     
+    if (treadleThreading) {
+        draftContents->liftplan = draftContents->threading;
+        draftContents->picks = draftContents->ends;
+        draftContents->weftColor = draftContents->warpColor;
+        draftContents->risingShed = true;
+        draftContents->maxTreadles = draftContents->maxShafts;
+    }
+    
     parsePicks(args::get(_picks), draftContents->picks);
     
     if (draftContents->maxShafts > maxShafts && compuDobbyGen < 4)
