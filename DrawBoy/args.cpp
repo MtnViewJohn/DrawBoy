@@ -525,9 +525,6 @@ Options::Options(int argc, const char * argv[])
     if (compuDobbyGen != 4 && virtualPositive)
         std::cout << "Only Compu-Dobby IV/4.5 looms can be virtual positive dobbies.\n";
 
-    if (_picks && _threading)
-        throw std::runtime_error("Must not specify a pick list when treadling the threading.");
-
     if (auto draftfileowner = std::ifstream(draftFile)) {
         if (draftFile.ends_with(".wif"))
             draftContents = std::make_unique<wif>(draftfileowner);
