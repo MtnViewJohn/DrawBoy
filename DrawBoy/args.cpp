@@ -375,7 +375,7 @@ Options::Options(int argc, const char * argv[])
         envAddress, args::Options::Single);
     args::MapFlag<std::string, int> _maxShafts(parser, "SHAFT_COUNT",
         "Number of shafts on the loom", {"shafts"}, shaftMap, defShaft,
-        defShaft ? args::Options::Single : args::Options::Required | args::Options::Single);
+        args::Options::Single);
     args::MapFlag<std::string, DobbyType, ToLowerReader> _dobbyType(parser, "DOBBY_TYPE",
         "Is the loom a positive, negative, or virtual positive dobby (+ and - are also accepted)", {"dobbyType"},
         dobbyMap, defDobby, args::Options::Single);
@@ -399,6 +399,8 @@ Options::Options(int argc, const char * argv[])
                 throw args::ParseError("Option loom device path or loom network address is required: --loomDevice or --loomAddress.");
             if (_net && args::get(_loomAddress).data()[0] == '\0')
                 throw args::ParseError("Option loom  network address is required for network mode: --loomAddress.");
+            if (!_cd4 && defGen != 4 && !_maxShafts)
+                throw args::ParseError("Option --shaft required unless Compu-Dobby 4/4.5.");
             if (_pick) {
                 bool autoPick = _pick.Get().starts_with("last");
                 int pickNum = 0;
