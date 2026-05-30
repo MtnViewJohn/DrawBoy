@@ -27,6 +27,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 
 namespace {
 struct addr_deleter {
@@ -367,6 +368,8 @@ Options::Options(int argc, const char * argv[])
         {"tabbycolor"}, "00FF00", args::Options::Single);
     args::Flag _threading(parser, "treadle the threading", "Treadle the threading, instead of the picks",
         {"threading"}, args::Options::Single);
+    args::ValueFlag<std::string> _sleying(parser, "SLEYING_PATTERN", "Pattern used for sleying the reed",
+        {"sley"}, "", args::Options::Single);
     args::ValueFlag<std::string> _loomDevice(parser, "LOOM_PATH",
         "The path of the loom device in the /dev directory", {"loomDevice"},
         envLoom, args::Options::Single);
@@ -542,16 +545,85 @@ Options::Options(int argc, const char * argv[])
         driveLoom = false;
         return;
     }
-    
+
+    parsePicks(args::get(_picks), treadleThreading ? draftContents->ends : draftContents->picks);
+
+    bool reverseTreadle = false;
+    if (pick <= 0) {
+        if (treadleThreading) {
+            pick = -pick;
+            reverseTreadle = true;
+        } else {
+            pick += picks.size();
+        }
+    }
+
     if (treadleThreading) {
-        draftContents->liftplan = draftContents->threading;
-        draftContents->picks = draftContents->ends;
-        draftContents->weftColor = draftContents->warpColor;
+        if (pick == 0 || pick > (int)picks.size())
+            throw std::runtime_error("Bad --pick value. Must correspond to an end in the threading.");
+        std::vector<size_t> sleying;
+        if (_sleying) {
+            treadleSleying = true;
+            size_t sleyNum = 0;
+            const char* sleyChar = _sleying.Get().c_str();
+            const char* sleyEnd = sleyChar + _sleying.Get().length();
+            for(;;) {
+                auto sleyValid = std::from_chars(sleyChar, sleyEnd, sleyNum);
+                if (sleyValid.ec != std::errc{} || sleyNum < 0)
+                    throw std::runtime_error("Parse error in --sley option.");
+                sleying.push_back(sleyNum);
+                if (sleyValid.ptr == sleyEnd)
+                    break;
+                if (*sleyValid.ptr != ',')
+                    throw std::runtime_error("Parse error in --sley option.");
+                sleyChar = sleyValid.ptr + 1;
+            };
+        } else {
+            sleying.push_back(1);
+        }
+            
+        std::vector<int> newPicks;
+        size_t zpick = (size_t)pick - 1;                // 0-based version of pick
+        draftContents->liftplan.clear();
+        draftContents->liftplan.push_back(0);           // 1-based
+        draftContents->weftColor.clear();
+        draftContents->weftColor.push_back(color());    // 1-based
+        draftContents->picks = 0;
         draftContents->risingShed = true;
         draftContents->maxTreadles = draftContents->maxShafts;
+
+        for (size_t dentIndex = 0, pickIndex = 0; pickIndex < picks.size(); ++dentIndex) {
+            size_t endsInDent = sleying[dentIndex % sleying.size()];
+            if (reverseTreadle ? (zpick < pickIndex)
+                               : (pickIndex + endsInDent <= zpick))
+            {
+                pickIndex += endsInDent;
+                continue;
+            }
+            // If the starting point is in the current dent then make sure that
+            // the whole dent is filled
+            if (zpick >= pickIndex && zpick < pickIndex + endsInDent) {
+                if (reverseTreadle && zpick != pickIndex + endsInDent - 1)
+                    throw std::runtime_error("Start pick is not left-most in the dent.");
+                if (!reverseTreadle && zpick != pickIndex)
+                    throw std::runtime_error("Start pick is not right-most in the dent.");
+            }
+            uint64_t lift = 0;
+            if (pickIndex + endsInDent > picks.size())   // last dent might be scant
+                endsInDent = picks.size() - pickIndex;
+            for (size_t i = 0; i < endsInDent; ++i)
+                lift |= draftContents->threading[(size_t)picks[pickIndex + i]];
+            draftContents->liftplan.push_back(lift);
+            draftContents->weftColor.push_back(draftContents->warpColor[(size_t)picks[pickIndex]]);
+            ++draftContents->picks;
+            newPicks.push_back(draftContents->picks);
+            pickIndex += endsInDent;
+        }
+        if (reverseTreadle)
+            std::reverse(newPicks.begin(), newPicks.end());
+        std::swap(picks, newPicks); // replace original pick list with flat list
+        pick = 1;
     }
-    
-    parsePicks(args::get(_picks), draftContents->picks);
     
     if (draftContents->maxShafts > maxShafts && compuDobbyGen < 4)
         throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
@@ -575,15 +647,6 @@ Options::Options(int argc, const char * argv[])
             throw std::runtime_error("Loom device is not a serial port.");
         
         initLoomPort(loomDeviceFD, compuDobbyGen);
-    }
-    
-    if (pick < 0) {
-        if (treadleThreading) {
-            pick = -pick;
-            reverseTreadle = true;
-        } else {
-            pick += draftContents->picks + 1;
-        }
     }
     
     std::string tabby = args::get(_tabby);

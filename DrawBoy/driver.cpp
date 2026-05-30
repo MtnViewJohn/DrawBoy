@@ -20,6 +20,7 @@
 #include <print>
 #include <set>
 #include <deque>
+#include <bit>
 
 namespace {
 std::string pickString(int pick, bool padded)
@@ -241,6 +242,11 @@ View::displayPick()
             std::putchar(' ');
     std::putchar('|');
     std::fputs(reset(), stdout);
+
+    if (opts.treadleSleying) {
+        int ends = std::popcount(lift);
+        std::print(" sley {} end{}", ends, ends == 1 ? ' ' : 's');
+    }
 
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
@@ -884,12 +890,9 @@ View::run()
         if (n == 0)
             break;
     }
-    
-    if (opts.reverseTreadle)
-        weaveForward = false;
-    
+
     sendToLoom(loomReset, false);
-    
+
     int AVLstate = 1;
     bool atLeastOnce = false;
     bool doAdvancePick = false;
