@@ -697,7 +697,10 @@ Options::Options(int argc, const char * argv[])
             for (size_t i = 0; i < endsInDent; ++i)
                 lift |= draftContents->threading[pickIndex + i];
             draftContents->liftplan.push_back(lift);
-            draftContents->weftColor.push_back(draftContents->warpColor[pickIndex]);
+            if (_sleying)
+                draftContents->weftColor.push_back(color((double)endsInDent, (double)endsInDent, (double)endsInDent));
+            else
+                draftContents->weftColor.push_back(draftContents->warpColor[pickIndex]);
             ++draftContents->picks;
             pickIndex += endsInDent;
         }

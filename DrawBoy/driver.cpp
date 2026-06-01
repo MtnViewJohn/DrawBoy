@@ -20,7 +20,6 @@
 #include <print>
 #include <set>
 #include <deque>
-#include <bit>
 
 namespace {
 std::string pickString(int pick, int picks, bool padded)
@@ -200,6 +199,11 @@ color
 View::displayPick()
 {
     auto [lift, weftColor] = calculateLift(currentPick);
+    int endsInDent = 0;
+    if (opts.treadleSleying) {
+        endsInDent = (int)weftColor.red;
+        weftColor = color();
+    }
 
     // Output drawdown
     std::putchar('\r');
@@ -238,10 +242,8 @@ View::displayPick()
     std::putchar('|');
     std::fputs(reset(), stdout);
 
-    if (opts.treadleSleying) {
-        int ends = std::popcount(lift);
-        std::print(" sley {} end{}", ends, ends == 1 ? ' ' : 's');
-    }
+    if (opts.treadleSleying)
+        std::print(" sley {} end{}", endsInDent, endsInDent == 1 ? "" : "s");
 
     Term::clearToEOL();
     std::fputs("\r\n", stdout);
