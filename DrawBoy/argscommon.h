@@ -44,7 +44,8 @@ enum class ColorAlert {
 
 enum TabbyPick {
     TabbyA = -1,
-    TabbyB = -2
+    TabbyB = -2,
+    TabbyNext = -3
 };
 
 inline const char* envLoom = std::getenv("DRAWBOY_LOOMDEVICE");

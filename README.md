@@ -59,7 +59,7 @@ options tells **drawboy** that the loom is a virtual positive dobby loom.
 
 **\-p**_pick_, **\-\-pick**=*pick*\
 
-> Sets the initial pick from the pick list to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list.
+> Sets the initial pick from the liftplan to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list. Non-positive picks also result in a modulo calculation.
 
 **\-plast**, **\-\-pick**=**last**\
 **\-plast\-**_offset_, **\-\-pick=last\-**_offset_\
@@ -69,11 +69,15 @@ options tells **drawboy** that the loom is a virtual positive dobby loom.
 
 **\-P**_picklist_, **\-\-picks**=*picklist*
 
-> Sets the list of picks from the draft file to weave. This is a comma-separated list of pick ranges with an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The pick range can a single number, a pair of numbers separated by a hyphen, or an arbitrary list of tabby picks (ab).
+> Replaces the liftplan with a subset from the draft file to weave. This is a comma-separated list of pick ranges each of which can have an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The pick range can a single number, a pair of numbers separated by a hyphen, an arbitrary list of tabby picks (ab), or a full picklist enclosed in parentheses. Arbitrarily nested picklists within picklists are allowed.
 
 > Pick ranges can also insert a tabby pick with each pattern pick from the draft file. A single pick preceeded by a tilde (~) will insert the appropriate tabby pick along with the specified draft pick. A range of picks separated by a tilde instead of a hyphen will insert a tabby pick with each draft pick.
 
 > The default pick list is the entire draft file.
+
+**\-\-ends**=*endlist*
+
+> Replaces the threading with a subset from the draft file to weave. This is a comma-separated list of end ranges each of which can have an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The end range can a single number, a pair of numbers separated by a hyphen, or a full endlist enclosed in parentheses. Arbitrarily nested endlists within endlists are allowed.
 
 **\-\-tabby**=*tabby spec*
 
@@ -89,7 +93,11 @@ options tells **drawboy** that the loom is a virtual positive dobby loom.
 
 **\-\-threading**
 
-> Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the threading to rise, in order from right to left. The appropriate end color is indicated in the pick view. Put **drawboy** in Reverse mode to treadle the threading from left to right.
+> Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the threading to rise, in order from right to left. The appropriate end color is indicated in the pick view. The **\-\-pick** option can be used to start at a different end in the threading. Specifying a negative pick will start treadling the threading from left to right from that end.
+
+**\-\-sley**=*sleying pattern*
+
+> Enables Treadle-the-Sleying mode. The *sleying pattern* is a list of number separated by commas that indicates how many ends to put in each dent from right to left (0 for empty dents). Treadling the loom causes the shafts for the next dent in the threading to rise, in order from right to left, cycling through the *sleying pattern*. The **\-\-pick** option can be used to start at a different end in the sleying. Specifying a negative pick will start treadling the sleying from left to right from that end. The specified end must be right-most in the dent if sleying right to left; or it must be left-most in the dent if sleying left to right. 
 
 **\-\-alertColor**=*alert color*
 
@@ -155,10 +163,6 @@ r - **Reverse Weaving**
 s - **Select Pick**
 
 > Select the next pick in the pick list. The up and down arrows act as shortcuts for selecting the previous or next pick in the pick list.
-
-p - **Change Pick List**
-
-> Overrides the pick list. The pick list specification is the same format as with the command line option. Changing the pick list resets the pick to 1.
 
 q - **Quit**
 

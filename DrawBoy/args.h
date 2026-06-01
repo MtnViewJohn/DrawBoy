@@ -23,8 +23,9 @@ class draft;
 struct Options {
     Options(int argc, const char * argv[]);
     ~Options();
-    void parsePicks(const std::string& str, int maxPick);
-    
+    void parsePicks(const std::string& str);
+    void parseEnds(const std::string& str);
+
     bool driveLoom = true;
     int compuDobbyGen;
     bool useNetwork;
@@ -36,7 +37,6 @@ struct Options {
     DobbyType dobbyType = DobbyType::Unspecified;
     bool virtualPositive = false;
     int pick = 1;
-    std::vector<int> picks;
     bool treadleThreading;
     bool treadleSleying = false;
     color tabbyColor;

@@ -63,10 +63,11 @@ connection. If no loom device path is provided for a serial connection, then a
 network connection is implicitly enabled.
 .TP
 \fB\-p\fP\fIpick\fP, \fB\-\-pick\fP=\fIpick\fP
-Sets the initial pick from the pick list to start weaving. The default pick is
+Sets the initial pick from the liftplan to start weaving. The default pick is
 the first pick in the pick list. If the specified pick is larger than size of
 the pick list then a modulo calculation is performed to determine where to
-start weaving in the pick list.
+start weaving in the pick list. Non-positive picks also result in a modulo
+calculation.
 
 .TP
 \fB\-plast\fP, \fB\-\-pick=last\fP
@@ -80,11 +81,12 @@ or minus an offset.
 
 .TP
 \fB\-P\fP\fIpicklist\fP, \fB\-\-picks\fP=\fIpicklist\fP
-Sets the list of picks from the draft file to weave. This is a comma\-separated
-list of pick ranges with an optional multiplier in front. The optional multiplier
-is a number followed by the letter \fIx\fP. The pick range can a single number,
-a pair of numbers separated by a hyphen, or an arbitrary list of tabby picks
-(ab).
+Replaces the liftplan with a subset from the draft file to weave. This is a
+comma\-separated list of pick ranges each of which can have an optional multiplier
+in front. The optional multiplier is a number followed by the letter \fIx\fP. The
+pick range can a single number, a pair of numbers separated by a hyphen, an
+arbitrary list of tabby picks (ab), or a full picklist enclosed in parentheses.
+Arbitrarily nested picklists within picklists are allowed.
 
 .IP
 Pick ranges can also insert a tabby pick with each pattern pick from the draft file.
@@ -94,6 +96,15 @@ of a hyphen will insert a tabby pick with each draft pick.
 
 .IP
 The default pick list is the entire draft file.
+
+.TP
+\fB\-\-ends\fP=\fIendlist\fP
+Replaces the threading with a subset from the draft file to weave. This is a
+comma\-separated list of end ranges each of which can have an optional multiplier
+in front. The optional multiplier is a number followed by the letter \fIx\fP. The
+end range can a single number, a pair of numbers separated by a hyphen, or a
+full endlist enclosed in parentheses. Arbitrarily nested endlists within endlists
+are allowed.
 
 .TP
 \fB\-\-tabby\fP=\fItabby\~spec\fP
@@ -117,8 +128,20 @@ green.
 \fB\-\-threading\fP
 Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the
 threading to rise, in order from right to left. The appropriate end color is
-indicated in the pick view. Put \fBdrawboy\fP in Reverse mode to treadle the
-threading from left to right.
+indicated in the pick view. The \fB\-\-pick\fP option can be used to start at a
+different end in the threading. Specifying a negative pick will start treadling
+the threading from left to right from that end.
+.TP
+\fB\-\-sley\fP=\fIsleying pattern\fP
+Enables Treadle-the-Sleying mode. The \fIsleying pattern\fP is a list of number
+separated by commas that indicates how many ends to put in each dent from right
+to left (0 for empty dents). Treadling the loom causes the shafts for the next
+dent in the threading to rise, in order from right to left, cycling through the
+\fIsleying pattern\fP. The \fB\-\-pick\fP option can be used to start at a
+different end in the sleying. Specifying a negative pick will start treadling the
+sleying from left to right from that end. The specified end must be right-most
+in the dent if sleying right to left; or it must be left-most in the dent if
+sleying left to right.
 .TP
 \fB\-\-colorAlert\fP=\fIcolor\~alert\fP
 Sounds the console bell when the weft color is changing. There are four alert modes:
@@ -199,10 +222,6 @@ through the pick list.
 s \- \fBSelect Pick\fP
 Select the next pick in the pick list. The up and down arrows act as shortcuts
 for selecting the previous or next pick in the pick list.
-.TP
-p \- \fBChange Pick List\fP
-Overrides the pick list. The pick list specification is the same format as with
-the command line option. Changing the pick list resets the pick to 1.
 .TP
 q \- \fBQuit\fP
 Quits \fBdrawboy\fP.

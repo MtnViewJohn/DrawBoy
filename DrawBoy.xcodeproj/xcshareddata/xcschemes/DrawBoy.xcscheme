@@ -65,7 +65,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--threading"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--picks=7-34"
@@ -100,8 +100,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sley=3/3"
-            isEnabled = "NO">
+            argument = "--sley=5"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--tabbycolor=FF00FF"

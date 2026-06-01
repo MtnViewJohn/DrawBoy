@@ -23,16 +23,20 @@
 #include <bit>
 
 namespace {
-std::string pickString(int pick, bool padded)
+std::string pickString(int pick, int picks, bool padded)
 {
     if (pick == TabbyA) return padded ? "   A" : "A";
     if (pick == TabbyB) return padded ? "   B" : "B";
     if (pick < 0) return padded ? "   X" : "X";
     
     if (padded)
-        return std::format("{:4}", pick);
+        return std::format("{:4}", pick + 1);
+    
+    int wifPick = pick % picks;
+    if (pick == wifPick)
+        return std::format("{}", pick + 1);
     else
-        return std::format("{}", pick);
+        return std::format("{}({})", pick + 1, wifPick + 1);
 }
 
 static const int ClearPick = -42;
@@ -42,7 +46,6 @@ enum class Mode {
     Weave,
     Tabby,
     PickEntry,
-    PickListEntry,
     Quit,
 };
 
@@ -65,9 +68,7 @@ enum class Commands {
     Reverse,
     SetPick,
     AdvancePick,
-    SetPickList,
     DoSetPick,
-    DoSetPickList,
     Quit
 };
 
@@ -77,7 +78,6 @@ std::map<Commands, const char*> CommandNames = {
     {Commands::Reverse, "Reverse"},
     {Commands::AdvancePick, "Next/Previous pick"},
     {Commands::DoSetPick, "Pick set"},
-    {Commands::DoSetPickList, "Pick list set"}
 };
 
 struct Command
@@ -90,7 +90,6 @@ std::map<Mode, const char*> ModePrompt{
     {Mode::Weave, "Weaving"},
     {Mode::Tabby, "Tabby"},
     {Mode::PickEntry, "Select pick"},
-    {Mode::PickListEntry, "Enter pick list"},
     {Mode::Quit, "Quitting"},
 };
 
@@ -104,7 +103,6 @@ struct View
     int currentPick = 0, nextPick = 1;
     bool pickSent = true;
     std::string pickValue;
-    int parenLevel = 0;
     
     std::array<color, 4> weftColors;
     size_t weftIndex = 0;
@@ -121,19 +119,22 @@ struct View
     LogDirection logdirn = LogDirection::Unknown;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), draftContent(*o.draftContents),
-      currentPick(o.pick - 2), nextPick(o.pick - 1)
+    : term(t), opts(o), draftContent(*o.draftContents)
     {
+        int pick = opts.pick;
+        while (pick <= 0)
+            pick += draftContent.picks;
+        nextPick = pick - 1;            // 1-based to 0-based
+        currentPick = nextPick - 1;
         if (currentPick < 0)
-            currentPick += (int)opts.picks.size();
+            currentPick += draftContent.picks;
     }
-    
+
     void handleEvent(const Term::Event& ev);
     bool handleGlobalEvent(const Term::Event& ev);
     bool handlePickEvent(const Term::Event& ev);
     bool handlePickEntryEvent(const Term::Event& ev);
-    bool handlePickListEntryEvent(const Term::Event& ev);
-    
+
     std::deque<Command> pendingCommands;
     void doCommand(Command cmd, bool deferPick = false);
 
@@ -175,21 +176,16 @@ View::calculateLift(int pick)
         if (pick == ClearPick)
             lift = (1ull << opts.maxShafts) - 1;   // loom shafts, not draft shafts
     } else {
-        size_t zpick = (size_t)(pick) % opts.picks.size();
-        int wifPick = opts.picks[zpick];
+        size_t zpick = (size_t)(pick % draftContent.picks);
+        size_t wifPick = zpick + 1;
 
-        if (wifPick < 0) {
-            lift = wifPick == -1 ? opts.tabbyA : opts.tabbyB;
-            weftColor = opts.tabbyColor;
-        } else {
-            lift = draftContent.liftplan[(size_t)wifPick];
-            weftColor = draftContent.weftColor[(size_t)(wifPick)];
-            
-            if ((opts.dobbyType == DobbyType::Negative &&  draftContent.risingShed) ||
-                (opts.dobbyType == DobbyType::Positive && !draftContent.risingShed))
-            {
-                lift ^= liftMask;
-            }
+        lift = draftContent.liftplan[wifPick];
+        weftColor = draftContent.weftColor[wifPick];
+        
+        if ((opts.dobbyType == DobbyType::Negative &&  draftContent.risingShed) ||
+            (opts.dobbyType == DobbyType::Positive && !draftContent.risingShed))
+        {
+            lift ^= liftMask;
         }
     }
 
@@ -231,8 +227,7 @@ View::displayPick()
     else
         leftArrow = opts.ascii ? " <-- " : " \xE2\xAC\x85  ";
     
-    int cpick = currentPick < 0 ? currentPick : currentPick + 1;
-    std::print(" {}{}{} |", leftArrow, pickString(cpick, true), rightArrow);
+    std::print(" {}{}{} |", leftArrow, pickString(currentPick, draftContent.picks, true), rightArrow);
     
     // Output liftplan
     for (uint64_t shaftMask = 1; shaftMask != (1ull << draftContent.maxShafts); shaftMask <<= 1)
@@ -284,30 +279,19 @@ View::displayPrompt()
                                 Term::Style::inverse : "";
     const char* menuSuffix = loomState == Arms::Down ?
                                 (opts.ascii ? ")" : Term::Style::reset) : "";
-    auto menu = std::format("{0}T{1}abby  {0}L{1}iftplan  {0}R{1}everse  {0}S{1}elect pick  {0}P{1}ick list  {0}Q{1}uit   ", menuPrefix, menuSuffix);
+    auto menu = std::format("{0}T{1}abby  {0}L{1}iftplan  {0}R{1}everse  {0}S{1}elect pick  {0}Q{1}uit   ", menuPrefix, menuSuffix);
     std::putchar('\r');
     switch (mode) {
         case Mode::PickEntry:
             std::print("Enter the new pick number: {}", pickValue);
             break;
-        case Mode::PickListEntry:
-            std::print("Enter the new pick list: {}", pickValue);
-            break;
         case Mode::Tabby:
         case Mode::Weave: {
-            int cwifpick = currentPick < 0 ? currentPick : opts.picks[(size_t)(currentPick) % opts.picks.size()];
-            int nwifpick = nextPick < 0 ? nextPick : opts.picks[(size_t)(nextPick) % opts.picks.size()];
-            int cpick = currentPick < 0 ? currentPick : currentPick + 1;
-            int npick = nextPick < 0 ? nextPick : nextPick + 1;
             const char* rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
-            if (cwifpick == cpick && nwifpick == npick)
-                std::print("[{}:{}{}{}] {}", ModePrompt[mode], pickString(cwifpick, false),
-                           rightArrow, pickString(nwifpick, false), menu);
-            else
-                std::print("[{}:{}({}){}{}({})] {}", ModePrompt[mode],
-                           pickString(cwifpick, false), pickString(cpick, false),
-                           rightArrow, pickString(nwifpick, false),
-                           pickString(npick, false), menu);
+            std::print("[{}:{}{}{}] {}", ModePrompt[mode],
+                       pickString(currentPick, draftContent.picks, false),
+                       rightArrow, pickString(nextPick, draftContent.picks, false),
+                       menu);
             break;
         }
         default:
@@ -331,10 +315,6 @@ View::handleEvent(const Term::Event &ev)
             break;
         case Mode::PickEntry:
             if (handlePickEntryEvent(ev))
-                return;
-            break;
-        case Mode::PickListEntry:
-            if (handlePickListEntryEvent(ev))
                 return;
             break;
         default:
@@ -405,9 +385,6 @@ View::handlePickEvent(const Term::Event &ev)
             case 's':
                 doCommand({Commands::SetPick});
                 return true;
-            case 'p':
-                doCommand({Commands::SetPickList});
-                return true;
             default:
                 break;
         }
@@ -466,42 +443,6 @@ View::handlePickEntryEvent(const Term::Event &ev)
                 mode = oldMode;
                 doCommand({Commands::DoSetPick, 0});
             }
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool
-View::handlePickListEntryEvent(const Term::Event &ev)
-{
-    if (ev.type == Term::EventType::Char) {
-        if (std::strchr("0123456789ABabx-~(),", ev.character)) {
-            if (ev.character == ')' && parenLevel == 0) {
-                std::putchar('\a');
-                std::fflush(stdout);
-                return true;
-            }
-            if (ev.character == '(') ++parenLevel;
-            if (ev.character == ')') --parenLevel;
-            pickValue.push_back(ev.character);
-            std::putchar(ev.character);
-            std::fflush(stdout);
-            return true;
-        }
-        if (ev.character == '\x7f') {
-            if (pickValue.empty()) {
-                std::putchar('\a');
-            } else {
-                pickValue.pop_back();
-                displayPrompt();
-            }
-            return true;
-        }
-        if (ev.character == '\r') {
-            mode = Mode::Weave;
-            doCommand({Commands::DoSetPickList});
             return true;
         }
     }
@@ -596,13 +537,6 @@ View::doCommand(Command cmd, bool deferPick)
             pickValue.clear();
             displayPrompt();
             break;
-        case Commands::SetPickList:
-            oldMode = mode;
-            mode = Mode::PickListEntry;
-            pickValue.clear();
-            parenLevel = 0;
-            displayPrompt();
-            break;
         case Commands::DoSetPick:
             if (cmd.argument > 0) {
                 nextPick = cmd.argument - 1;
@@ -618,25 +552,6 @@ View::doCommand(Command cmd, bool deferPick)
                 }
             }
             break;
-        case Commands::DoSetPickList:
-            if (parenLevel != 0) {
-                std::putchar('\a');
-                std::fflush(stdout);
-                return;
-            }
-            try {
-                opts.parsePicks(pickValue, draftContent.picks);
-                nextPick = 0;       // Current pick is from old pick list
-                currentPick = -10;  // it is meaningless in new pick list
-                mode = Mode::Weave;
-                if (!deferPick)
-                    sendPick();
-            } catch (std::exception& e) {
-                std::print("\r\n\a{}{}{}\r\n", bold(), e.what(), reset());
-            }
-            if (!deferPick)
-                displayPrompt();
-            break;
     }
 }
 
@@ -644,8 +559,8 @@ void
 View::setPick(int newPick)
 {
     nextPick = newPick;
-    int psize = (int)opts.picks.size();
-    if (opts.treadleThreading && (newPick < 0 || newPick >= psize))
+    int psize = (int)draftContent.picks;
+    if ((opts.treadleThreading || opts.treadleSleying) && (newPick < 0 || newPick >= psize))
         mode = Mode::Quit;
     if (nextPick >= 9999)
         nextPick -= (nextPick / psize) * psize;

@@ -28,6 +28,7 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <cassert>
 
 namespace {
 struct addr_deleter {
@@ -149,9 +150,9 @@ addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool patternBeforeT
     if (isTabby) {
         if (patternBeforeTabby) {
             newpicks.push_back(_pick);
-            newpicks.push_back(-3);
+            newpicks.push_back(TabbyNext);
         } else {
-            newpicks.push_back(-3);
+            newpicks.push_back(TabbyNext);
             newpicks.push_back(_pick);
         }
     } else {
@@ -286,35 +287,78 @@ ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby, bool thre
 }
 
 void
-Options::parsePicks(const std::string &str, int maxPick)
+Options::parsePicks(const std::string &str)
 {
-    // If no treadle list provided then treadle the whole liftplan
-    if (str.empty()) {
-        picks.resize((size_t)maxPick);
-        for (int i = 0; i < maxPick; ++i)
-            picks[(size_t)i] = i + 1;
+    if (str.empty())
         return;
-    }
-    
+
     bool patternBeforeTabby = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::xByA;
     bool tabbyAFirst = tabbyPattern == TabbyPattern::xAyB || tabbyPattern == TabbyPattern::AxBy;
     
-    picks = ParsePicks(str, maxPick, patternBeforeTabby, treadleThreading);
+    auto picks = ParsePicks(str, draftContents->picks, patternBeforeTabby, false);
+    std::vector<uint64_t> newLiftplan;
+    std::vector<color>    newWeftColor;
+    newLiftplan.reserve(picks.size() + 1);
+    newWeftColor.reserve(picks.size() + 1);
+    newLiftplan.push_back(0);
+    newWeftColor.push_back(color());
 
     // Replace auto-tabby picks with actual tabby A or tabby B
     bool tabbyIsA = tabbyAFirst;
     int picksSinceTabby = 10;       // anything > 1
-    for (auto& _pick: picks) {
-        if (_pick == -3) {
-            if (picksSinceTabby > 1)
-                tabbyIsA = tabbyAFirst;
-            _pick = tabbyIsA ? TabbyA : TabbyB;
-            tabbyIsA = !tabbyIsA;
-            picksSinceTabby = 0;
-        } else {
-            ++picksSinceTabby;
+    for (int _pick: picks) {
+        switch (_pick) {
+            case TabbyA:
+            case TabbyB:
+                newLiftplan.push_back(_pick == TabbyA ? tabbyA : tabbyB);
+                newWeftColor.push_back(tabbyColor);
+                tabbyIsA = _pick != TabbyA;
+                picksSinceTabby = 0;
+                break;
+            case TabbyNext:
+                if (picksSinceTabby > 1)
+                    tabbyIsA = tabbyAFirst;
+                newLiftplan.push_back(tabbyIsA ? tabbyA : tabbyB);
+                newWeftColor.push_back(tabbyColor);
+                tabbyIsA = !tabbyIsA;
+                picksSinceTabby = 0;
+                break;
+            default:
+                assert(_pick > 0 && _pick <= draftContents->picks);
+                newLiftplan.push_back(draftContents->liftplan[(size_t)_pick]);
+                newWeftColor.push_back(draftContents->weftColor[(size_t)_pick]);
+                ++picksSinceTabby;
+                break;
         }
     }
+
+    std::swap(draftContents->liftplan, newLiftplan);
+    std::swap(draftContents->weftColor, newWeftColor);
+    draftContents->picks = (int)draftContents->liftplan.size() - 1;
+}
+
+void
+Options::parseEnds(const std::string& str)
+{
+    if (str.empty())
+        return;
+
+    auto endList = ParsePicks(str, draftContents->ends, true, true);
+    std::vector<uint64_t> newThreading;
+    std::vector<color>    newWarpColor;
+    newThreading.reserve(endList.size() + 1);
+    newWarpColor.reserve(endList.size() + 1);
+    newThreading.push_back(0);
+    newWarpColor.push_back(color());
+
+    for (int end: endList) {
+        newThreading.push_back(draftContents->threading[(size_t)end]);
+        newWarpColor.push_back(draftContents->warpColor[(size_t)end]);
+    }
+
+    std::swap(draftContents->threading, newThreading);
+    std::swap(draftContents->warpColor, newWarpColor);
+    draftContents->ends = (int)draftContents->threading.size() - 1;
 }
 
 Options::Options(int argc, const char * argv[])
@@ -366,6 +410,9 @@ Options::Options(int argc, const char * argv[])
         {"tabbyPattern"}, tabbyMap, TabbyPattern::xAyB, args::Options::Single);
     args::ValueFlag<std::string> _tabbyColor(parser, "TABBY_COLOR", "Color displayed for tabby picks",
         {"tabbycolor"}, "00FF00", args::Options::Single);
+    args::ValueFlag<std::string> _ends(parser, "ENDS_LIST",
+        "List of end ranges in the threading to weave", {"ends"},
+        args::Options::Single);
     args::Flag _threading(parser, "treadle the threading", "Treadle the threading, instead of the picks",
         {"threading"}, args::Options::Single);
     args::ValueFlag<std::string> _sleying(parser, "SLEYING_PATTERN", "Pattern used for sleying the reed",
@@ -546,22 +593,53 @@ Options::Options(int argc, const char * argv[])
         return;
     }
 
-    parsePicks(args::get(_picks), treadleThreading ? draftContents->ends : draftContents->picks);
+    if (_tabby) {
+        std::string tabby = args::get(_tabby);
+        if (tabby.length() > (size_t)draftContents->maxShafts)
+            std::cerr << "Tabby specification is wider than the draft." << std::endl;
 
-    bool reverseTreadle = false;
-    if (pick <= 0) {
-        if (treadleThreading) {
-            pick = -pick;
-            reverseTreadle = true;
-        } else {
-            pick += picks.size();
+        for (size_t shaft = 0; shaft < tabby.length(); ++shaft) {
+            if (tabby[shaft] == 'a')
+                tabbyA |= 1ull << shaft;
+            else if (tabby[shaft] == 'b')
+                tabbyB |= 1ull << shaft;
+            else
+                throw std::runtime_error("Bad character in tabby specification.");
+        }
+
+        if (tabbyA == 0)
+            std::cerr << "Tabby A has no shafts set." << std::endl;
+        if (tabbyB == 0)
+            std::cerr << "Tabby B has no shafts set." << std::endl;
+    } else {
+        for (size_t shaft = 0; (int)shaft < draftContents->maxShafts; ++shaft) {
+            if (shaft & 1)
+                tabbyB |= 1ull << shaft;
+            else
+                tabbyA |= 1ull << shaft;
         }
     }
 
-    if (treadleThreading) {
-        if (pick == 0 || pick > (int)picks.size())
+    tabbyColor = color(args::get(_tabbyColor).c_str());
+
+    parsePicks(args::get(_picks));
+    parseEnds(args::get(_ends));
+
+    bool reverseTreadle = false;
+    if (pick <= 0) {
+        if (treadleThreading || _sleying) {
+            pick = -pick;
+            reverseTreadle = true;
+        } else {
+            pick += draftContents->picks;
+        }
+    }
+
+    if (treadleThreading || _sleying) {
+        if (pick == 0 || pick > draftContents->ends)
             throw std::runtime_error("Bad --pick value. Must correspond to an end in the threading.");
         std::vector<size_t> sleying;
+        size_t sleyed = 0;
         if (_sleying) {
             treadleSleying = true;
             size_t sleyNum = 0;
@@ -572,6 +650,7 @@ Options::Options(int argc, const char * argv[])
                 if (sleyValid.ec != std::errc{} || sleyNum < 0)
                     throw std::runtime_error("Parse error in --sley option.");
                 sleying.push_back(sleyNum);
+                sleyed += sleyNum;
                 if (sleyValid.ptr == sleyEnd)
                     break;
                 if (*sleyValid.ptr != ',')
@@ -580,48 +659,52 @@ Options::Options(int argc, const char * argv[])
             };
         } else {
             sleying.push_back(1);
+            sleyed = 1;
         }
-            
-        std::vector<int> newPicks;
-        size_t zpick = (size_t)pick - 1;                // 0-based version of pick
+
+        size_t pick_z = (size_t)pick;
         draftContents->liftplan.clear();
+        draftContents->liftplan.reserve((size_t)draftContents->ends * sleying.size() / sleyed + 2);
         draftContents->liftplan.push_back(0);           // 1-based
         draftContents->weftColor.clear();
+        draftContents->weftColor.reserve((size_t)draftContents->ends * sleying.size() / sleyed + 2);
         draftContents->weftColor.push_back(color());    // 1-based
         draftContents->picks = 0;
         draftContents->risingShed = true;
         draftContents->maxTreadles = draftContents->maxShafts;
 
-        for (size_t dentIndex = 0, pickIndex = 0; pickIndex < picks.size(); ++dentIndex) {
+        for (size_t dentIndex = 0, pickIndex = 1;
+             (int)pickIndex < draftContents->ends; ++dentIndex)
+        {
             size_t endsInDent = sleying[dentIndex % sleying.size()];
-            if (reverseTreadle ? (zpick < pickIndex)
-                               : (pickIndex + endsInDent <= zpick))
+            if (reverseTreadle ? (pickIndex > pick_z)
+                               : (pickIndex + endsInDent <= pick_z))
             {
                 pickIndex += endsInDent;
                 continue;
             }
             // If the starting point is in the current dent then make sure that
-            // the whole dent is filled
-            if (zpick >= pickIndex && zpick < pickIndex + endsInDent) {
-                if (reverseTreadle && zpick != pickIndex + endsInDent - 1)
+            // the whole dent is filled (unless it is the last dent)
+            if (pick_z >= pickIndex && pick_z < pickIndex + endsInDent) {
+                if (reverseTreadle && pick_z != pickIndex + endsInDent - 1 && pick != draftContents->ends)
                     throw std::runtime_error("Start pick is not left-most in the dent.");
-                if (!reverseTreadle && zpick != pickIndex)
+                if (!reverseTreadle && pick_z != pickIndex)
                     throw std::runtime_error("Start pick is not right-most in the dent.");
             }
             uint64_t lift = 0;
-            if (pickIndex + endsInDent > picks.size())   // last dent might be scant
-                endsInDent = picks.size() - pickIndex;
+            if (pickIndex + endsInDent - 1 > (size_t)draftContents->ends)   // last dent might be scant
+                endsInDent = (size_t)draftContents->ends - pickIndex + 1;
             for (size_t i = 0; i < endsInDent; ++i)
-                lift |= draftContents->threading[(size_t)picks[pickIndex + i]];
+                lift |= draftContents->threading[pickIndex + i];
             draftContents->liftplan.push_back(lift);
-            draftContents->weftColor.push_back(draftContents->warpColor[(size_t)picks[pickIndex]]);
+            draftContents->weftColor.push_back(draftContents->warpColor[pickIndex]);
             ++draftContents->picks;
-            newPicks.push_back(draftContents->picks);
             pickIndex += endsInDent;
         }
-        if (reverseTreadle)
-            std::reverse(newPicks.begin(), newPicks.end());
-        std::swap(picks, newPicks); // replace original pick list with flat list
+        if (reverseTreadle) {
+            std::reverse(draftContents->liftplan.begin() + 1, draftContents->liftplan.end());
+            std::reverse(draftContents->weftColor.begin() + 1, draftContents->weftColor.end());
+        }
         pick = 1;
     }
     
@@ -648,24 +731,6 @@ Options::Options(int argc, const char * argv[])
         
         initLoomPort(loomDeviceFD, compuDobbyGen);
     }
-    
-    std::string tabby = args::get(_tabby);
-    
-    for (size_t shaft = 0; shaft < tabby.length(); ++shaft) {
-        if (tabby[shaft] == 'a')
-            tabbyA |= 1ull << shaft;
-        else if (tabby[shaft] == 'b')
-            tabbyB |= 1ull << shaft;
-        else
-            throw std::runtime_error("Bad character in tabby specification.");
-    }
-            
-    if (tabbyA == 0)
-        std::cerr << "Tabby A has no shafts set." << std::endl;
-    if (tabbyB == 0)
-        std::cerr << "Tabby B has no shafts set." << std::endl;
-    
-    tabbyColor = color(args::get(_tabbyColor).c_str());
     
     if (_log) {
         auto now = std::chrono::system_clock::now();
