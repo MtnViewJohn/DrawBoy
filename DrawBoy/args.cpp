@@ -678,7 +678,7 @@ Options::Options(int argc, const char * argv[])
         draftContents->maxTreadles = draftContents->maxShafts;
 
         for (size_t dentIndex = 0, pickIndex = 1;
-             (int)pickIndex < draftContents->ends; ++dentIndex)
+             (int)pickIndex <= draftContents->ends; ++dentIndex)
         {
             size_t endsInDent = sleying[dentIndex % sleying.size()];
             // If the starting point is in the current dent then make sure that
