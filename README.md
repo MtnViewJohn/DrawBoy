@@ -94,11 +94,11 @@ options tells **drawboy** that the loom is a virtual positive dobby loom.
 
 **\-\-threading**
 
-> Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the threading to rise, in order from right to left. The appropriate end color is indicated in the pick view. The **\-\-pick** option can be used to start at a different end in the threading. Specifying a negative pick will start treadling the threading from left to right from that end.
+> Enables Treadle-the-Threading mode. Treadling the loom causes each shaft in the threading to rise, in order from right to left. The appropriate end color is indicated in the pick view. The **\-\-pick** option can be used to start at a different end in the threading and to thread left to right.
 
 **\-\-sley**=*sleying pattern*
 
-> Enables Treadle-the-Sleying mode. The *sleying pattern* is a list of number separated by commas that indicates how many ends to put in each dent from right to left (0 for empty dents). Treadling the loom causes the shafts for the next dent in the threading to rise, in order from right to left, cycling through the *sleying pattern*. The **\-\-pick** option can be used to start at a different end in the sleying. Specifying a negative pick will start treadling the sleying from left to right from that end. The specified end must be right-most in the dent if sleying right to left; or it must be left-most in the dent if sleying left to right. 
+> Enables Treadle-the-Sleying mode. The *sleying pattern* is a list of number separated by commas that indicates how many ends to put in each dent from right to left (0 for empty dents). Treadling the loom causes the shafts for the next dent in the threading to rise, in order from right to left, cycling through the *sleying pattern*. The **\-\-pick** option can be used to start at a different end in the sleying and to sley left to right. The specified end must be right-most in the dent if sleying right to left; or it must be left-most in the dent if sleying left to right. 
 
 **\-\-alertColor**=*alert color*
 
