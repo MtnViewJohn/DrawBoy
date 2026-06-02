@@ -452,12 +452,13 @@ Options::Options(int argc, const char * argv[])
             if (!_cd4 && defGen != 4 && !_maxShafts)
                 throw args::ParseError("Option --shaft required unless Compu-Dobby 4/4.5.");
             if (_pick) {
-                bool autoPick = _pick.Get().starts_with("last");
+                bool autoPick = _pick.Get().starts_with("next");
                 int pickNum = 0;
-                if (_pick.Get() != "last") {
-                    auto pickRes = std::from_chars(_pick.Get().data() + (autoPick ? 4 : 0),
-                        _pick.Get().data() + _pick.Get().length() - (autoPick ? 4 : 0),
-                        pickNum, 10);
+                if (_pick.Get() != "next") {
+                    reverseTreadle = _pick.Get().starts_with('<');
+                    size_t startAt = reverseTreadle ? 1 : (autoPick ? 4 : 0);
+                    auto pickRes = std::from_chars(_pick.Get().data() + startAt,
+                        _pick.Get().data() + _pick.Get().length(), pickNum);
                     if (pickRes.ec != std::errc())
                         throw args::ParseError("Argument 'PICK' received invalid value type '" +
                             _pick.Get() + "'");
