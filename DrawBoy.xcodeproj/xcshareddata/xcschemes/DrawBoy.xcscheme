@@ -96,8 +96,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--pick=f6"
-            isEnabled = "NO">
+            argument = "--pick=last"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--sley=5"

@@ -58,14 +58,15 @@ options tells **drawboy** that the loom is a virtual positive dobby loom.
 > Connect to a Compu-Dobby IV/4.5 loom over a network connection instead of a serial connection. If no loom device path is provided for a serial connection, then a network connection is implicitly enabled.
 
 **\-p**_pick_, **\-\-pick**=*pick*\
+**\-p**\<_pick_, **\-\-pick**=\<*pick*
 
-> Sets the initial pick from the liftplan to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list. Non-positive picks also result in a modulo calculation.
+> Sets the initial pick from the liftplan to start weaving. The default pick is the first pick in the pick list. If the specified pick is larger than size of the pick list then a modulo calculation is performed to determine where to start weaving in the pick list. Non-positive picks also result in a modulo calculation. If the pick number is preceeded by the '<' character then weaving (or threading, or sleying) starts from that pick in the reverse direction.
 
-**\-plast**, **\-\-pick**=**last**\
-**\-plast\-**_offset_, **\-\-pick=last\-**_offset_\
-**\-plast+**_offset_, **\-\-pick=last+**_offset_
+**\-pnext**, **\-\-pick**=**next**\
+**\-pnext\-**_offset_, **\-\-pick=next\-**_offset_\
+**\-pnext+**_offset_, **\-\-pick=next+**_offset_
 
-> **Drawboy** stores the last pick thrown when quitting. Using one of the three **last** pick forms causes **drawboy** to pick up where it left off, plus or minus an offset.
+> **Drawboy** stores the next pick to be thrown and the weaving direction when quitting. Using one of the three **next** pick forms causes **drawboy** to pick up where it left off, plus or minus an offset.
 
 **\-P**_picklist_, **\-\-picks**=*picklist*
 

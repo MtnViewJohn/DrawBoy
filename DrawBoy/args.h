@@ -37,6 +37,7 @@ struct Options {
     DobbyType dobbyType = DobbyType::Unspecified;
     bool virtualPositive = false;
     int pick = 1;
+    bool reverseTreadle = false;
     bool treadleThreading;
     bool treadleSleying = false;
     color tabbyColor;

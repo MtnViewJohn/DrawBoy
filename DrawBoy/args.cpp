@@ -467,17 +467,20 @@ Options::Options(int argc, const char * argv[])
                     if (std::FILE* pickf{std::fopen(pickFile.c_str(), "r")}) {
                         char buf[12];
                         if (std::fgets(buf, 12, pickf)) {
+                            char* start = buf[0] == '<' ? buf + 1 : buf;
                             int pickBase = 1;
-                            auto baseRes = std::from_chars(buf, buf + 12, pickBase, 10);
+                            auto baseRes = std::from_chars(start, buf + 12, pickBase, 10);
                             if (baseRes.ec == std::errc()) {
-                                pick = pickBase + pickNum;
+                                reverseTreadle = buf[0] == '<';
+                                pick = reverseTreadle ? pickBase - pickNum
+                                                      : pickBase + pickNum;
                                 success = true;
                             }
                         }
                         std::fclose(pickf);
                     }
                     if (success) {
-                        std::print("Continuing at pick {}.\n\n", pick);
+                        std::print("Continuing at pick {}{}.\n\n", reverseTreadle ? "<" : "", pick);
                     } else {
                         std::print("Failed to fetch previous pick. Starting at pick 1.\n\n");
                         pick = 1;
@@ -625,13 +628,13 @@ Options::Options(int argc, const char * argv[])
     parsePicks(args::get(_picks));
     parseEnds(args::get(_ends));
 
-    bool reverseTreadle = false;
     if (pick <= 0) {
         if (treadleThreading || _sleying) {
-            pick = -pick;
-            reverseTreadle = true;
+            while (pick <= 0)
+                pick += draftContents->ends;
         } else {
-            pick += draftContents->picks;
+            while (pick <= 0)
+                pick += draftContents->picks;
         }
     }
 
@@ -677,15 +680,10 @@ Options::Options(int argc, const char * argv[])
              (int)pickIndex < draftContents->ends; ++dentIndex)
         {
             size_t endsInDent = sleying[dentIndex % sleying.size()];
-            if (reverseTreadle ? (pickIndex > pick_z)
-                               : (pickIndex + endsInDent <= pick_z))
-            {
-                pickIndex += endsInDent;
-                continue;
-            }
             // If the starting point is in the current dent then make sure that
             // the whole dent is filled (unless it is the last dent)
             if (pick_z >= pickIndex && pick_z < pickIndex + endsInDent) {
+                pick = (int)draftContents->liftplan.size();
                 if (reverseTreadle && pick_z != pickIndex + endsInDent - 1 && pick != draftContents->ends)
                     throw std::runtime_error("Start pick is not left-most in the dent.");
                 if (!reverseTreadle && pick_z != pickIndex)
@@ -698,17 +696,13 @@ Options::Options(int argc, const char * argv[])
                 lift |= draftContents->threading[pickIndex + i];
             draftContents->liftplan.push_back(lift);
             if (_sleying)
-                draftContents->weftColor.push_back(color((double)endsInDent, (double)endsInDent, (double)endsInDent));
+                draftContents->weftColor.push_back(color((double)endsInDent,
+                    (double)(pickIndex), (double)(pickIndex + endsInDent - 1)));
             else
                 draftContents->weftColor.push_back(draftContents->warpColor[pickIndex]);
             ++draftContents->picks;
             pickIndex += endsInDent;
         }
-        if (reverseTreadle) {
-            std::reverse(draftContents->liftplan.begin() + 1, draftContents->liftplan.end());
-            std::reverse(draftContents->weftColor.begin() + 1, draftContents->weftColor.end());
-        }
-        pick = 1;
     }
     
     if (draftContents->maxShafts > maxShafts && compuDobbyGen < 4)

@@ -118,13 +118,14 @@ struct View
     LogDirection logdirn = LogDirection::Unknown;
     
     View(Term& t, Options& o)
-    : term(t), opts(o), draftContent(*o.draftContents)
+    : term(t), opts(o), draftContent(*o.draftContents),
+      weaveForward(!o.reverseTreadle)
     {
         int pick = opts.pick;
         while (pick <= 0)
             pick += draftContent.picks;
         nextPick = pick - 1;            // 1-based to 0-based
-        currentPick = nextPick - 1;
+        currentPick = nextPick + (opts.reverseTreadle ? 1 : -1);
         if (currentPick < 0)
             currentPick += draftContent.picks;
     }
@@ -199,11 +200,8 @@ color
 View::displayPick()
 {
     auto [lift, weftColor] = calculateLift(currentPick);
-    int endsInDent = 0;
-    if (opts.treadleSleying) {
-        endsInDent = (int)weftColor.red;
-        weftColor = color();
-    }
+    int endsInDent = (int)weftColor.red;
+    auto displayColor = opts.treadleSleying ? color() : weftColor;
 
     // Output drawdown
     std::putchar('\r');
@@ -215,7 +213,7 @@ View::displayPick()
         bool raised = ( activated && opts.dobbyType == DobbyType::Positive) ||
                       (!activated && opts.dobbyType == DobbyType::Negative);
         
-        color& c = raised ? draftContent.warpColor[i] : weftColor;
+        color& c = raised ? draftContent.warpColor[i] : displayColor;
         std::fputs(toColor(c), stdout);
         if (opts.ascii)
             std::putchar(raised ? '|' : '-');
@@ -224,7 +222,7 @@ View::displayPick()
     }
     
     // Output direction arrows and pick #
-    std::fputs(toColor(weftColor), stdout);
+    std::fputs(toColor(displayColor), stdout);
     const char *leftArrow = "", *rightArrow = "";
     if (weaveForward)
         rightArrow = opts.ascii ? " --> " : " \xE2\xAE\x95  ";
@@ -813,6 +811,7 @@ View::run()
     int AVLstate = 1;
     bool atLeastOnce = false;
     bool doAdvancePick = false;
+    int lastPick = 0;
 
     while (mode != Mode::Quit) {
         int nfds = listenToLoom();
@@ -900,10 +899,23 @@ View::run()
                     }
                     if (loomLine == armsUp && loomState != Arms::Up) {
                         // Shed is closed, next shed is fixed
+                        color lastColor;
                         loomState = Arms::Up;
                         currentPick = nextPick;
-                        colorCheck(displayPick());
+                        colorCheck(lastColor = displayPick());
                         displayPrompt();
+                        if (opts.treadleSleying) {
+                            int sleyPick = weaveForward ? (int)lastColor.green
+                                                        : (int)lastColor.blue;
+                            // Record sley pick if it is valid and this is not
+                            // a zero end dent
+                            if (sleyPick >= 1 && lastColor.red >= 1.0)
+                                lastPick = sleyPick;
+                        } else {
+                            // Record liftplan pick, ignoring tabby picks
+                            if (currentPick >= 0)
+                                lastPick = currentPick + 1;
+                        }
                     }
                     if (loomLine == armsNeutral) {
                         loomState = Arms::Unknown;
@@ -917,17 +929,16 @@ View::run()
         }
     }
     if (atLeastOnce) {
-        int cpick = currentPick >= 0 ? currentPick + 1 : oldPick + 1;
         bool success = false;
         if (std::FILE* pickf{std::fopen(opts.pickFile.c_str(), "w")}) {
             try {
-                std::print(pickf, "{}\n", cpick);
+                std::print(pickf, "{}{}\n", weaveForward ? "" : "<", lastPick);
                 success = true;
             } catch (...) {}
             std::fclose(pickf);
         }
         if (success)
-            std::print("\r\nNext pick saved: {}\r\n", cpick);
+            std::print("\r\nNext pick saved: {}{}\r\n", weaveForward ? "" : "<", lastPick);
         else
             std::print("\r\nFailed to save next pick.\r\n");
     }

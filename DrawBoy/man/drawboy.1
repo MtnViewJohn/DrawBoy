@@ -61,23 +61,27 @@ Indicates whether the loom has a Compu-Dobby I, II, III, or IV/4.5 interface.
 Connect to a Compu-Dobby IV/4.5 loom over a network connection instead of a serial
 connection. If no loom device path is provided for a serial connection, then a
 network connection is implicitly enabled.
+
 .TP
 \fB\-p\fP\fIpick\fP, \fB\-\-pick\fP=\fIpick\fP
+.TQ
+\fB\-p\fP<\fIpick\fP, \fB\-\-pick\fP=<\fIpick\fP
 Sets the initial pick from the liftplan to start weaving. The default pick is
 the first pick in the pick list. If the specified pick is larger than size of
 the pick list then a modulo calculation is performed to determine where to
 start weaving in the pick list. Non-positive picks also result in a modulo
-calculation.
+calculation. If the pick number is preceeded by the '<' character then weaving
+(or threading, or sleying) starts from that pick in the reverse direction.
 
 .TP
-\fB\-plast\fP, \fB\-\-pick=last\fP
-.TP
-\fB\-plast\-\fP\fIoffset\fP, \fB\-\-pick=last\-\fP\fIoffset\fP
-.TP
-\fB\-plast\+\fP\fIoffset\fP, \fB\-\-pick=last\+\fP\fIoffset\fP
-\fBDrawboy\fP stores the last pick thrown when quitting. Using one of the three
-\fBlast\fP pick forms causes \fBdrawboy\fP to pick up where it left off, plus
-or minus an offset.
+\fB\-pnext\fP, \fB\-\-pick=next\fP
+.TQ
+\fB\-pnext\-\fP\fIoffset\fP, \fB\-\-pick=next\-\fP\fIoffset\fP
+.TQ
+\fB\-pnext\+\fP\fIoffset\fP, \fB\-\-pick=next\+\fP\fIoffset\fP
+\fBDrawboy\fP stores the next pick to be thrown when quitting. Using one of the
+three \fBnext\fP pick forms causes \fBdrawboy\fP to pick up where it left off,
+plus or minus an offset.
 
 .TP
 \fB\-P\fP\fIpicklist\fP, \fB\-\-picks\fP=\fIpicklist\fP
