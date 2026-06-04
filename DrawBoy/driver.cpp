@@ -253,10 +253,9 @@ void
 View::colorCheck(color currentColor)
 {
     weftColors[weftIndex & 3] = currentColor;
-    bool bell;
+    bool bell = false;
     switch (opts.colorAlert) {
         case ColorAlert::None:
-            bell = false;
             break;
         case ColorAlert::Simple:
         case ColorAlert::Pulse:

@@ -39,7 +39,7 @@ OBJS_USER := $(SRCS_USER:%=$(BUILD_DIR)/%.o)
 INC_FLAGS := $(addprefix -I,$(INCS))
 CPPFLAGS += $(INC_FLAGS)
 CPPFLAGS += -Wdate-time -D_FORTIFY_SOURCE=2
-CPPFLAGS += -std=c++20
+CPPFLAGS += -std=c++23
 CPPFLAGS += -MMD -MP
 CPPFLAGS += -O2
 CPPFLAGS += -fstack-protector-strong -Wformat -Werror=format-security

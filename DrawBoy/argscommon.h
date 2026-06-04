@@ -9,6 +9,7 @@
 #define argscommon_h
 
 #include <cstdlib>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <unordered_map>

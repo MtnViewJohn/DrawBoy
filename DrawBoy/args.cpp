@@ -29,6 +29,7 @@
 #include <fstream>
 #include <algorithm>
 #include <cassert>
+#include <print>
 
 namespace {
 struct addr_deleter {
@@ -40,7 +41,8 @@ using unique_ai = std::unique_ptr<addrinfo, addr_deleter>;
 int
 openTelnet(std::string& address)
 {
-    addrinfo hint{AI_ADDRCONFIG, PF_INET, SOCK_STREAM, IPPROTO_TCP};
+    addrinfo hint{AI_ADDRCONFIG, PF_INET, SOCK_STREAM, IPPROTO_TCP,
+                  0, nullptr, nullptr, nullptr};
     addrinfo* results;
 
     if (::getaddrinfo(address.c_str(), "telnet", &hint, &results) < 0)
@@ -651,7 +653,7 @@ Options::Options(int argc, const char * argv[])
             const char* sleyEnd = sleyChar + _sleying.Get().length();
             for(;;) {
                 auto sleyValid = std::from_chars(sleyChar, sleyEnd, sleyNum);
-                if (sleyValid.ec != std::errc{} || sleyNum < 0)
+                if (sleyValid.ec != std::errc{})
                     throw std::runtime_error("Parse error in --sley option.");
                 sleying.push_back(sleyNum);
                 sleyed += sleyNum;
