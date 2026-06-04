@@ -213,18 +213,22 @@ ParsePicks(std::string_view str, int maxPick, bool patternBeforeTabby, bool thre
                     mult = 1;
                 }
             }
-            if (std::strchr("ABab", str.front())) {
+            if (std::strchr("ABNabn", str.front())) {
                 if (threading)
-                    throw std::runtime_error("Tabby entries make no sense in treadle-the-threading mode.");
-                while (!str.empty() && std::strchr("ABab", str.front())) {
+                    throw std::runtime_error("Tabby entries make no sense in treadle-the-threading/sleying mode.");
+                while (!str.empty() && std::strchr("ABNabn", str.front())) {
                     switch (str.front()) {
                         case 'a':
                         case 'A':
-                            addpick(-1, pickRange, false, false);
+                            addpick(TabbyA, pickRange, false, false);
                             break;
                         case 'b':
                         case 'B':
-                            addpick(-2, pickRange, false, false);
+                            addpick(TabbyB, pickRange, false, false);
+                            break;
+                        case 'n':
+                        case 'N':
+                            addpick(TabbyNext, pickRange, false, false);
                             break;
                         default:
                             break;

@@ -89,8 +89,9 @@ Replaces the liftplan with a subset from the draft file to weave. This is a
 comma\-separated list of pick ranges each of which can have an optional multiplier
 in front. The optional multiplier is a number followed by the letter \fIx\fP. The
 pick range can a single number, a pair of numbers separated by a hyphen, an
-arbitrary list of tabby picks (ab), or a full picklist enclosed in parentheses.
-Arbitrarily nested picklists within picklists are allowed.
+arbitrary list of tabby picks (a, b, or n), or a full picklist enclosed in
+parentheses. Arbitrarily nested picklists within picklists are allowed. The 'n'
+tabby pick is the next tabby shed, the opposite of the most recent tabby shed.
 
 .IP
 Pick ranges can also insert a tabby pick with each pattern pick from the draft file.

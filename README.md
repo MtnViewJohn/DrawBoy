@@ -70,7 +70,7 @@ options tells **drawboy** that the loom is a virtual positive dobby loom.
 
 **\-P**_picklist_, **\-\-picks**=*picklist*
 
-> Replaces the liftplan with a subset from the draft file to weave. This is a comma-separated list of pick ranges each of which can have an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The pick range can a single number, a pair of numbers separated by a hyphen, an arbitrary list of tabby picks (ab), or a full picklist enclosed in parentheses. Arbitrarily nested picklists within picklists are allowed.
+> Replaces the liftplan with a subset from the draft file to weave. This is a comma-separated list of pick ranges each of which can have an optional multiplier in front. The optional multiplier is a number followed by the letter *x*. The pick range can a single number, a pair of numbers separated by a hyphen, an arbitrary list of tabby picks (a, b, or n), or a full picklist enclosed in parentheses. Arbitrarily nested picklists within picklists are allowed. The 'n' tabby pick is the next tabby shed, the opposite of the most recent tabby shed.
 
 > Pick ranges can also insert a tabby pick with each pattern pick from the draft file. A single pick preceeded by a tilde (~) will insert the appropriate tabby pick along with the specified draft pick. A range of picks separated by a tilde instead of a hyphen will insert a tabby pick with each draft pick.
 
