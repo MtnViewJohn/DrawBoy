@@ -20,6 +20,7 @@
 #include "argscommon.h"
 #include <iostream>
 #include <cassert>
+#include <memory>
 
 namespace {
     struct addr_deleter {
