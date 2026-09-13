@@ -17,6 +17,7 @@
 #include <string_view>
 #include <memory>
 #include <cstdio>
+#include "serial.h"
 
 class draft;
 
@@ -31,7 +32,7 @@ struct Options {
     bool useNetwork;
     std::string loomDevice;
     std::string loomAddress;
-    int loomDeviceFD = 0;
+    serial loomPort;
     std::unique_ptr<draft> draftContents;
     int maxShafts;
     DobbyType dobbyType = DobbyType::Unspecified;

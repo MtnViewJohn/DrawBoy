@@ -55,6 +55,7 @@
 				fakedriver.cpp,
 				fakemain.cpp,
 				ipc.cpp,
+				"serial-posix.cpp",
 				term.cpp,
 			);
 			target = 523179292D0B98540085FB15 /* FakeLoom */;
@@ -191,7 +192,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastUpgradeCheck = 1610;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					523179292D0B98540085FB15 = {
 						CreatedOnToolsVersion = 16.2;
@@ -327,6 +328,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				Warnings = "-Wall -pedantic";
 			};
 			name = Debug;
@@ -391,6 +393,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				Warnings = "-Wall -pedantic";
 			};
 			name = Release;

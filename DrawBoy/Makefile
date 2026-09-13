@@ -20,7 +20,7 @@ install:
 	$(MKDIR_P) $(DESTDIR)$(MAN_DIR)/man1
 	$(INSTALL_DATA) man/drawboy.1 $(DESTDIR)$(MAN_DIR)/man1/
 
-SRCS_COMMON := term.cpp ipc.cpp
+SRCS_COMMON := term.cpp ipc.cpp serial-posix.cpp
 
 SRCS_TEST := fakemain.cpp fakeargs.cpp fakedriver.cpp
 SRCS_TEST += $(SRCS_COMMON)

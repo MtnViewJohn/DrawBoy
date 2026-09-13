@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1610"
+   LastUpgradeVersion = "2630"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -97,10 +97,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--pick=90"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sley=5"
+            argument = "--sley=-5"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
@@ -133,7 +133,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;weaving/32 shaft test.wif&quot;"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;gudruns towel4.dtx&quot;"
@@ -165,7 +165,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "loomtest_24shaft_pos.wif"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel4.wif&apos;"

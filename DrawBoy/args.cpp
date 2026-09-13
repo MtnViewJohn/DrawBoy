@@ -7,23 +7,14 @@
 #include "args.h"
 #include "args.hxx"
 #include "stdio.h"
-#include <dirent.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <termios.h>
 #include <sstream>
 #include <algorithm>
 #include <cstdlib>
-#include "ipc.h"
 #include <set>
 #include <memory>
 #include <charconv>
 #include "wif.h"
 #include "dtx.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -32,120 +23,6 @@
 #include <print>
 
 namespace {
-struct addr_deleter {
-    void operator()(addrinfo* ap) { ::freeaddrinfo(ap); }
-};
-
-using unique_ai = std::unique_ptr<addrinfo, addr_deleter>;
-
-int
-openTelnet(std::string& address)
-{
-    addrinfo hint{AI_ADDRCONFIG, PF_INET, SOCK_STREAM, IPPROTO_TCP,
-                  0, nullptr, nullptr, nullptr};
-    addrinfo* results;
-
-    if (::getaddrinfo(address.c_str(), "telnet", &hint, &results) < 0)
-        return -2;
-
-    auto aiList = unique_ai(results);
-
-    for (addrinfo* ai = results; ai; ai = ai->ai_next) {
-        int sockFD = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-        if (sockFD < 0)
-            continue;
-
-        if (::connect(sockFD, ai->ai_addr, ai->ai_addrlen) < 0) {
-            ::close(sockFD);
-            continue;
-        }
-
-        return sockFD;
-    }
-    return -1;
-}
-
-int
-checkForSerial(std::string& name)
-{
-    int fd = ::open(name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-    int modemBits = 0;
-    if (fd == -1)
-        return -1;
-    if (!::isatty(fd) || ::ioctl(fd, TIOCMGET, &modemBits) == -1)
-    {
-        ::close(fd);
-        return -2;
-    }
-    return fd;
-}
-
-struct dir_deleter {
-    void operator()(DIR* dp) { ::closedir(dp); }
-};
-
-using unique_dir = std::unique_ptr<DIR, dir_deleter>;
-
-std::set<std::string>
-enumSerial(const std::set<std::string>& exclude)
-{
-    std::set<std::string> result;
-    
-    auto devDir = unique_dir(::opendir("/dev"));
-    
-    if (devDir) {
-        while (struct dirent *entry = ::readdir(devDir.get())) {
-            if (entry->d_type == DT_CHR) {
-                std::string dname = "/dev/";
-                dname.append(entry->d_name);
-                if (exclude.contains(dname))
-                    continue;
-                std::putchar('.');
-                int fd = checkForSerial(dname);
-                if (fd >= 0) {
-                    ::close(fd);
-                    std::cout << '\n' << dname << std::endl;
-                    result.emplace(std::move(dname));
-                }
-            }
-        }
-    }
-    return result;
-}
-
-
-void
-initLoomPort(int fd, int cdgen)
-{
-    struct termios term;
-
-    if (::tcgetattr(fd, &term) < 0)
-        throw make_system_error("Cannot communicate with loom device");
-    
-    ::cfmakeraw(&term);
-    
-    if (cdgen == 1) {
-        ::cfsetispeed(&term, B1200);            // set 1200 baud
-        ::cfsetospeed(&term, B1200);
-        term.c_cflag |= PARENB;                 // set 7E2
-        term.c_cflag &= (tcflag_t)(~PARODD);
-        term.c_cflag |= CSTOPB;
-        term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS7;
-    } else {
-        ::cfsetispeed(&term, B9600);            // set 9600 baud
-        ::cfsetospeed(&term, B9600);
-        term.c_cflag &= (tcflag_t)(~PARENB);    // set 8N1
-        term.c_cflag &= (tcflag_t)(~CSTOPB);
-        term.c_cflag = (term.c_cflag & (tcflag_t)(~CSIZE)) | CS8;
-    }
-    term.c_cflag |= CLOCAL;
-    term.c_cc[VMIN] = 0;
-    term.c_cc[VTIME] = 1;
-
-    if (::tcsetattr(fd, TCSAFLUSH, &term) < 0)
-        throw make_system_error("Cannot communicate with loom device");
-}
-
 void
 addpick(int _pick, std::vector<int>& newpicks, bool isTabby, bool patternBeforeTabby)
 {
@@ -520,11 +397,11 @@ Options::Options(int argc, const char * argv[])
         std::cout << "\nMake sure that the USB dongle is unplugged, and then type return.";
         std::cin.getline(buf, 100, '\n');
         std::cout << "Scanning for pre-existing devices";
-        auto exclude = enumSerial({});
+        auto exclude = serial::enumSerial({});
         std::cout << "\nOK! Now plug in the USB dongle, wait a few seconds, and type return.";
         std::cin.getline(buf, 100, '\n');
         std::cout << "Scanning for new devices";
-        auto results = enumSerial(exclude);
+        auto results = serial::enumSerial(exclude);
         if (results.empty()) {
             std::cout << "\nAlas! No new devices were found." << std::endl;
         } else {
@@ -716,24 +593,27 @@ Options::Options(int argc, const char * argv[])
         throw std::runtime_error("Draft file requires more shafts than the loom possesses.");
     
     if (envSocket) {
-        IPC::Client fakeLoom(envSocket);
-        loomDeviceFD = fakeLoom.release();
+        serial loom(envSocket, serial::CxnType::Socket);
+        loomPort = std::move(loom);
     } else if (useNetwork) {
-        loomDeviceFD = openTelnet(loomAddress);
+        serial loom(loomAddress, serial::CxnType::Telnet);
 
-        if (loomDeviceFD == -1)
+        if (loom.getStatus() == serial::Status::NotOpen)
             throw std::runtime_error("Cannot open loom on network.");
-        if (loomDeviceFD == -2)
+        if (loom.getStatus() == serial::Status::NotFound)
             throw std::runtime_error("Loom address cannot be found on network.");
-    } else {
-        loomDeviceFD = checkForSerial(loomDevice);
 
-        if (loomDeviceFD == -1)
+        loomPort = std::move(loom);
+    } else {
+        serial loom(loomDevice, serial::CxnType::Serial);
+
+        if (loom.getStatus() == serial::Status::NotOpen)
             throw std::runtime_error("Cannot open loom device.");
-        if (loomDeviceFD == -2)
+        if (loom.getStatus() == serial::Status::NotSerial)
             throw std::runtime_error("Loom device is not a serial port.");
         
-        initLoomPort(loomDeviceFD, compuDobbyGen);
+        loom.initLoomPort(compuDobbyGen);
+        loomPort = std::move(loom);
     }
     
     if (_log) {
@@ -754,10 +634,6 @@ Options::Options(int argc, const char * argv[])
 
 Options::~Options()
 {
-    if (loomDeviceFD >= 0) {
-        ::close(loomDeviceFD);
-        loomDeviceFD = -1;
-    }
     if (logFile) {
         std::fclose(logFile);
         logFile = nullptr;

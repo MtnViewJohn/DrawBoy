@@ -9,8 +9,6 @@
 #include "term.h"
 #include "draft.h"
 #include <exception>
-#include <sys/select.h>
-#include <unistd.h>
 #include <cstdio>
 #include <map>
 #include <string_view>
@@ -20,6 +18,7 @@
 #include <print>
 #include <set>
 #include <deque>
+#include <unistd.h>
 
 namespace {
 std::string pickString(int pick, int picks, bool padded)
@@ -596,22 +595,10 @@ View::sendToLoom(std::string_view msg, bool waitReady)
             msg.remove_prefix((size_t)result);
         } else {
             if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-                timeval tv = {};
-                fd_set wrfds = {};
-                fd_set rdfds = {};
-                int selectresult;
-                
-                tv.tv_sec = term.pendingEvent() ? 0 : 1;
-                FD_ZERO(&wrfds);
-                FD_ZERO(&rdfds);
                 std::putchar('>');
                 std::fflush(stdout);
-                FD_SET(opts.loomDeviceFD, &wrfds);
-                FD_SET(STDIN_FILENO, &rdfds);
-                selectresult = ::select(opts.loomDeviceFD + 1, &rdfds, &wrfds, nullptr, &tv);
-                if (selectresult == -1 && errno != EINTR)
-                    throw make_system_error("loom select failed");
-                if (FD_ISSET(STDIN_FILENO, &rdfds) || term.pendingEvent()) {
+                auto ready = opts.loomPort.waitWrite(term.pendingEvent() ? 0 : 1);
+                if (ready._stdinReady || term.pendingEvent()) {
                     Term::Event ev = term.getEvent();
                     if (ev.type != Term::EventType::None)
                         handleEvent(ev);
@@ -672,26 +659,19 @@ View::sendPick()
 int
 View::listenToLoom()
 {
-    fd_set rdset;
     char c;
-    FD_SET(STDIN_FILENO, &rdset);
-    FD_SET(opts.loomDeviceFD, &rdset);
-    timeval threesec{term.pendingEvent() || !loomOutput.empty() ? 0 : 3, 0};
-    
-    int nfds = ::select(opts.loomDeviceFD + 1, &rdset, nullptr, nullptr, &threesec);
-    
-    if (nfds == -1 && errno != EINTR)
-        throw make_system_error("select failed");
 
-    if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
+    auto ready = opts.loomPort.waitRead(term.pendingEvent() || !loomOutput.empty() ? 0 : 3);
+
+    if (ready._stdinReady || term.pendingEvent() || ready._nfds == -1) {
         Term::Event ev = term.getEvent();
         if (ev.type != Term::EventType::None)
             handleEvent(ev);
         if (mode == Mode::Quit)
-            return nfds;
+            return ready._nfds;
     }
     
-    if (FD_ISSET(opts.loomDeviceFD, &rdset)) {
+    if (ready._loomReady) {
         int count = 0;
         while (true) {
             auto n = readLoom(c);
@@ -718,13 +698,13 @@ View::listenToLoom()
     
     if (opts.compuDobbyGen == 4 && loomOutput.starts_with("<error"))
         make_system_error({loomOutput});
-    return nfds;
+    return ready._nfds;
 }
 
 ssize_t
 View::readLoom(char &c)
 {
-    ssize_t n = ::read(opts.loomDeviceFD, &c, 1);
+    int n = opts.loomPort.read(c);
     
     if (n == 1 && opts.logFile) {
         if (logdirn != LogDirection::Reading) {
@@ -740,7 +720,7 @@ View::readLoom(char &c)
 ssize_t
 View::writeLoom(std::string_view msg)
 {
-    ssize_t n = ::write(opts.loomDeviceFD, msg.data(), msg.length());
+    int n = opts.loomPort.write(msg);
     
     if (n > 0 && opts.logFile) {
         if (logdirn != LogDirection::Writing) {

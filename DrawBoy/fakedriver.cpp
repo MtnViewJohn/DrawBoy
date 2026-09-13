@@ -8,13 +8,14 @@
 #include "driver.h"
 #include "fakeargs.h"
 #include "term.h"
-#include <sys/select.h>
-#include <unistd.h>
 #include <csignal>
 #include "ipc.h"
 #include <cstring>
 #include <chrono>
 #include <charconv>
+#include <string_view>
+#include <cassert>
+#include "serial.h"
 
 enum class Shed {
     Up,
@@ -43,7 +44,7 @@ struct View
     Term& term;
     Options& opts;
     
-    int socketFD = -1;
+    serial socket;
     
     Mode mode = Mode::Run;
     
@@ -62,11 +63,11 @@ struct View
     
     void handleEvent(const Term::Event& ev);
     
-    void sendToDrawBoy(const char *msg);
+    void sendToDrawBoy(std::string_view msg);
     
     void displayPrompt();
     LoopingState connect();
-    LoopingState run(IPC::Server& server);
+    LoopingState run(IPC::Server& serverIPC, serial& server);
 };
 
 void
@@ -159,37 +160,28 @@ View::displayPrompt()
 }
 
 void
-View::sendToDrawBoy(const char *msg)
+View::sendToDrawBoy(std::string_view msg)
 {
-    size_t remaining = std::strlen(msg);
-    size_t sent = 0;
-    
-    while (remaining > 0  &&  mode != Mode::Quit)
-    {
-        auto result = ::write(socketFD, msg + sent, remaining);
-        if (result >= 0) {
+    while (!msg.empty() && mode != Mode::Quit) {
+        auto sent = socket.write(msg);
+        if (sent >= 0) {
             // sent partial or all the remaining data
-            sent += (size_t)result;
-            remaining -= (size_t)result;
+            assert(sent > 0);
+            msg.remove_prefix((size_t)sent);
         } else {
-            int err = errno;
-            if (err == EPIPE) {
-                mode = Mode::Closed;
-                return;
-            }
-            if (err == EAGAIN || err == EWOULDBLOCK || err == EINTR) {
-                timeval tv = {};
-                fd_set fds = {};
-                int selectresult;
-                
-                tv.tv_sec = 1;
-                FD_ZERO(&fds);
-                FD_SET(socketFD, &fds);
-                selectresult = ::select(socketFD + 1, nullptr, &fds, nullptr, &tv);
-                if (selectresult == -1 && errno != EINTR)
-                    throw make_system_error("loom select failed");
-            } else {
-                throw make_system_error("loom write failed");
+            switch (errno) {
+                case EPIPE:
+                    mode = Mode::Closed;
+                    return;
+                case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+                case EWOULDBLOCK:
+#endif
+                case EINTR:
+                    socket.waitWrite(1);
+                    break;
+                default:
+                    throw make_system_error("loom write failed");
             }
         }
     }
@@ -203,22 +195,19 @@ View::connect()
     const char* loomReset = opts.cd4 ? "\r" : "\x0f\x03";
 
     while (mode == Mode::Run) {
-        fd_set rdset;
-        FD_SET(STDIN_FILENO, &rdset);
-        FD_SET(socketFD, &rdset);
-        timeval onesec{term.pendingEvent() ? 0 : 1, 0};
+        int tdelay = term.pendingEvent() ? 0 : 1;
         if (!autoInput.empty() && !autoReset && std::isdigit((unsigned char)autoInput.front())) {
             size_t pos = 0;
             int delay = std::stoi(autoInput, &pos);
             autoDelay = std::chrono::system_clock::now() + std::chrono::seconds(delay);
             autoInput.erase(0, pos);
-            std::printf("\r\nInserting %d second delay. ", (int)onesec.tv_sec);
+            std::printf("\r\nInserting %d second delay. ", tdelay);
         }
 
-        int nfds = ::select(socketFD + 1, &rdset, nullptr, nullptr, &onesec);
+        auto ready = socket.waitRead(tdelay);
         
-        if (nfds == -1 && errno != EINTR)
-            throw make_system_error("select failed");
+        if (ready._nfds == -1 && errno != EINTR)
+            throw make_system_error("select failed(1)");
 
         if (!autoInput.empty() && !autoReset &&
             std::chrono::system_clock::now() > autoDelay &&
@@ -253,15 +242,15 @@ View::connect()
             }
         }
 
-        if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
+        if (ready._stdinReady || term.pendingEvent() || ready._nfds == -1) {
             Term::Event ev = term.getEvent();
             if (ev.type == Term::EventType::None) continue;
             handleEvent(ev);
         }
         
-        if (FD_ISSET(socketFD, &rdset)) {
+        if (ready._loomReady) {
             char c;
-            auto n = ::read(socketFD, &c, 1);
+            auto n = socket.read(c);
             if (n < 0) {
                 if (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK)
                     continue;
@@ -281,7 +270,7 @@ View::connect()
                         std::fputs("\r\nSending loom greeting.\r\n", stdout);
                         std::string greeting = std::format("<Compu-Dobby IV, {}H, {} Dobby, HW A.1, FW 0.1.0>\n\r<Password:>",
                                                            opts.maxShafts, opts.dobbyType == DobbyType::Positive ? "Pos" : "Neg");
-                        sendToDrawBoy(greeting.c_str());
+                        sendToDrawBoy(greeting);
                     } else {
                         std::fputs("\r\nSolenoid reset command received.\r\n", stdout);
                         solenoidState = Solenoid::Reset;
@@ -350,27 +339,23 @@ View::connect()
         }
     }
     
+    socket.close();
     return mode == Mode::Quit ? LoopingState::ShouldQuit : LoopingState::ShouldWait;
 }
 
 LoopingState
-View::run(IPC::Server& server)
+View::run(IPC::Server& serverIPC, serial& server)
 {
     std::fputs("\r\n\n\nWaiting for DrawBoy   q)uit", stdout);
     std::fflush(stdout);
 
     while (true) {
-        fd_set rdset;
-        FD_SET(STDIN_FILENO, &rdset);
-        FD_SET(server.fd(), &rdset);
-        timeval onesec{term.pendingEvent() ? 0 : 1, 0};
+        auto ready = server.waitRead(term.pendingEvent() ? 0 : 1);
         
-        int nfds = select(server.fd() + 1, &rdset, nullptr, nullptr, &onesec);
-        
-        if (nfds == -1 && errno != EINTR)
-            throw make_system_error("select failed");
+        if (ready._nfds == -1 && errno != EINTR)
+            throw make_system_error("select failed(2)");
 
-        if (FD_ISSET(STDIN_FILENO, &rdset) || term.pendingEvent() || nfds == -1) {
+        if (ready._stdinReady || term.pendingEvent() || ready._nfds == -1) {
             Term::Event ev = term.getEvent();
             if (ev.type == Term::EventType::Char) {
                 if (ev.character == '\x03' || ev.character == 'q' || ev.character == 'Q')
@@ -378,11 +363,11 @@ View::run(IPC::Server& server)
             }
         }
         
-        if (FD_ISSET(server.fd(), &rdset)) {
+        if (ready._loomReady) {
             try {
-                auto ac = server.accept();
+                auto ac = serverIPC.accept();
                 if (!ac.has_value()) continue;
-                socketFD = ac->fd();
+                socket = serial(ac->fd(), serial::CxnType::Socket);
                 return connect();
             } catch (IPC::SocketError& se) {
                 std::printf("\r\nClient connection failed: %s, ignoring\r\n", se.what());
@@ -395,7 +380,8 @@ View::run(IPC::Server& server)
 void
 driver(Options& opts)
 {
-    IPC::Server server(opts.socketPath);
+    IPC::Server serverIPC(opts.socketPath);
+    serial server(serverIPC.fd(), serial::CxnType::Socket);
     LoopingState loop = LoopingState::ShouldWait;
     std::signal(SIGPIPE, SIG_IGN);
     
@@ -406,7 +392,8 @@ driver(Options& opts)
             throw std::runtime_error("Could not open terminal.");
         
         View view(term, opts);
-        loop = view.run(server);
+        loop = view.run(serverIPC, server);
         std::fputs("\r\n\nDrawBoy closed.\r\n", stdout);
     } while (loop != LoopingState::ShouldQuit);
+    serverIPC.release();    // server object will close socket descriptor
 }
