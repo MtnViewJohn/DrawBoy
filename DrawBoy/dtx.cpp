@@ -15,6 +15,8 @@
 #include <bit>
 #include <cctype>
 
+using namespace std::string_literals;
+
 namespace {
 std::string_view currentline(std::string& line)
 {
@@ -128,14 +130,14 @@ readColorSection(std::ifstream& dtxstream, const char* name, const std::vector<c
         if (line.length() == 0) break;
         if (line.starts_with("@@")) break;
 
-        char* end = const_cast<char*>(line.begin());    // bullshit strtol API
+        const char* end = line.begin();
         errno = 0;
         while (end != line.end()) {
-            size_t v = (size_t)std::strtol(end, &end, 10);
+            size_t v = (size_t)std::strtol(end, const_cast<char**>(&end), 10);
             if (errno)
-                throw std::runtime_error("Error in dtx file: parse error in warp/weft color section.");
+                throw std::runtime_error("Error in dtx file: parse error in "s + name + " section.");
             if (v >= palette.size())
-                throw std::runtime_error("Dtx file contains color outside of the palette.");
+                throw std::runtime_error("Dtx file contains color outside of the palette in "s + name + " section.");
             colors.push_back(palette[v]);
         }
     }
