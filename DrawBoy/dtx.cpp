@@ -262,9 +262,11 @@ dtx::dtx(std::ifstream& dtxstream)
                     contents.contains("Weft Colors");
     
     auto info = readInfoToMap(dtxstream);
-    if (!info.contains("shafts") || !info.contains("shafts") ||
-        !info.contains("shafts") || !info.contains("shafts"))
+    if (!info.contains("shafts") || !info.contains("treadles") ||
+        !info.contains("ends") || !info.contains("picks"))
+    {
         throw std::runtime_error("Dtx file missing information.");
+    }
     maxShafts = info["shafts"];
     maxTreadles = info["treadles"];
     ends = info["ends"];

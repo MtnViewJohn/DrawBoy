@@ -165,7 +165,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "loomtest_24shaft_pos.wif"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&apos;gudruns towel4.wif&apos;"
@@ -173,7 +173,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;Penny-wise table runner.dtx&quot;"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "&quot;log cabin 17end.dtx&quot;"
